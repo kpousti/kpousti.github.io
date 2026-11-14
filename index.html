@@ -37,11 +37,16 @@
   --text-dim: #93a1b8;   /* secondary text: 7.2:1 on the page, so even small labels pass WCAG AAA */
   --bright: #eef3fa;     /* headings */
   --accent: #f2b56b;     /* sunset amber */
+  --ink-rgb: 10, 18, 32; --screen: var(--screen); --accent-rgb: 242, 181, 107; --on-accent: #0a1220;
+  --edge: 255, 255, 255; /* hairline highlights on glass: white on dark themes, black on the light one */
+  --grain: 0.04;
+  /* Text colors inside the dark project screens (they stay dark in every theme). */
+  --s-text: #c3cddd; --s-dim: #93a1b8; --s-bright: #eef3fa; --s-line: #223049; --s-accent: #f2b56b;
   --glow: 98, 152, 255;  /* cursor light and scene color, as r,g,b; JS retints it per chapter */
   --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-  --bar-h: 56px;
+  --bar-h: 78px;
   /* Motion: one entrance curve, one two-way curve, three durations. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -51,7 +56,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scrollbar-color: #2a3a57 var(--ink); scrollbar-width: thin; }
+html { scrollbar-color: var(--line) var(--ink); scrollbar-width: thin; }
 body {
   margin: 0; background: var(--ink); color: var(--text);
   font-family: var(--font-body); font-size: var(--step-0); line-height: 1.62;
@@ -61,10 +66,10 @@ body {
 }
 p, li { text-wrap: pretty; }
 /* Film grain over the whole page. JS paints the texture once. */
-.grain { position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: 0.04; }
+.grain { position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: var(--grain); }
 a { color: inherit; text-decoration: none; }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
-::selection { background: var(--accent); color: var(--ink); }
+::selection { background: var(--accent); color: var(--on-accent); }
 
 /* ---------- Fixed layers: scene canvas, cursor light, scene label ---------- */
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
@@ -77,45 +82,52 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-
   position: fixed; right: 20px; bottom: 18px; z-index: 5;
   max-width: min(360px, calc(100vw - 40px));
   padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px;
-  background: rgba(10, 18, 32, 0.85);
+  background: rgba(var(--ink-rgb), 0.85);
   font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim); pointer-events: none;
 }
 .scene-note b { color: var(--accent); font-weight: 500; }
 
-/* ---------- Tab bar ---------- */
+/* ---------- Tab bar: a floating glass capsule, with a bubble that slides to the active tab ---------- */
 .bar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 10; height: var(--bar-h);
-  display: flex; align-items: center; gap: 20px; padding: 0 22px;
-  background: rgba(10, 18, 32, 0.62);
-  -webkit-backdrop-filter: saturate(160%) blur(18px); backdrop-filter: saturate(160%) blur(18px);
-  border-bottom: 1px solid rgba(34, 48, 73, 0.7);
+  position: fixed; top: 12px; left: 50%; z-index: 10; transform: translateX(-50%);
+  width: min(1040px, calc(100% - 24px)); height: 54px;
+  display: flex; align-items: center; gap: 16px; padding: 0 8px 0 22px; border-radius: 999px;
+  background: rgba(var(--panel), 0.58);
+  -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px);
+  border: 1px solid rgba(var(--edge), 0.13);
+  box-shadow: inset 0 1px 0 rgba(var(--edge), 0.14), 0 14px 40px -18px rgba(0, 0, 0, 0.55);
 }
 .mark { font-family: var(--font-display); font-weight: 700; font-size: 1.08rem; color: var(--bright); white-space: nowrap; }
-.tabs { position: relative; display: flex; gap: 2px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
+.tabs {
+  position: relative; display: flex; gap: 2px; margin: 0 auto; padding: 4px; border-radius: 999px;
+  background: rgba(var(--edge), 0.05); overflow-x: auto; scrollbar-width: none;
+}
 .tabs::-webkit-scrollbar { display: none; }
 .tabs a {
-  position: relative; z-index: 1; padding: 6px 14px; border-radius: 999px;
-  font-size: 13.5px; color: var(--text-dim); white-space: nowrap; transition: color 0.2s;
+  position: relative; z-index: 1; padding: 7px 15px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 500; color: var(--text-dim); white-space: nowrap; transition: color 0.2s;
 }
 .tabs a:hover, .tabs a.active { color: var(--bright); }
-/* The pill that slides under the active tab. JS sets --x, --w and --o on .tabs. */
+/* The bubble under the active tab. JS sets --x, --w and --o on .tabs. */
 .tab-ink {
-  position: absolute; left: 0; top: 50%; height: 30px; margin-top: -15px;
+  position: absolute; left: 0; top: 50%; height: 34px; margin-top: -17px;
   width: var(--w, 0px); transform: translateX(var(--x, 0px)); opacity: var(--o, 0);
-  border-radius: 999px; background: rgba(var(--glow), 0.16); border: 1px solid rgba(var(--glow), 0.38);
-  transition: transform 0.38s cubic-bezier(0.3, 0.8, 0.3, 1), width 0.38s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.2s;
+  border-radius: 999px; background: linear-gradient(rgba(var(--edge), 0.16), rgba(var(--edge), 0.08));
+  border: 1px solid rgba(var(--edge), 0.16);
+  box-shadow: inset 0 1px 0 rgba(var(--edge), 0.22), 0 4px 14px -6px rgba(0, 0, 0, 0.5), 0 0 22px -6px rgba(var(--glow), 0.55);
+  transition: transform 0.42s cubic-bezier(0.3, 0.8, 0.3, 1), width 0.42s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.2s;
   pointer-events: none;
 }
 .bar-cta {
-  padding: 6px 14px; border: 1px solid var(--accent); border-radius: 999px;
-  font-size: 13px; font-weight: 500; color: var(--accent); white-space: nowrap;
+  padding: 9px 18px; border-radius: 999px; background: var(--accent);
+  font-size: 13px; font-weight: 500; color: var(--on-accent); white-space: nowrap;
   transform: translate(var(--tx, 0px), var(--ty, 0px));
-  transition: background var(--t-fast), color var(--t-fast), transform var(--t-med) var(--ease-out);
+  transition: filter var(--t-fast), transform var(--t-med) var(--ease-out);
 }
-.bar-cta:hover { background: var(--accent); color: var(--ink); }
-/* Thin line under the bar showing how far down the page you are. */
+.bar-cta:hover { filter: brightness(1.12); }
+/* Thin line along the top edge showing how far down the page you are. */
 .progress {
-  position: fixed; top: var(--bar-h); left: 0; z-index: 10; width: 100%; height: 2px;
+  position: fixed; top: 0; left: 0; z-index: 11; width: 100%; height: 2px;
   background: var(--accent); transform-origin: 0 50%; transform: scaleX(var(--p, 0));
 }
 
@@ -137,7 +149,7 @@ h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; lin
 
 /* Hero */
 .hero {
-  min-height: 94vh; padding: calc(var(--bar-h) + 72px) 24px 96px;
+  position: relative; min-height: 94vh; padding: calc(var(--bar-h) + 72px) 24px 96px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 .hero > * { animation: rise 0.9s var(--ease-out) both; }
@@ -150,11 +162,8 @@ h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; lin
 @keyframes rise { from { opacity: 0; transform: translateY(26px); } }
 h1 {
   font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(3.4rem, 11.5vw, 8rem); line-height: 0.98; letter-spacing: -0.03em; font-stretch: 86%;
+  font-size: clamp(3.7rem, 13.5vw, 10.5rem); line-height: 0.98; letter-spacing: -0.03em; font-stretch: 86%;
   color: var(--bright); margin: 0; padding-bottom: 0.06em;
-  /* The cursor light also catches the letters. JS moves --hx / --hy. */
-  background: radial-gradient(540px circle at var(--hx, 50%) var(--hy, 30%), #ffffff 0%, #e3ebf8 32%, #9db3d8 100%);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
 /* The name settles from light and loose to bold and tight. */
 .hero > h1 { animation: settle 1.3s var(--ease-out) both; }
@@ -170,8 +179,8 @@ h1 {
   transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast), transform var(--t-med) var(--ease-out);
 }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--ink); }
-.btn.primary:hover { background: #ffc98a; color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.12); }
 .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; font-size: 14px; margin-top: 30px; }
 .links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
 .links a:hover { color: var(--accent); border-color: var(--accent); }
@@ -218,7 +227,7 @@ h1 {
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
 .chips li {
   font-family: var(--font-mono); font-size: 11.5px; color: var(--accent);
-  border: 1px solid var(--line); background: rgba(242, 181, 107, 0.07); border-radius: 999px; padding: 3px 11px;
+  border: 1px solid var(--line); background: rgba(var(--accent-rgb), 0.07); border-radius: 999px; padding: 3px 11px;
 }
 
 /* Project cards with a live demo screen */
@@ -239,7 +248,7 @@ h1 {
   background: radial-gradient(340px circle at var(--cx, 50%) var(--cy, 0%), rgba(var(--glow), 0.14), transparent 70%);
 }
 .feature:hover::before, .build:hover::before { opacity: 1; }
-.screen { position: relative; border-bottom: 1px solid var(--line); background: #08101c; }
+.screen { position: relative; border-bottom: 1px solid var(--line); background: var(--screen); }
 .screen canvas { display: block; width: 100%; height: 200px; }
 .build .screen canvas { height: 240px; }
 .build.wide .screen canvas { height: 330px; }
@@ -259,7 +268,7 @@ h1 {
 .build .feature-body { padding: 20px 22px 22px; }
 .build h3 { font-size: 1.14rem; }
 .status { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
-.chat { padding: 14px 20px 16px; min-height: 120px; display: flex; flex-direction: column; gap: 8px; font-size: 0.92rem; line-height: 1.45; border-bottom: 1px solid var(--line); background: #08101c; }
+.chat { padding: 14px 20px 16px; min-height: 120px; display: flex; flex-direction: column; gap: 8px; font-size: 0.92rem; line-height: 1.45; border-bottom: 1px solid var(--line); background: var(--screen); }
 .chat p { margin: 0; }
 .chat .q { color: var(--bright); }
 .chat .q::before { content: "You  "; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
@@ -285,10 +294,10 @@ h1 {
 .pin-meter { margin-top: 28px; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .pin-meter i { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); }
 .pin:not(.live) .pin-meter { display: none; }
-.pin-screen { border: 1px solid var(--line); border-radius: 16px; background: #08101c; overflow: hidden; }
+.pin-screen { border: 1px solid var(--line); border-radius: 16px; background: var(--screen); overflow: hidden; }
 .pin-screen canvas { display: block; width: 100%; height: min(58vh, 470px); }
 
-.skip { position: fixed; left: 12px; top: -60px; z-index: 20; padding: 8px 14px; border-radius: 8px; background: var(--accent); color: var(--ink); font-weight: 500; }
+.skip { position: fixed; left: 12px; top: -60px; z-index: 20; padding: 8px 14px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 500; }
 .skip:focus { top: 10px; }
 .has-touch { display: none; }
 @media (hover: none) { .has-mouse { display: none; } .has-touch { display: inline; } }
@@ -303,7 +312,7 @@ h1 {
 .beyond .wide { grid-column: span 2; }
 .beyond li { padding: 0 20px 22px; overflow: hidden; transition: border-color var(--t-med), transform var(--t-med) var(--ease-out); }
 .beyond li:hover { border-color: var(--accent); transform: translateY(-3px); }
-.mini { display: block; width: calc(100% + 40px); height: 124px; margin: 0 -20px 16px; background: #08101c; border-bottom: 1px solid var(--line); } }
+.mini { display: block; width: calc(100% + 40px); height: 124px; margin: 0 -20px 16px; background: var(--screen); border-bottom: 1px solid var(--line); } }
 .beyond li { font-size: 0.94rem; text-align: left; }
 .beyond i { color: var(--bright); }
 .beyond b { display: block; text-align: left; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
@@ -349,7 +358,8 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
   .chapter { padding: 96px 20px; }
 }
 @media (max-width: 700px) {
-  .bar { padding: 0 14px; gap: 12px; }
+  .bar { padding: 0 6px 0 16px; gap: 10px; height: 50px; }
+  .tabs a { font-size: 13px; }
   .bar-cta { display: none; }
   .tabs { margin: 0; }
   .tabs a { padding: 6px 11px; }
@@ -365,6 +375,45 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 @media (max-width: 420px) {
   .stats, .skill-grid, .wins { grid-template-columns: minmax(0, 1fr); }
 }
+/* The name is drawn as a graph on this canvas; the real heading stays in the page for screen readers. */
+#nameMesh { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; animation: none; }
+.hero > h1 { animation: none; }
+h1.meshed { color: transparent; }
+
+/* Dark project screens keep light text in every theme. */
+.screen, .chat, .pin-screen, .mini { --text: var(--s-text); --text-dim: var(--s-dim); --bright: var(--s-bright); --line: var(--s-line); --accent: var(--s-accent); color: var(--s-text); }
+
+/* Projects on wide screens: cards on the right, and a framed stage on the left where each card's scene plays in the open. */
+.wrap.wide { max-width: 1240px; }
+.stage { display: none; }
+@media (min-width: 1000px) {
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 500px); gap: 36px; align-items: start; }
+  .split .features { grid-template-columns: minmax(0, 1fr); }
+  .stage {
+    display: block; position: sticky; top: max(calc(var(--bar-h) + 12px), calc(50vh - 290px)); height: min(620px, calc(100vh - var(--bar-h) - 36px));
+    border: 1px solid rgba(var(--edge), 0.1); border-radius: 22px; background: rgba(var(--panel), 0.22);
+    box-shadow: inset 0 1px 0 rgba(var(--edge), 0.08);
+  }
+  .stage span { position: absolute; left: 20px; top: 16px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+  /* Chapter headlines get room, so the scene behind them is seen before the cards arrive. */
+  .chapter[data-scene] > .wrap > .head { min-height: 38vh; display: flex; flex-direction: column; justify-content: center; }
+}
+
+/* Theme picker (previews only). */
+.themes {
+  position: fixed; left: 16px; bottom: 16px; z-index: 12; display: flex; gap: 4px; padding: 5px; border-radius: 999px; max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none;
+  background: rgba(var(--panel), 0.72); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(var(--edge), 0.14); box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.6);
+}
+.themes[hidden] { display: none; }
+.themes button {
+  display: flex; align-items: center; gap: 7px; padding: 7px 12px 7px 8px; border: 0; border-radius: 999px; background: none; cursor: pointer;
+  font: 500 12.5px var(--font-body); color: var(--text-dim); white-space: nowrap;
+}
+.themes button[aria-pressed="true"] { background: rgba(var(--edge), 0.12); color: var(--bright); }
+.themes i { position: relative; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid; }
+.themes u { position: absolute; inset: 3.5px; border-radius: 50%; }
+@media (max-width: 700px) { .themes { bottom: 58px; } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; animation: none !important; }
@@ -375,7 +424,8 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="grain" id="grain" aria-hidden="true"></div>
 <div class="glow" aria-hidden="true"></div>
-<div class="scene-note" id="sceneNote" aria-hidden="true"><b>A* search</b> routing to your cursor</div>
+<div class="scene-note" id="sceneNote" aria-hidden="true"><b>Breadth-first search</b> spreading through the name</div>
+<div class="themes" id="themes" role="group" aria-label="Color theme" hidden></div>
 
 <a class="skip" href="#about">Skip to content</a>
 <header class="bar">
@@ -394,11 +444,11 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 <div class="progress" aria-hidden="true"></div>
 
 <main>
-  <section class="hero" id="top" data-scene="graph">
-    <p class="eyebrow">Software engineer · San Diego, CA<span id="clock"></span></p>
+  <section class="hero" id="top" data-scene="drift">
+    <p class="eyebrow">Software engineer · San Diego, CA</p>
     <h1>Kia Pousti</h1>
-    <p class="hero-role">Fast graph systems. <em>Practical AI.</em></p>
-    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">Move your cursor: the background is finding the shortest path to it.</span><span class="has-touch">Drag a finger across the screen: the background finds the shortest path to it.</span></p>
+    <p class="hero-role" id="hook">Fast graph systems. <em>Practical AI.</em></p>
+    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">My name above is a graph with a search spreading through it. Push it around with your cursor.</span><span class="has-touch">My name above is a graph, with a search spreading through it.</span></p>
     <div class="actions">
       <a class="btn primary" href="#projects">See the work</a>
       <a class="btn" href="#contact">Get in touch</a>
@@ -409,6 +459,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       <a href="mailto:kiapousti@gmail.com">Email</a>
     </div>
     <a class="cue" href="#about">Scroll</a>
+    <canvas id="nameMesh" aria-hidden="true"></canvas>
   </section>
 
   <section class="chapter" id="about" data-scene="sphere">
@@ -505,7 +556,9 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       </div>
     </div>
 
-    <div class="wrap">
+    <div class="wrap wide">
+      <div class="split" data-stage>
+      <aside class="stage" aria-hidden="true"><span>Now playing</span></aside>
       <div class="features">
 
         <article class="feature" data-scene="graph" data-reveal>
@@ -572,6 +625,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
             <ul class="chips"><li>C++</li><li>Tarjan SCC</li><li>Stoer–Wagner</li></ul>
           </div>
         </article>
+      </div>
       </div>
     </div>
   </section>
@@ -730,8 +784,38 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 
 <script>
 // ---------- Shared helpers ----------
-var GLOW = '98,152,255', AMBER = '242,181,107', WHITE = '238,243,250', DIM = '132,146,168';
-var PALETTE = ['98,152,255', '242,181,107', '126,214,190', '201,160,255', '238,243,250'];
+// ---------- Themes: every color on the page and in the animations comes from one of these ----------
+var THEMES = {
+  night:   { name: 'Night Water',  scheme: 'dark',  ink: '#0a1220', inkRgb: '10,18,32',   panel: '14,24,40',   screen: SCREEN, panelc: PANELC, line: '#223049', text: '#c3cddd', dim: '#93a1b8', bright: '#eef3fa', accent: '#f2b56b', accentRgb: '242,181,107', onAccent: '#0a1220', edge: '255,255,255', grain: 0.04,
+             demo: { glow: '98,152,255', white: '238,243,250', dim: '132,146,168', palette: ['98,152,255', '242,181,107', '126,214,190', '201,160,255', '238,243,250'] } },
+  studio:  { name: 'Studio Black', scheme: 'dark',  ink: '#000000', inkRgb: '0,0,0',      panel: '22,22,24',   screen: '#0a0a0c', panelc: '#161618', line: '#2c2c30', text: '#d2d2d7', dim: '#98989f', bright: '#f5f5f7', accent: '#2997ff', accentRgb: '41,151,255',  onAccent: '#000000', edge: '255,255,255', grain: 0.03,
+             demo: { glow: '170,176,190', white: '245,245,247', dim: '134,134,139', palette: ['170,176,190', '41,151,255', '110,210,200', '180,150,255', '245,245,247'] } },
+  gallery: { name: 'Gallery Light', scheme: 'light', ink: '#f5f5f7', inkRgb: '245,245,247', panel: '255,255,255', screen: '#111114', panelc: '#1b1b20', line: '#d2d2d7', text: '#3a3a3c', dim: '#6e6e73', bright: '#1d1d1f', accent: '#0066cc', accentRgb: '0,102,204',   onAccent: '#ffffff', edge: '0,0,0',       grain: 0.025,
+             demo: { glow: '150,170,200', accent: '77,163,255', white: '245,245,247', dim: '150,150,160', palette: ['150,170,200', '77,163,255', '110,210,200', '180,150,255', '245,245,247'] },
+             page: { glow: '60,90,140', accent: '0,102,204', white: '29,29,31', palette: ['60,90,140', '0,102,204', '20,130,110', '110,70,200', '29,29,31'] },
+             s: { text: '#d2d2d7', dim: '#a1a1a8', bright: '#f5f5f7', line: '#2c2c30', accent: '#4da3ff' } },
+  volt:    { name: 'Volt',         scheme: 'dark',  ink: '#070806', inkRgb: '7,8,6',      panel: '17,19,14',   screen: '#030402', panelc: '#0f110c', line: '#272b1f', text: '#c9cfbf', dim: '#969d88', bright: '#f4f7ea', accent: '#c8f230', accentRgb: '200,242,48',  onAccent: '#0a0d02', edge: '255,255,255', grain: 0.045,
+             demo: { glow: '168,178,150', white: '244,247,234', dim: '140,146,128', palette: ['168,178,150', '200,242,48', '120,220,190', '230,230,120', '244,247,234'] } },
+  aurora:  { name: 'Aurora',       scheme: 'dark',  ink: '#0d0b16', inkRgb: '13,11,22',   panel: '23,20,38',   screen: '#08070f', panelc: '#14122a', line: '#2c2845', text: '#cbc7df', dim: '#9c96b8', bright: '#f3f0ff', accent: '#7ee6c8', accentRgb: '126,230,200', onAccent: '#07120f', edge: '255,255,255', grain: 0.04,
+             demo: { glow: '160,130,255', white: '243,240,255', dim: '140,134,170', palette: ['160,130,255', '126,230,200', '255,160,200', '120,180,255', '243,240,255'] } }
+};
+// Colors the project screens draw with, and the colors the page-wide scenes draw with. applyTheme fills both.
+var GLOW, AMBER, WHITE, DIM, PALETTE, SCREEN, PANELC, PAGE = {}, THEME_KEY = 'night';
+function applyTheme(key) {
+  var t = THEMES[key] || THEMES.night, st = document.documentElement.style, s = t.s || { text: t.text, dim: t.dim, bright: t.bright, line: t.line, accent: t.accent };
+  THEME_KEY = THEMES[key] ? key : 'night';
+  var vars = { '--ink': t.ink, '--ink-rgb': t.inkRgb, '--panel': t.panel, '--screen': t.screen, '--line': t.line, '--text': t.text, '--text-dim': t.dim, '--bright': t.bright,
+    '--accent': t.accent, '--accent-rgb': t.accentRgb, '--on-accent': t.onAccent, '--edge': t.edge, '--grain': t.grain,
+    '--s-text': s.text, '--s-dim': s.dim, '--s-bright': s.bright, '--s-line': s.line, '--s-accent': s.accent };
+  for (var k in vars) st.setProperty(k, vars[k]);
+  st.colorScheme = t.scheme;
+  GLOW = t.demo.glow; AMBER = t.demo.accent || t.accentRgb; WHITE = t.demo.white; DIM = t.demo.dim; PALETTE = t.demo.palette; SCREEN = t.screen; PANELC = t.panelc;
+  var pg = t.page || { glow: t.demo.glow, accent: t.accentRgb, white: t.demo.white, palette: t.demo.palette };
+  PAGE.glow = pg.glow; PAGE.accent = pg.accent; PAGE.white = pg.white; PAGE.palette = pg.palette;
+  var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', t.ink);
+  try { window.dispatchEvent(new Event('themechange')); } catch (e) {}
+}
+applyTheme('night');
 var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function rgba(c, a) { return 'rgba(' + c + ',' + a + ')'; }
@@ -761,9 +845,6 @@ var pointer = { x: -1, y: -1, active: false };
   function apply() {
     root.style.setProperty('--mx', pointer.x + 'px');
     root.style.setProperty('--my', pointer.y + 'px');
-    var hr = h1.getBoundingClientRect(); // light the name's letters from the same spot
-    h1.style.setProperty('--hx', (pointer.x - hr.left) + 'px');
-    h1.style.setProperty('--hy', (pointer.y - hr.top) + 'px');
     pending = false;
   }
   window.addEventListener('pointermove', function (e) {
@@ -807,21 +888,11 @@ var pointer = { x: -1, y: -1, active: false };
   if (window.console) console.log('%cKia Pousti%c  Designed and built by hand. kiapousti.com', 'font-weight:700;color:#f2b56b', 'color:#93a1b8');
 })();
 
-// ---------- Hero: show the current time in San Diego ----------
-(function () {
-  var el = document.getElementById('clock');
-  if (!el || !window.Intl) return;
-  function tick() {
-    try { el.textContent = ' · ' + new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Los_Angeles' }).format(new Date()); } catch (e) {}
-  }
-  tick(); setInterval(tick, 30000);
-})();
-
 // ---------- In-page links: glide to the section, re-aiming each frame so nothing can throw it off ----------
 (function () {
   var run = 0;
   function aim(el) { // where the page must be scrolled for this element to sit just under the tab bar
-    var barH = document.querySelector('.bar').offsetHeight, doc = document.documentElement;
+    var barH = document.querySelector('.bar').getBoundingClientRect().bottom + 8, doc = document.documentElement;
     var y = el.getBoundingClientRect().top + window.scrollY - barH;
     return clamp(y, 0, doc.scrollHeight - window.innerHeight);
   }
@@ -1048,7 +1119,7 @@ var pointer = { x: -1, y: -1, active: false };
         if (settled[idx]) {
           dot(ctx, p.x, p.y, 9, idx === 0 ? rgba(AMBER, 1) : rgba(GLOW, 1));
           text(ctx, String(s.dist[idx]), p.x, p.y + 0.5, '#0a1220', 'center');
-        } else { dot(ctx, p.x, p.y, 9, '#08101c'); ring(ctx, p.x, p.y, 9, rgba(GLOW, 0.4)); }
+        } else { dot(ctx, p.x, p.y, 9, SCREEN); ring(ctx, p.x, p.y, 9, rgba(GLOW, 0.4)); }
       });
       text(ctx, 'settled ' + count + ' of ' + total, w - 10, 14, rgba(WHITE, 0.75), 'right');
     }
@@ -1101,7 +1172,7 @@ var pointer = { x: -1, y: -1, active: false };
       });
       s.nodes.forEach(function (p, idx) {
         if (comp[idx] !== undefined) dot(ctx, p.x, p.y, 9, rgba(PALETTE[comp[idx] % 5], 1));
-        else { dot(ctx, p.x, p.y, 9, '#08101c'); ring(ctx, p.x, p.y, 9, seen[idx] ? rgba(AMBER, 1) : rgba(GLOW, 0.4), seen[idx] ? 2 : 1.3); }
+        else { dot(ctx, p.x, p.y, 9, SCREEN); ring(ctx, p.x, p.y, 9, seen[idx] ? rgba(AMBER, 1) : rgba(GLOW, 0.4), seen[idx] ? 2 : 1.3); }
       });
       text(ctx, 'components found ' + found, w - 10, h - 12, rgba(WHITE, 0.75), 'right');
     }
@@ -1180,7 +1251,7 @@ var pointer = { x: -1, y: -1, active: false };
         else { var v = (u - 0.45) / 0.55; x = cx + (endX - cx) * v; y = cy + ((human ? botY : topY) - cy) * v; color = human ? rgba(AMBER, 1) : rgba(GLOW, 1); }
         dot(ctx, x, y, 3.5, color);
       }
-      dot(ctx, cx, cy, 13, '#08101c'); ring(ctx, cx, cy, 13, rgba(WHITE, 0.8));
+      dot(ctx, cx, cy, 13, SCREEN); ring(ctx, cx, cy, 13, rgba(WHITE, 0.8));
       text(ctx, 'AI', cx, cy + 0.5, rgba(WHITE, 0.95), 'center');
       text(ctx, 'inquiries', 6, cy - 14, rgba(DIM, 1));
       text(ctx, 'auto-reply', w - 6, topY, rgba(GLOW, 1), 'right');
@@ -1275,7 +1346,7 @@ var pointer = { x: -1, y: -1, active: false };
         if (bd.hub) {
           var need = 1 + Math.floor(now / 2600) % 3, top = apex[1] - 22;
           ctx.strokeStyle = rgba(AMBER, 0.9); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(apex[0], apex[1]); ctx.lineTo(apex[0], top + 10); ctx.stroke();
-          ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(AMBER, 1); ctx.beginPath(); ctx.rect(apex[0] - 46, top - 12, 92, 22); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = SCREEN; ctx.strokeStyle = rgba(AMBER, 1); ctx.beginPath(); ctx.rect(apex[0] - 46, top - 12, 92, 22); ctx.fill(); ctx.stroke();
           text(ctx, 'needs you: ' + need, apex[0], top - 0.5, rgba(AMBER, 1), 'center');
           if (arrivals) ring(ctx, base[0], base[1] - tw * 0.1, tw * (0.5 + 0.25 * Math.abs(Math.sin(now * 0.005))), rgba(AMBER, 0.5), 1.2); // a report just landed
         } else if (w >= 430) text(ctx, bd.name, base[0], base[1] + 13, rgba(WHITE, 0.8), 'center');
@@ -1289,7 +1360,7 @@ var pointer = { x: -1, y: -1, active: false };
       var now = REDUCE ? 3300 : t, hz = h * 0.46, x, i;
       // dawn glow and a sun on the horizon
       var sky = ctx.createLinearGradient(0, hz - 60, 0, hz);
-      sky.addColorStop(0, 'rgba(242,181,107,0)'); sky.addColorStop(1, rgba(AMBER, 0.22));
+      sky.addColorStop(0, rgba(AMBER, 0)); sky.addColorStop(1, rgba(AMBER, 0.22));
       ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hz);
       dot(ctx, w * 0.8, hz - 2, 12, rgba(AMBER, 0.95));
       // distant swell lines marching in
@@ -1424,7 +1495,7 @@ var pointer = { x: -1, y: -1, active: false };
         text(ctx, lane[1], 14, y - 34, lane[2]);
         ctx.strokeStyle = li ? rgba(AMBER, 0.5) : rgba(GLOW, 0.3); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(nx(0), y); ctx.lineTo(nx(3), y); ctx.stroke();
         for (i = 0; i < 4; i++) {
-          box(ctx, nx(i) - 30, y - 12, 60, 24, '#08101c', li ? rgba(AMBER, 0.9) : rgba(GLOW, 0.6));
+          box(ctx, nx(i) - 30, y - 12, 60, 24, SCREEN, li ? rgba(AMBER, 0.9) : rgba(GLOW, 0.6));
           text(ctx, names[i], nx(i), y + 0.5, li ? rgba(AMBER, 1) : rgba(WHITE, 0.75), 'center');
         }
       });
@@ -1455,7 +1526,7 @@ var pointer = { x: -1, y: -1, active: false };
       var flip = clamp((u - 0.42) / 0.14, 0, 1), sx = Math.abs(Math.cos(flip * Math.PI)), back = flip > 0.5;
       var slide = u > 0.93 ? (u - 0.93) / 0.07 : u < 0.06 ? (u / 0.06) - 1 : 0; // leaves to the left, arrives from the right
       ctx.save(); ctx.translate(cx - slide * w * 0.5, cy); ctx.globalAlpha = 1 - Math.abs(slide); ctx.scale(Math.max(sx, 0.02), 1);
-      ctx.fillStyle = back ? 'rgba(242,181,107,0.14)' : '#0e1828'; ctx.strokeStyle = back ? rgba(AMBER, 1) : rgba(GLOW, 0.8); ctx.lineWidth = 1.5;
+      ctx.fillStyle = back ? rgba(AMBER, 0.14) : PANELC; ctx.strokeStyle = back ? rgba(AMBER, 1) : rgba(GLOW, 0.8); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.rect(-cw / 2, -chh / 2, cw, chh); ctx.fill(); ctx.stroke();
       if (sx > 0.35) {
         text(ctx, back ? 'answer' : 'flashcard ' + (idx % 4 + 1) + ' of 4', -cw / 2 + 12, -chh / 2 + 16, back ? rgba(AMBER, 1) : rgba(DIM, 1));
@@ -1467,7 +1538,7 @@ var pointer = { x: -1, y: -1, active: false };
       var gain = clamp((u - 0.56) / 0.2, 0, 1), xp = (idx % 4) * 50 + gain * 50, level = 1 + Math.floor(idx / 4) % 9;
       var bx = narrow ? 20 : w * 0.7, bw = narrow ? w - 40 : w * 0.26, by = narrow ? h - 34 : h * 0.52;
       text(ctx, 'level ' + level, bx, by - 18, rgba(WHITE, 0.9)); text(ctx, Math.round(xp) + ' / 200 XP', bx + bw, by - 18, rgba(AMBER, 1), 'right');
-      box(ctx, bx, by - 5, bw, 10, '#08101c', rgba(GLOW, 0.5)); box(ctx, bx, by - 5, bw * xp / 200, 10, rgba(AMBER, 0.95));
+      box(ctx, bx, by - 5, bw, 10, SCREEN, rgba(GLOW, 0.5)); box(ctx, bx, by - 5, bw * xp / 200, 10, rgba(AMBER, 0.95));
       if (gain > 0 && gain < 1) text(ctx, '+50 XP', bx + bw * xp / 200, by - 36 - gain * 14, rgba(AMBER, 1 - gain * 0.6), 'center');
       if (!narrow) for (var s = 0; s < 4; s++) { // streak: one dot per card answered this round
         var on = s < idx % 4 || (s === idx % 4 && gain >= 1);
@@ -1486,8 +1557,8 @@ var pointer = { x: -1, y: -1, active: false };
       ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath();
       ctx.moveTo(x0 - 12, dy - 7); ctx.quadraticCurveTo(x0, dy, x0 + 14, dy); ctx.lineTo(x1 - 14, dy); ctx.quadraticCurveTo(x1, dy, x1 + 12, dy - 7); ctx.stroke();
       wheel(ctx, x0 + 26, gy - 8, 8, spin, rgba(WHITE, 0.95)); wheel(ctx, x1 - 26, gy - 8, 8, spin, rgba(WHITE, 0.95));
-      box(ctx, cx - L * 0.3, dy + 3, L * 0.26, 9, '#08101c', rgba(GLOW, 0.9)); text(ctx, 'battery', cx - L * 0.17, dy - 12, rgba(DIM, 1), 'center');
-      box(ctx, cx + L * 0.02, dy + 3, L * 0.16, 9, 'rgba(242,181,107,0.25)', rgba(AMBER, 1)); text(ctx, 'ESC', cx + L * 0.1, dy - 12, rgba(AMBER, 1), 'center');
+      box(ctx, cx - L * 0.3, dy + 3, L * 0.26, 9, SCREEN, rgba(GLOW, 0.9)); text(ctx, 'battery', cx - L * 0.17, dy - 12, rgba(DIM, 1), 'center');
+      box(ctx, cx + L * 0.02, dy + 3, L * 0.16, 9, rgba(AMBER, 0.25), rgba(AMBER, 1)); text(ctx, 'ESC', cx + L * 0.1, dy - 12, rgba(AMBER, 1), 'center');
       ring(ctx, x1 - 44, gy - 12, 5, rgba(AMBER, 1), 1.5);
       var ax = cx - L * 0.04, bx = cx + L * 0.18, mx = x1 - 49; // current pulsing along the wires
       ctx.strokeStyle = rgba(AMBER, 0.5); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(ax, dy + 7); ctx.lineTo(cx + L * 0.02, dy + 7); ctx.moveTo(bx, dy + 7); ctx.lineTo(mx, gy - 12); ctx.stroke();
@@ -1538,13 +1609,13 @@ var pointer = { x: -1, y: -1, active: false };
       var body = [[-88, -12], [-84, -34], [-52, -40], [-34, -62], [26, -62], [48, -40], [84, -34], [90, -12]];
       ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
       body.forEach(function (p, i) { var q = P(p[0], p[1]); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
-      ctx.closePath(); ctx.fillStyle = '#0e1828'; ctx.fill(); ctx.stroke();
+      ctx.closePath(); ctx.fillStyle = PANELC; ctx.fill(); ctx.stroke();
       var w1 = P(-54, -10), w2 = P(54, -10);
-      dot(ctx, w1[0], w1[1], 12 * s, '#08101c'); dot(ctx, w2[0], w2[1], 12 * s, '#08101c');
+      dot(ctx, w1[0], w1[1], 12 * s, SCREEN); dot(ctx, w2[0], w2[1], 12 * s, SCREEN);
       wheel(ctx, w1[0], w1[1], 11 * s, 0.4, rgba(WHITE, 0.95)); wheel(ctx, w2[0], w2[1], 11 * s, 1.1, rgba(WHITE, 0.95));
       var m = P(66, -31 - (1 - ease) * 60); // the motor on its hoist
       ctx.strokeStyle = rgba(AMBER, 0.7 * (1 - clamp((u - 0.42) / 0.08, 0, 1))); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(m[0], 0); ctx.lineTo(m[0], m[1] - 7 * s); ctx.stroke();
-      box(ctx, m[0] - 11 * s, m[1] - 7 * s, 22 * s, 13 * s, 'rgba(242,181,107,0.3)', rgba(AMBER, 1));
+      box(ctx, m[0] - 11 * s, m[1] - 7 * s, 22 * s, 13 * s, rgba(AMBER, 0.3), rgba(AMBER, 1));
       if (drop >= 1 && u < 0.5) ring(ctx, m[0], m[1], (10 + (u - 0.4) * 160) * s, rgba(AMBER, 1 - (u - 0.4) * 10), 1.4); // seated
       var sh = clamp((u - 0.52) / 0.4, 0, 1); // the shine
       if (sh > 0 && sh < 1) {
@@ -1559,8 +1630,8 @@ var pointer = { x: -1, y: -1, active: false };
       var now = REDUCE ? 900 : t, gy = h - 14, cx = w * 0.4, bw = Math.min(70, w * 0.3), bh = 40, i;
       ctx.strokeStyle = rgba(GLOW, 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(10, gy); ctx.lineTo(w - 10, gy); ctx.stroke();
       ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 2; ctx.lineJoin = 'round';
-      box(ctx, cx - bw / 2, gy - bh, bw, bh, '#0e1828', rgba(WHITE, 0.95));
-      ctx.beginPath(); ctx.moveTo(cx - bw / 2 - 8, gy - bh); ctx.lineTo(cx, gy - bh - 26); ctx.lineTo(cx + bw / 2 + 8, gy - bh); ctx.closePath(); ctx.fillStyle = '#0e1828'; ctx.fill(); ctx.stroke();
+      box(ctx, cx - bw / 2, gy - bh, bw, bh, PANELC, rgba(WHITE, 0.95));
+      ctx.beginPath(); ctx.moveTo(cx - bw / 2 - 8, gy - bh); ctx.lineTo(cx, gy - bh - 26); ctx.lineTo(cx + bw / 2 + 8, gy - bh); ctx.closePath(); ctx.fillStyle = PANELC; ctx.fill(); ctx.stroke();
       var glow = 0.55 + 0.45 * Math.sin(now * 0.002);
       box(ctx, cx - bw / 2 + 8, gy - bh + 9, 14, 12, rgba(AMBER, glow), rgba(AMBER, 1)); box(ctx, cx + bw / 2 - 22, gy - bh + 9, 14, 12, rgba(AMBER, glow), rgba(AMBER, 1));
       box(ctx, cx - 6, gy - 20, 12, 20, null, rgba(WHITE, 0.95));
@@ -1594,7 +1665,7 @@ var pointer = { x: -1, y: -1, active: false };
       [-1, 1].forEach(function (side) { ctx.beginPath(); ctx.moveTo(cx, by - ph / 2 + 3); ctx.quadraticCurveTo(cx + side * pw * 0.5, by - ph / 2 - 3, cx + side * pw, by - ph / 2); ctx.lineTo(cx + side * pw, by + ph / 2); ctx.quadraticCurveTo(cx + side * pw * 0.5, by + ph / 2 - 3, cx, by + ph / 2 + 3); ctx.stroke(); });
       ctx.beginPath(); ctx.moveTo(cx, by - ph / 2 + 3); ctx.lineTo(cx, by + ph / 2 + 3); ctx.stroke();
       var px = cx + Math.cos(a) * pw, lift = Math.sin(a) * 7;
-      ctx.fillStyle = 'rgba(242,181,107,0.2)'; ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 1.4; ctx.beginPath();
+      ctx.fillStyle = rgba(AMBER, 0.2); ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 1.4; ctx.beginPath();
       ctx.moveTo(cx, by - ph / 2 + 3); ctx.lineTo(px, by - ph / 2 - lift); ctx.lineTo(px, by + ph / 2 - lift); ctx.lineTo(cx, by + ph / 2 + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
     }
   };
@@ -1760,7 +1831,7 @@ var pointer = { x: -1, y: -1, active: false };
       ctx.strokeStyle = rgba(AMBER, slim); ctx.lineWidth = 2.6; ctx.beginPath(); var first = true;
       for (i = 0; i < raw.length; i++) if (keep[i]) { if (first) { ctx.moveTo(raw[i].x, raw[i].y); first = false; } else ctx.lineTo(raw[i].x, raw[i].y); }
       ctx.stroke();
-      for (i = 0; i < raw.length; i++) if (keep[i]) { ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(AMBER, slim); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(raw[i].x, raw[i].y, 3.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+      for (i = 0; i < raw.length; i++) if (keep[i]) { ctx.fillStyle = SCREEN; ctx.strokeStyle = rgba(AMBER, slim); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(raw[i].x, raw[i].y, 3.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
     }
     // start, the raw tap, and the snap onto the road
     var s0 = nodes[start], g0 = nodes[goal];
@@ -1862,6 +1933,160 @@ var pointer = { x: -1, y: -1, active: false };
   });
 })();
 
+// ---------- Hero: the name drawn as a graph, with a breadth-first search rippling through it ----------
+(function () {
+  var hero = document.querySelector('.hero'), h1 = hero.querySelector('h1'), cv = document.getElementById('nameMesh');
+  var ctx = cv && cv.getContext && cv.getContext('2d');
+  if (!ctx) return;
+  var HOP = 26; // milliseconds the search takes to cross one edge
+  var W = 0, H = 0, dotR = 1.4, pts = [], edges = [], adj = [], depth = [], maxDepth = 1, waveT0 = 0, visible = true, born = 0, heroTop = 0;
+
+  // Rasterize the name where the heading sits, then keep one point per grid cell that lands on ink.
+  function build() {
+    var hr = hero.getBoundingClientRect(), r = h1.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2), cs = getComputedStyle(h1);
+    if (hr.width < 10 || r.width < 10) return;
+    W = hr.width; H = hr.height;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var fs = parseFloat(cs.fontSize), off = document.createElement('canvas'), o = off.getContext('2d'), label = h1.textContent.trim();
+    off.width = Math.ceil(r.width) + 60; off.height = Math.ceil(fs * 1.3);
+    if ('fontStretch' in o) o.fontStretch = 'semi-condensed'; // the heading is set narrow; browsers without this fall back to the width fit below
+    if ('letterSpacing' in o) o.letterSpacing = (-0.03 * fs) + 'px';
+    o.font = '700 ' + fs + 'px ' + cs.fontFamily;
+    var mw = o.measureText(label).width, fit = Math.min(1, (r.width * 0.98) / mw); // match the heading's width
+    o.font = '700 ' + (fs * fit) + 'px ' + cs.fontFamily; o.textAlign = 'center'; o.textBaseline = 'middle'; o.fillStyle = '#000';
+    o.fillText(label, off.width / 2, off.height / 2);
+    var img = o.getImageData(0, 0, off.width, off.height).data, step = Math.max(4, Math.round(fs / 24)), grid = {}, old = pts, i;
+    var ox = r.left - hr.left + r.width / 2 - off.width / 2, oy = r.top - hr.top + r.height / 2 - off.height / 2 - fs * 0.03, rnd = rng(9);
+    pts = []; edges = []; adj = []; dotR = clamp(step * 0.27, 1, 1.6);
+    for (var gy = 0; gy * step < off.height; gy++) for (var gx = 0; gx * step < off.width; gx++) {
+      var px = gx * step, py = gy * step;
+      if (img[(py * off.width + px) * 4 + 3] < 120) continue;
+      var tx = ox + px + (rnd() - 0.5) * step * 0.35, ty = oy + py + (rnd() - 0.5) * step * 0.35, prev = old[pts.length];
+      grid[gx + ',' + gy] = pts.length;
+      pts.push({ tx: tx, ty: ty, x: prev ? prev.x : rnd() * W, y: prev ? prev.y : rnd() * H, vx: 0, vy: 0, lag: tx / W });
+      adj.push([]);
+    }
+    for (var key in grid) { // connect each point to its neighbors on the grid
+      var c = key.split(','), a = grid[key], gxi = +c[0], gyi = +c[1];
+      [[1, 0], [0, 1], [1, 1], [-1, 1]].forEach(function (d) { var b = grid[(gxi + d[0]) + ',' + (gyi + d[1])]; if (b !== undefined) { edges.push([a, b]); adj[a].push(b); adj[b].push(a); } });
+    }
+    // Letters are separate islands, so bridge each one to the next: the search can then cross the whole name.
+    var comp = pts.map(function () { return -1; }), groups = [];
+    for (i = 0; i < pts.length; i++) {
+      if (comp[i] >= 0) continue;
+      var g = { ids: [i], cx: 0 }, q = [i]; comp[i] = groups.length;
+      while (q.length) { var cur = q.pop(); for (var j = 0; j < adj[cur].length; j++) { var nb = adj[cur][j]; if (comp[nb] < 0) { comp[nb] = groups.length; g.ids.push(nb); q.push(nb); } } }
+      g.ids.forEach(function (id) { g.cx += pts[id].tx / g.ids.length; });
+      groups.push(g);
+    }
+    groups.sort(function (a, b) { return a.cx - b.cx; });
+    for (i = 0; i + 1 < groups.length; i++) {
+      var bestD = Infinity, ba = -1, bb = -1;
+      groups[i].ids.forEach(function (a) { groups[i + 1].ids.forEach(function (b) { var d = (pts[a].tx - pts[b].tx) * (pts[a].tx - pts[b].tx) + (pts[a].ty - pts[b].ty) * (pts[a].ty - pts[b].ty); if (d < bestD) { bestD = d; ba = a; bb = b; } }); });
+      edges.push([ba, bb]); adj[ba].push(bb); adj[bb].push(ba);
+    }
+    h1.classList.add('meshed');
+    if (!born) born = performance.now();
+    search(0);
+  }
+
+  // Breadth-first search from one point: depth[i] is how many hops away point i is.
+  function search(now) {
+    if (!pts.length) return;
+    var src = Math.floor(Math.random() * pts.length), i;
+    if (pointer.active) { // start from the point nearest the cursor when it is over the hero
+      var hr = hero.getBoundingClientRect(), px = pointer.x - hr.left, py = pointer.y - hr.top, best = Infinity;
+      if (py > -40 && py < H + 40) for (i = 0; i < pts.length; i++) { var d = (pts[i].tx - px) * (pts[i].tx - px) + (pts[i].ty - py) * (pts[i].ty - py); if (d < best) { best = d; src = i; } }
+    }
+    depth = pts.map(function () { return -1; }); depth[src] = 0; maxDepth = 1;
+    var queue = [src], head = 0;
+    while (head < queue.length) {
+      var cur = queue[head++];
+      for (i = 0; i < adj[cur].length; i++) { var nb = adj[cur][i]; if (depth[nb] < 0) { depth[nb] = depth[cur] + 1; if (depth[nb] > maxDepth) maxDepth = depth[nb]; queue.push(nb); } }
+    }
+    for (i = 0; i < pts.length; i++) if (depth[i] < 0) depth[i] = maxDepth + 6 + (i % 9); // separate letters join the wave late
+    waveT0 = now;
+  }
+
+  function frame(now) {
+    if (visible && pts.length) {
+      var hr = hero.getBoundingClientRect(), mx = pointer.active ? pointer.x - hr.left : -999, my = pointer.active ? pointer.y - hr.top : -999, i, p;
+      var gone = clamp(-hr.top / (H * 0.7), 0, 1), since = now - born; // scrolling away scatters the name
+      for (i = 0; i < pts.length; i++) {
+        p = pts[i];
+        var txx = p.tx + (p.tx - W / 2) * gone * 0.9, tyy = p.ty - gone * 140 * (0.4 + p.lag);
+        if (REDUCE) { p.x = txx; p.y = tyy; continue; }
+        if (since < p.lag * 900) continue; // arrive left to right
+        var dx = p.x - mx, dy = p.y - my, d2 = dx * dx + dy * dy;
+        if (d2 < 12100) { var d = Math.sqrt(d2) || 1, f = (110 - d) / 110 * 2.6; p.vx += dx / d * f; p.vy += dy / d * f; } // the cursor pushes points aside
+        p.vx = (p.vx + (txx - p.x) * 0.045) * 0.84; p.vy = (p.vy + (tyy - p.y) * 0.045) * 0.84;
+        p.x += p.vx; p.y += p.vy;
+      }
+      if (!REDUCE && now - waveT0 > (maxDepth + 10) * HOP + 700) search(now);
+      var front = REDUCE ? -99 : (now - waveT0) / HOP, alpha = 1 - gone;
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineWidth = 1; ctx.strokeStyle = rgba(PAGE.white, 0.3 * alpha); ctx.beginPath();
+      for (i = 0; i < edges.length; i++) { var a = pts[edges[i][0]], b = pts[edges[i][1]]; ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
+      ctx.stroke();
+      ctx.strokeStyle = rgba(PAGE.accent, 0.95 * alpha); ctx.lineWidth = 1.6; ctx.beginPath(); // edges the search is crossing right now
+      for (i = 0; i < edges.length; i++) { var da = depth[edges[i][0]], db = depth[edges[i][1]]; if (Math.abs(da - front) < 4 && Math.abs(db - front) < 4) { var e0 = pts[edges[i][0]], e1 = pts[edges[i][1]]; ctx.moveTo(e0.x, e0.y); ctx.lineTo(e1.x, e1.y); } }
+      ctx.stroke();
+      for (i = 0; i < pts.length; i++) {
+        p = pts[i];
+        var hot = Math.abs(depth[i] - front) < 4;
+        ctx.fillStyle = hot ? rgba(PAGE.accent, alpha) : rgba(PAGE.white, 0.92 * alpha);
+        ctx.beginPath(); ctx.arc(p.x, p.y, hot ? dotR * 1.7 : dotR, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    if (!REDUCE) requestAnimationFrame(frame);
+  }
+
+  function start() { build(); requestAnimationFrame(frame); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+  window.addEventListener('resize', function () { build(); if (REDUCE) frame(0); });
+  window.addEventListener('themechange', function () { if (REDUCE) frame(0); });
+  if ('IntersectionObserver' in window) new IntersectionObserver(function (en) { visible = en[0].isIntersecting; }).observe(hero);
+})();
+
+// ---------- Hero: a line under the name that changes every week ----------
+(function () {
+  var el = document.getElementById('hook');
+  if (!el) return;
+  var hooks = [
+    'Fast graph systems. <em>Practical AI.</em>',
+    'I think in graphs. <em>Then I ship them.</em>',
+    '1.2 million road nodes. <em>One shortest path.</em>',
+    'Math first. <em>Then the code.</em>',
+    'Manual work in. <em>Software out.</em>',
+    'Fast code starts with <em>the right data layout.</em>',
+    'Every demo here runs <em>the real algorithm.</em>',
+    'From Galois theory <em>to A* search.</em>',
+    'Hours saved is <em>my favorite metric.</em>',
+    'Built by hand. <em>No frameworks.</em>',
+    'Routes, agents and <em>anomalies caught early.</em>',
+    'The model caught <em>what the baseline missed.</em>'
+  ];
+  var week = Math.floor(Date.now() / (7 * 24 * 3600 * 1000)); // whole weeks since 1970, so the line turns over every seven days
+  el.innerHTML = hooks[week % hooks.length];
+})();
+
+// ---------- Theme picker: shown in previews, hidden on the live site ----------
+(function () {
+  var holder = document.getElementById('themes');
+  if (!holder || /(^|\.)kiapousti\.com$|github\.io$/.test(location.hostname)) return;
+  holder.hidden = false;
+  Object.keys(THEMES).forEach(function (key) {
+    var t = THEMES[key], b = document.createElement('button');
+    b.type = 'button'; b.id = 'theme-' + key; b.setAttribute('aria-pressed', key === THEME_KEY);
+    b.innerHTML = '<i style="background:' + t.ink + ';border-color:' + t.accent + '"><u style="background:' + t.accent + '"></u></i>' + t.name;
+    b.addEventListener('click', function () {
+      applyTheme(key);
+      holder.querySelectorAll('button').forEach(function (o) { o.setAttribute('aria-pressed', o === b); });
+    });
+    holder.appendChild(b);
+  });
+})();
+
 // ---------- Background: one set of points that re-forms for each chapter and moves with the scroll ----------
 (function () {
   var canvas = document.getElementById('bg');
@@ -1869,11 +2094,12 @@ var pointer = { x: -1, y: -1, active: false };
   if (!ctx) return;
   var note = document.getElementById('sceneNote'), root = document.documentElement;
   var NOTES = {
+    drift: '<b>Breadth-first search</b> spreading through the name',
     graph: '<b>A* search</b> routing to your cursor',
     sphere: '<b>Fibonacci sphere</b> scroll to spin it',
     grid: '<b>Automation</b> manual steps become clean pipelines',
     story: '<b>Route Engine</b> keep scrolling to run the request',
-    signal: '<b>Sensor telemetry</b> amber points are flagged anomalies',
+    signal: '<b>Sensor telemetry</b> highlighted points are flagged anomalies',
     orbits: '<b>Agents in orbit</b> each one reporting to the hub',
     scc: '<b>Tarjan SCC</b> cycles grouped into components',
     waves: '<b>Pacific swell</b> rolling in',
@@ -1883,15 +2109,16 @@ var pointer = { x: -1, y: -1, active: false };
     voice: '<b>Voiceprint</b> a question on its way to Kia-bot',
     barrel: '<b>Set wave</b> standing up and pitching',
     candles: '<b>Price path</b> with its moving average',
-    funnel: '<b>Lead routing</b> amber goes to a person',
+    funnel: '<b>Lead routing</b> highlighted leads go to a person',
     spiral: '<b>Golden angle</b> each point turned 137.5 degrees from the last',
     histogram: '<b>Return distribution</b> shifting as the sample changes'
   };
-  var TINT = { graph: GLOW, sphere: PALETTE[2], grid: GLOW, signal: GLOW, orbits: PALETTE[3], scc: GLOW, waves: GLOW, turbine: AMBER, tree: PALETTE[3], wavefront: PALETTE[2], voice: PALETTE[2], barrel: GLOW, candles: GLOW, funnel: GLOW, spiral: GLOW, histogram: GLOW };
+  function tints() { return { graph: PAGE.glow, sphere: PAGE.palette[2], grid: PAGE.glow, signal: PAGE.glow, orbits: PAGE.palette[3], scc: PAGE.glow, waves: PAGE.glow, turbine: PAGE.accent, tree: PAGE.palette[3], wavefront: PAGE.palette[2], voice: PAGE.palette[2], barrel: PAGE.glow, candles: PAGE.glow, funnel: PAGE.glow, spiral: PAGE.glow, histogram: PAGE.glow }; }
   var W, H, cols, rows, n, nodes = null, adj, edges, startNode;
-  var scene = 'graph', sceneStart = 0, lp = 0, lpS = 0; // lp: how far the current chapter has scrolled through the screen
+  var scene = 'drift', sceneStart = 0, lp = 0, lpS = 0; // lp: how far the current chapter has scrolled through the screen
   var route = { goal: -1, visited: [], path: [], t0: 0 };
   var autoGoal = -1, autoGoalAt = 0;
+  var stT = { k: 1, x: 0, y: 0 }, sk = 1, sx = 0, sy = 0, LW = 1; // where the scene is drawn: full screen, or shrunk into the Projects stage
 
   // Build the points and the road graph for the current window size.
   function build() {
@@ -1962,7 +2189,7 @@ var pointer = { x: -1, y: -1, active: false };
     if (pointer.active) {
       var bestD = Infinity; goal = 0;
       for (var i = 0; i < n; i++) {
-        var dx = nodes[i].tx - pointer.x, dy = nodes[i].ty - pointer.y, d = dx * dx + dy * dy;
+        var dx = nodes[i].tx - (pointer.x - (sx - W / 2 * sk)) / sk, dy = nodes[i].ty - (pointer.y - (sy - H / 2 * sk)) / sk, d = dx * dx + dy * dy;
         if (d < bestD) { bestD = d; goal = i; }
       }
     } else {
@@ -1986,7 +2213,10 @@ var pointer = { x: -1, y: -1, active: false };
     var centers = [[0.2, 0.3], [0.5, 0.2], [0.8, 0.32], [0.33, 0.72], [0.68, 0.74]];
     for (i = 0; i < n; i++) {
       p = nodes[i]; p.hot = false; p.z = 0;
-      if (scene === 'graph') {
+      if (scene === 'drift') {
+        // Quiet drifting points behind the name.
+        p.tx = p.gx + Math.sin(time * 0.0004 + i) * 16; p.ty = p.gy + Math.cos(time * 0.0005 + i * 1.7) * 16 - (lpS - 0.3) * H * 0.24 * p.depth;
+      } else if (scene === 'graph') {
         // Parallax: nearer points travel further as the page scrolls.
         p.tx = p.gx; p.ty = p.gy - (lpS - 0.3) * H * 0.24 * p.depth;
       } else if (scene === 'sphere') {
@@ -2068,11 +2298,11 @@ var pointer = { x: -1, y: -1, active: false };
   }
 
   function line(a, b) { ctx.moveTo(nodes[a].x, nodes[a].y); ctx.lineTo(nodes[b].x, nodes[b].y); }
-  function dot(x, y, r, color, alpha) { ctx.fillStyle = rgba(color, alpha); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
-  function ring(x, y, r, color, alpha) { ctx.strokeStyle = rgba(color, alpha); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); }
+  function dot(x, y, r, color, alpha) { ctx.fillStyle = rgba(color, alpha); ctx.beginPath(); ctx.arc(x, y, r * LW, 0, Math.PI * 2); ctx.fill(); }
+  function ring(x, y, r, color, alpha) { ctx.strokeStyle = rgba(color, alpha); ctx.lineWidth = LW * 1.2; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); }
 
   function draw(now) {
-    var i, a = clamp((now - sceneStart) / 700, 0, 1), tint = TINT[scene] || GLOW; // lines fade in after a scene change
+    var i, a = clamp((now - sceneStart) / 700, 0, 1), tint = tints()[scene] || PAGE.glow; // lines fade in after a scene change
     lpS += (lp - lpS) * (REDUCE ? 1 : 0.09); // smooth the scroll position so scenes glide
     setTargets(now);
     for (i = 0; i < n; i++) { // ease every point toward its target
@@ -2081,17 +2311,22 @@ var pointer = { x: -1, y: -1, active: false };
     }
     ctx.clearRect(0, 0, W, H);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    var se = REDUCE ? 1 : 0.12; // glide between full screen and the stage
+    sk += (stT.k - sk) * se; sx += (stT.x - sx) * se; sy += (stT.y - sy) * se; LW = Math.pow(1 / sk, 0.8);
+    ctx.save(); ctx.translate(sx - W / 2 * sk, sy - H / 2 * sk); ctx.scale(sk, sk);
 
-    if (scene === 'graph') {
+    if (scene === 'drift') {
+      // points only
+    } else if (scene === 'graph') {
       pickGoal(now);
-      ctx.strokeStyle = rgba(GLOW, 0.13 * a); ctx.lineWidth = 1;
+      ctx.strokeStyle = rgba(PAGE.glow, 0.13 * a); ctx.lineWidth = LW * 1;
       ctx.beginPath(); for (i = 0; i < edges.length; i++) line(edges[i][0], edges[i][1]); ctx.stroke();
       var prog = REDUCE ? 1 : clamp((now - route.t0) / 520, 0, 1);
       var shown = Math.floor(route.visited.length * clamp(prog / 0.6, 0, 1));
-      for (i = 0; i < shown; i++) { var v = nodes[route.visited[i]]; dot(v.x, v.y, 2.6, GLOW, 0.5 * a); }
+      for (i = 0; i < shown; i++) { var v = nodes[route.visited[i]]; dot(v.x, v.y, 2.6, PAGE.glow, 0.5 * a); }
       var segs = (route.path.length - 1) * clamp((prog - 0.45) / 0.55, 0, 1);
       if (segs > 0) {
-        ctx.strokeStyle = rgba(AMBER, 0.85 * a); ctx.lineWidth = 2;
+        ctx.strokeStyle = rgba(PAGE.accent, 0.85 * a); ctx.lineWidth = LW * 2;
         ctx.beginPath(); ctx.moveTo(nodes[route.path[0]].x, nodes[route.path[0]].y);
         for (i = 1; i <= Math.floor(segs); i++) ctx.lineTo(nodes[route.path[i]].x, nodes[route.path[i]].y);
         var whole = Math.floor(segs), frac = segs - whole;
@@ -2101,84 +2336,84 @@ var pointer = { x: -1, y: -1, active: false };
         }
         ctx.stroke();
       }
-      ring(nodes[startNode].x, nodes[startNode].y, 6, AMBER, 0.9 * a);
-      if (route.goal >= 0) { ring(nodes[route.goal].x, nodes[route.goal].y, 6, AMBER, 0.9 * a); dot(nodes[route.goal].x, nodes[route.goal].y, 2.6, AMBER, a); }
+      ring(nodes[startNode].x, nodes[startNode].y, 6, PAGE.accent, 0.9 * a);
+      if (route.goal >= 0) { ring(nodes[route.goal].x, nodes[route.goal].y, 6, PAGE.accent, 0.9 * a); dot(nodes[route.goal].x, nodes[route.goal].y, 2.6, PAGE.accent, a); }
     } else if (scene === 'sphere') {
-      ctx.strokeStyle = rgba(tint, 0.1 * a); ctx.lineWidth = 1; // the spiral that threads every point
+      ctx.strokeStyle = rgba(tint, 0.1 * a); ctx.lineWidth = LW * 1; // the spiral that threads every point
       ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
       for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
       ctx.stroke();
       var head = REDUCE ? 20 : Math.floor(now * 0.012) % n; // an amber route traveling along the spiral
-      ctx.strokeStyle = rgba(AMBER, 0.8 * a); ctx.lineWidth = 1.8; ctx.beginPath();
+      ctx.strokeStyle = rgba(PAGE.accent, 0.8 * a); ctx.lineWidth = LW * 1.8; ctx.beginPath();
       for (i = 0; i < 12; i++) { var q = nodes[(head + i) % n]; if (i === 0) ctx.moveTo(q.x, q.y); else if ((head + i) % n !== 0) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
       ctx.stroke();
     } else if ((scene === 'grid' || scene === 'story')) {
-      ctx.strokeStyle = rgba(GLOW, 0.12 * a); ctx.lineWidth = 1;
+      ctx.strokeStyle = rgba(PAGE.glow, 0.12 * a); ctx.lineWidth = LW * 1;
       ctx.beginPath();
       for (i = 0; i < edges.length; i++) if (edges[i][1] - edges[i][0] !== cols + 1) line(edges[i][0], edges[i][1]);
       ctx.stroke();
       for (var rw = 0; rw < rows; rw++) { // one pulse of work moving along each row, pushed along by the scroll
         var f = (((REDUCE ? 0 : now * 0.00009) + lpS * 0.9 + rw * 0.37) % 1 + 1) % 1;
-        dot(f * W, nodes[rw * cols].y, 3, AMBER, 0.85 * a);
+        dot(f * W, nodes[rw * cols].y, 3, PAGE.accent, 0.85 * a);
       }
     } else if (scene === 'signal') {
-      ctx.strokeStyle = rgba(GLOW, 0.4 * a); ctx.lineWidth = 1.3;
+      ctx.strokeStyle = rgba(PAGE.glow, 0.4 * a); ctx.lineWidth = LW * 1.3;
       ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
       for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
       ctx.stroke();
-      for (i = 0; i < n; i++) if (nodes[i].hot) { ring(nodes[i].x, nodes[i].y, 9, AMBER, 0.9 * a); dot(nodes[i].x, nodes[i].y, 3, AMBER, a); }
+      for (i = 0; i < n; i++) if (nodes[i].hot) { ring(nodes[i].x, nodes[i].y, 9, PAGE.accent, 0.9 * a); dot(nodes[i].x, nodes[i].y, 3, PAGE.accent, a); }
     } else if (scene === 'orbits') {
-      ctx.strokeStyle = rgba(tint, 0.16 * a); ctx.lineWidth = 1;
+      ctx.strokeStyle = rgba(tint, 0.16 * a); ctx.lineWidth = LW * 1;
       for (var rg = 0; rg < 4; rg++) {
         var orx = Math.min(W, H * 1.5) * (0.17 + rg * 0.1);
         ctx.beginPath(); ctx.ellipse(W * 0.5, H * 0.54, orx, orx * 0.4, -0.28, 0, Math.PI * 2); ctx.stroke();
       }
-      dot(W * 0.5, H * 0.54, 5, AMBER, a); ring(W * 0.5, H * 0.54, 12, AMBER, 0.6 * a);
+      dot(W * 0.5, H * 0.54, 5, PAGE.accent, a); ring(W * 0.5, H * 0.54, 12, PAGE.accent, 0.6 * a);
       for (i = 0; i < n; i++) if (nodes[i].hot) { // a report traveling from an agent to the hub
-        ctx.strokeStyle = rgba(AMBER, 0.22 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(W * 0.5, H * 0.54); ctx.stroke();
-        dot(nodes[i].x, nodes[i].y, 3.2, AMBER, a);
+        ctx.strokeStyle = rgba(PAGE.accent, 0.22 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(W * 0.5, H * 0.54); ctx.stroke();
+        dot(nodes[i].x, nodes[i].y, 3.2, PAGE.accent, a);
       }
     } else if (scene === 'scc') {
       for (var cl = 0; cl < 5; cl++) {
-        ctx.strokeStyle = rgba(PALETTE[cl], 0.3 * a); ctx.lineWidth = 1;
+        ctx.strokeStyle = rgba(PAGE.palette[cl], 0.3 * a); ctx.lineWidth = LW * 1;
         ctx.beginPath();
         for (i = cl; i < n; i += 5) line(i, i + 5 < n ? i + 5 : cl); // close each ring
         ctx.stroke();
       }
-      ctx.strokeStyle = rgba(GLOW, 0.1 * a);
+      ctx.strokeStyle = rgba(PAGE.glow, 0.1 * a);
       ctx.beginPath(); line(0, 1); line(1, 2); line(3, 4); line(0, 3); ctx.stroke(); // links between components
     } else if (scene === 'turbine') {
       for (var b9 = 0; b9 < 9; b9++) { // each blade, from the hub outward
-        ctx.strokeStyle = rgba(tint, 0.34 * a); ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.54);
+        ctx.strokeStyle = rgba(tint, 0.34 * a); ctx.lineWidth = LW * 1.3; ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.54);
         for (i = b9; i < n; i += 9) ctx.lineTo(nodes[i].x, nodes[i].y);
         ctx.stroke();
       }
-      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.455, GLOW, 0.25 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.05, AMBER, 0.9 * a);
-      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, WHITE, 0.9 * a);
+      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.455, PAGE.glow, 0.25 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.05, PAGE.accent, 0.9 * a);
+      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, PAGE.white, 0.9 * a);
     } else if (scene === 'tree') {
-      ctx.strokeStyle = rgba(tint, 0.18 * a); ctx.lineWidth = 1; ctx.beginPath();
+      ctx.strokeStyle = rgba(tint, 0.18 * a); ctx.lineWidth = LW * 1; ctx.beginPath();
       for (i = 1; i < n; i++) line(i, (i - 1) >> 1);
       ctx.stroke();
       // one leaf-to-root path lights up, and moves along the bottom row as you scroll
       var leaf = n - 1 - Math.floor(((lpS * 0.9 + (REDUCE ? 0 : now * 0.00006)) % 1 + 1) % 1 * Math.floor(n / 2));
-      ctx.strokeStyle = rgba(AMBER, 0.9 * a); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(nodes[leaf].x, nodes[leaf].y);
+      ctx.strokeStyle = rgba(PAGE.accent, 0.9 * a); ctx.lineWidth = LW * 2; ctx.beginPath(); ctx.moveTo(nodes[leaf].x, nodes[leaf].y);
       for (i = leaf; i > 0; i = (i - 1) >> 1) ctx.lineTo(nodes[(i - 1) >> 1].x, nodes[(i - 1) >> 1].y);
       ctx.stroke();
-      for (i = leaf; ; i = (i - 1) >> 1) { dot(nodes[i].x, nodes[i].y, 3, AMBER, a); if (i === 0) break; }
+      for (i = leaf; ; i = (i - 1) >> 1) { dot(nodes[i].x, nodes[i].y, 3, PAGE.accent, a); if (i === 0) break; }
     } else if (scene === 'wavefront') {
-      ctx.strokeStyle = rgba(GLOW, 0.12 * a); ctx.lineWidth = 1;
+      ctx.strokeStyle = rgba(PAGE.glow, 0.12 * a); ctx.lineWidth = LW * 1;
       ctx.beginPath(); for (i = 0; i < edges.length; i++) line(edges[i][0], edges[i][1]); ctx.stroke();
-      ring(nodes[startNode].gx, nodes[startNode].gy, frontier(REDUCE ? 0 : now), AMBER, 0.35 * a);
-      for (i = 0; i < n; i++) { if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 3.4, AMBER, a); else if (nodes[i].z > 0) dot(nodes[i].x, nodes[i].y, 2.5, tint, 0.75 * a); }
-      dot(nodes[startNode].gx, nodes[startNode].gy, 5, AMBER, a);
+      ring(nodes[startNode].gx, nodes[startNode].gy, frontier(REDUCE ? 0 : now), PAGE.accent, 0.35 * a);
+      for (i = 0; i < n; i++) { if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 3.4, PAGE.accent, a); else if (nodes[i].z > 0) dot(nodes[i].x, nodes[i].y, 2.5, tint, 0.75 * a); }
+      dot(nodes[startNode].gx, nodes[startNode].gy, 5, PAGE.accent, a);
     } else if (scene === 'voice') {
-      ctx.strokeStyle = rgba(tint, 0.55 * a); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
+      ctx.strokeStyle = rgba(tint, 0.55 * a); ctx.lineWidth = LW * 1.4; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
       for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
       ctx.closePath(); ctx.stroke();
-      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.2, AMBER, 0.4 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.41, tint, 0.12 * a);
+      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.2, PAGE.accent, 0.4 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.41, tint, 0.12 * a);
     } else if (scene === 'barrel') {
       for (var brw = 0; brw < 6; brw++) {
-        ctx.strokeStyle = rgba(brw === 0 ? WHITE : GLOW, (brw === 0 ? 0.7 : 0.24 + brw * 0.04) * a); ctx.lineWidth = brw === 0 ? 1.8 : 1.2;
+        ctx.strokeStyle = rgba(brw === 0 ? PAGE.white : PAGE.glow, (brw === 0 ? 0.7 : 0.24 + brw * 0.04) * a); ctx.lineWidth = LW * brw === 0 ? 1.8 : 1.2;
         ctx.beginPath(); ctx.moveTo(nodes[brw].x, nodes[brw].y);
         for (i = brw + 6; i < n; i += 6) { // curve through the midpoints so the wave face is smooth, not angular
           var pv = nodes[i - 6], cu = nodes[i];
@@ -2187,36 +2422,36 @@ var pointer = { x: -1, y: -1, active: false };
         ctx.stroke();
       }
       for (i = 0; i < n; i++) if (nodes[i].hot) { // spray off the lip
-        dot(nodes[i].x - 8 - hashNoise(i) * 14, nodes[i].y - 10 - (hashNoise(i * 3) + 0.5) * 16, 1.6, WHITE, 0.7 * a);
-        dot(nodes[i].x, nodes[i].y, 2.6, WHITE, 0.9 * a);
+        dot(nodes[i].x - 8 - hashNoise(i) * 14, nodes[i].y - 10 - (hashNoise(i * 3) + 0.5) * 16, 1.6, PAGE.white, 0.7 * a);
+        dot(nodes[i].x, nodes[i].y, 2.6, PAGE.white, 0.9 * a);
       }
     } else if (scene === 'candles') {
-      for (var fd = 0; fd < 4; fd++) { ctx.fillStyle = rgba(AMBER, 0.045 * a); ctx.fillRect((fd + 0.68) * W / 4, 0, 0.32 * W / 4, H); } // test windows
-      ctx.strokeStyle = rgba(GLOW, 0.5 * a); ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
+      for (var fd = 0; fd < 4; fd++) { ctx.fillStyle = rgba(PAGE.accent, 0.045 * a); ctx.fillRect((fd + 0.68) * W / 4, 0, 0.32 * W / 4, H); } // test windows
+      ctx.strokeStyle = rgba(PAGE.glow, 0.5 * a); ctx.lineWidth = LW * 1.3; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
       for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
       ctx.stroke();
-      ctx.strokeStyle = rgba(AMBER, 0.85 * a); ctx.lineWidth = 1.8; ctx.beginPath(); // moving average of the last 12 points
+      ctx.strokeStyle = rgba(PAGE.accent, 0.85 * a); ctx.lineWidth = LW * 1.8; ctx.beginPath(); // moving average of the last 12 points
       for (i = 11; i < n; i++) { var sum = 0; for (var mk = i - 11; mk <= i; mk++) sum += nodes[mk].y; if (i === 11) ctx.moveTo(nodes[i].x, sum / 12); else ctx.lineTo(nodes[i].x, sum / 12); }
       ctx.stroke();
     } else if (scene === 'spiral') {
-      ctx.strokeStyle = rgba(GLOW, 0.14 * a); ctx.lineWidth = 1; ctx.beginPath(); // the 13 spirals one way
+      ctx.strokeStyle = rgba(PAGE.glow, 0.14 * a); ctx.lineWidth = LW * 1; ctx.beginPath(); // the 13 spirals one way
       for (i = 0; i + 13 < n; i++) line(i, i + 13);
       ctx.stroke();
-      ctx.strokeStyle = rgba(AMBER, 0.3 * a); ctx.beginPath(); // and the 21 the other way: both Fibonacci numbers
+      ctx.strokeStyle = rgba(PAGE.accent, 0.3 * a); ctx.beginPath(); // and the 21 the other way: both Fibonacci numbers
       for (i = 0; i + 21 < n; i++) line(i, i + 21);
       ctx.stroke();
     } else if (scene === 'histogram') {
-      ctx.strokeStyle = rgba(GLOW, 0.3 * a); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W * 0.1, H * 0.8 + 10); ctx.lineTo(W * 0.9, H * 0.8 + 10); ctx.stroke();
-      for (i = 0; i < 21; i++) if (nodes[i].hot) { ctx.strokeStyle = rgba(AMBER, 0.7 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, H * 0.18); ctx.lineTo(nodes[i].x, H * 0.8 + 10); ctx.stroke(); }
+      ctx.strokeStyle = rgba(PAGE.glow, 0.3 * a); ctx.lineWidth = LW * 1; ctx.beginPath(); ctx.moveTo(W * 0.1, H * 0.8 + 10); ctx.lineTo(W * 0.9, H * 0.8 + 10); ctx.stroke();
+      for (i = 0; i < 21; i++) if (nodes[i].hot) { ctx.strokeStyle = rgba(PAGE.accent, 0.7 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, H * 0.18); ctx.lineTo(nodes[i].x, H * 0.8 + 10); ctx.stroke(); }
     } else if (scene === 'funnel') {
-      ctx.strokeStyle = rgba(GLOW, 0.14 * a); ctx.lineWidth = 1; ctx.beginPath();
+      ctx.strokeStyle = rgba(PAGE.glow, 0.14 * a); ctx.lineWidth = LW * 1; ctx.beginPath();
       ctx.moveTo(0, H * 0.54); ctx.lineTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.28); ctx.moveTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.8);
       ctx.stroke();
-      ring(W * 0.45, H * 0.54, 16, WHITE, 0.7 * a);
-      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, AMBER, a);
+      ring(W * 0.45, H * 0.54, 16, PAGE.white, 0.7 * a);
+      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, PAGE.accent, a);
     } else { // waves
       for (var row = 0; row < 6; row++) {
-        ctx.strokeStyle = rgba(row === 2 ? AMBER : GLOW, (0.2 + row * 0.04) * a); ctx.lineWidth = 1.2;
+        ctx.strokeStyle = rgba(row === 2 ? PAGE.accent : PAGE.glow, (0.2 + row * 0.04) * a); ctx.lineWidth = LW * 1.2;
         ctx.beginPath(); ctx.moveTo(nodes[row].x, nodes[row].y);
         for (i = row + 6; i < n; i += 6) ctx.lineTo(nodes[i].x, nodes[i].y);
         ctx.stroke();
@@ -2226,8 +2461,9 @@ var pointer = { x: -1, y: -1, active: false };
     for (i = 0; i < n; i++) { // the points themselves, always visible
       var nd = nodes[i];
       if (scene === 'sphere') dot(nd.x, nd.y, 1.1 + (nd.z + 1) * 1.1, tint, 0.2 + (nd.z + 1) * 0.3); // nearer points are larger and brighter
-      else dot(nd.x, nd.y, 1.7, scene === 'scc' ? PALETTE[i % 5] : tint, 0.5);
+      else dot(nd.x, nd.y, 1.7, scene === 'scc' ? PAGE.palette[i % 5] : tint, 0.5);
     }
+    ctx.restore();
     requestAnimationFrame(draw);
   }
 
@@ -2242,11 +2478,14 @@ var pointer = { x: -1, y: -1, active: false };
       if (gap < bestGap) { bestGap = gap; best = tagged[i]; bestRect = rect; }
     }
     if (bestRect) lp = clamp((probe - bestRect.top) / Math.max(bestRect.height, 1), -0.5, 1.5);
-    var next = best ? best.getAttribute('data-scene') : 'graph';
+    var holder = best && window.innerWidth >= 1000 && best.closest ? best.closest('[data-stage]') : null, box = holder && holder.querySelector('.stage');
+    if (box) { var sr = box.getBoundingClientRect(); stT.k = Math.min(sr.width / W, sr.height / H) * 0.96; stT.x = sr.left + sr.width / 2; stT.y = sr.top + sr.height / 2; } // play this card's scene inside the stage
+    else { stT.k = 1; stT.x = W / 2; stT.y = H / 2; }
+    var next = best ? best.getAttribute('data-scene') : 'drift';
     if (next !== scene) {
       scene = next; sceneStart = performance.now(); route.goal = -1;
       note.innerHTML = NOTES[scene] || '';
-      root.style.setProperty('--glow', TINT[scene] || GLOW); // retint the cursor light and tab pill for this chapter
+      root.style.setProperty('--glow', tints()[scene] || PAGE.glow); // retint the cursor light and tab pill for this chapter
     }
   }
 
@@ -2256,7 +2495,9 @@ var pointer = { x: -1, y: -1, active: false };
   });
 
   build();
+  sx = stT.x = W / 2; sy = stT.y = H / 2;
   pickScene();
+  window.addEventListener('themechange', function () { root.style.setProperty('--glow', tints()[scene] || PAGE.glow); });
   window.addEventListener('scroll', pickScene, { passive: true });
   window.addEventListener('resize', function () { build(); pickScene(); });
   requestAnimationFrame(draw);
