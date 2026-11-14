@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kia Pousti Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: sticky identity column on the left, scrolling work on the right.
+   Every project carries its own live demo screen, and behind the page one field of points
+   re-forms for each section: road graph, pipeline, telemetry, graph components, ocean swell. */
+:root {
+  color-scheme: dark;
+  --ink: #0a1220;        /* page background: night water */
+  --panel: #0e1828;      /* cards and demo screens */
+  --line: #223049;       /* hairlines and chip borders */
+  --text: #c3cddd;       /* body text */
+  --text-dim: #8492a8;   /* secondary text */
+  --bright: #eef3fa;     /* headings */
+  --accent: #f2b56b;     /* sunset amber */
+  --glow: 98, 152, 255;  /* cursor light and graph lines, as r,g,b */
+  --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+::selection { background: var(--accent); color: var(--ink); }
+
+/* Animated background canvas and the light that follows the cursor. */
+#bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(560px circle at var(--mx, 70%) var(--my, 22%),
+    rgba(var(--glow), 0.15), rgba(var(--glow), 0.05) 45%, transparent 70%);
+}
+/* Small label that says what the background is showing right now. */
+.scene-note {
+  position: fixed; right: 20px; bottom: 18px; z-index: 2;
+  max-width: min(360px, calc(100vw - 40px));
+  padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: rgba(10, 18, 32, 0.85);
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim);
+  pointer-events: none;
+}
+.scene-note b { color: var(--accent); font-weight: 500; }
+
+.page {
+  position: relative; z-index: 1;
+  max-width: 1220px; margin: 0 auto; padding: 0 24px;
+  display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 56px;
+}
+
+/* ---------- Left column ---------- */
+.side {
+  position: sticky; top: 0; height: 100vh; padding: 88px 0 56px;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
+}
+.where { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--text-dim); margin: 0 0 18px; }
+h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(2.6rem, 5vw, 3.6rem); line-height: 1.02; letter-spacing: -0.02em;
+  color: var(--bright); margin: 0;
+}
+.role { font-size: 1.15rem; font-weight: 500; color: var(--bright); margin: 14px 0 0; }
+.pitch { max-width: 36ch; color: var(--text-dim); margin: 14px 0 0; }
+
+.nav { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.nav a {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-dim); transition: color 0.2s;
+}
+.nav a::before { content: ""; width: 28px; height: 1px; background: currentColor; transition: width 0.2s; }
+.nav a:hover, .nav a.active { color: var(--bright); }
+.nav a:hover::before, .nav a.active::before { width: 60px; }
+.nav a.active::before { background: var(--accent); }
+
+.links { display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px; }
+.links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
+.links a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---------- Right column ---------- */
+main { padding: 88px 0 120px; display: flex; flex-direction: column; gap: 104px; min-width: 0; }
+section { scroll-margin-top: 88px; }
+h2 {
+  font-family: var(--font-mono); font-weight: 500; font-size: 12px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 0 0 22px;
+}
+.lede { max-width: 62ch; margin: -8px 0 24px; color: var(--text-dim); }
+.prose { max-width: 62ch; display: flex; flex-direction: column; gap: 16px; }
+.prose p { margin: 0; }
+.prose strong { color: var(--bright); font-weight: 500; }
+
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 32px 0 0; padding: 0; list-style: none; }
+.stats li { padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14, 24, 40, 0.8); }
+.stats .num { display: block; font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1.1; color: var(--bright); font-variant-numeric: tabular-nums; }
+.stats .what { display: block; margin-top: 6px; font-size: 0.86rem; color: var(--text-dim); line-height: 1.4; }
+
+/* Moving strip of focus areas. */
+.ticker { margin: 36px 0 0; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 11px 0; }
+.ticker-track { display: flex; gap: 36px; width: max-content; animation: slide 38s linear infinite; }
+.ticker span { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
+.ticker span::before { content: "◆"; color: var(--accent); margin-right: 36px; font-size: 8px; vertical-align: middle; }
+@keyframes slide { to { transform: translateX(-50%); } }
+
+.list { display: flex; flex-direction: column; gap: 8px; margin: 0 -20px; padding: 0; list-style: none; }
+.card { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 20px; padding: 20px; border-radius: 10px; }
+.when { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); padding-top: 4px; font-variant-numeric: tabular-nums; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; line-height: 1.3; color: var(--bright); margin: 0; text-wrap: balance; }
+.org { color: var(--text-dim); font-size: 0.94rem; margin: 2px 0 0; }
+.card p { margin: 8px 0 0; font-size: 0.94rem; }
+.points { margin: 10px 0 0; padding: 0 0 0 18px; font-size: 0.94rem; display: flex; flex-direction: column; gap: 6px; }
+.points li::marker { color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.chips li {
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--accent);
+  border: 1px solid var(--line); background: rgba(242, 181, 107, 0.07);
+  border-radius: 999px; padding: 3px 11px;
+}
+
+/* ---------- Project cards with a live demo screen ---------- */
+.features { display: flex; flex-direction: column; gap: 22px; }
+.feature, .build {
+  position: relative; border: 1px solid var(--line); border-radius: 14px;
+  background: rgba(14, 24, 40, 0.9); overflow: hidden;
+}
+/* A light that follows the cursor inside the card. JS sets --cx / --cy. */
+.feature::before, .build::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s;
+  background: radial-gradient(340px circle at var(--cx, 50%) var(--cy, 0%), rgba(var(--glow), 0.13), transparent 70%);
+}
+.feature:hover::before, .build:hover::before { opacity: 1; }
+.screen { position: relative; border-bottom: 1px solid var(--line); background: #08101c; }
+.screen canvas { display: block; width: 100%; height: 200px; }
+.build .screen canvas { height: 140px; }
+.screen-bar {
+  display: flex; justify-content: space-between; gap: 12px; padding: 7px 14px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-dim);
+}
+.screen-bar b { color: var(--accent); font-weight: 500; }
+.live::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 7px; vertical-align: 1px; animation: blink 1.6s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: 0.25; } }
+.feature-body { position: relative; padding: 20px 22px 22px; }
+.feature-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.feature-head a { font-family: var(--font-mono); font-size: 12px; color: var(--accent); border-bottom: 1px solid transparent; transition: border-color 0.2s; white-space: nowrap; }
+.feature-head a:hover { border-color: var(--accent); }
+.feature-body p { margin: 8px 0 0; font-size: 0.94rem; }
+
+.builds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.build .feature-body { padding: 16px 18px 18px; }
+.build h3 { font-size: 1.04rem; }
+.status { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+
+/* Kia-bot sample exchange under its waveform. */
+.chat { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 0.86rem; line-height: 1.45; border-bottom: 1px solid var(--line); background: #08101c; }
+.chat p { margin: 0; }
+.chat .q { color: var(--bright); }
+.chat .q::before { content: "You  "; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.chat .a::before { content: "Kia-bot  "; font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+.chat .tools { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); transition: opacity 0.3s; }
+.chat .off { visibility: hidden; }
+
+.skills { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px 20px; margin: 0; }
+.skills dt { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); padding-top: 3px; }
+.skills dd { margin: 0; font-size: 0.94rem; }
+
+.beyond { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.beyond li { padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14, 24, 40, 0.8); font-size: 0.9rem; }
+.beyond b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.02rem; color: var(--bright); margin-bottom: 4px; }
+
+.contact-line { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; color: var(--bright); margin: 0 0 14px; text-wrap: balance; }
+.contact-list { display: flex; flex-direction: column; gap: 10px; margin: 22px 0 0; padding: 0; list-style: none; font-size: 0.98rem; }
+.contact-list span { display: inline-block; width: 86px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+.contact-list a { color: var(--bright); border-bottom: 1px solid var(--line); transition: color 0.2s, border-color 0.2s; }
+.contact-list a:hover { color: var(--accent); border-color: var(--accent); }
+footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
+
+/* ---------- Small screens: one column, nothing sticky ---------- */
+@media (max-width: 900px) {
+  .page { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 20px; }
+  .side { position: static; height: auto; padding: 56px 0 8px; }
+  .nav { display: none; }
+  main { padding: 48px 0 110px; gap: 76px; }
+  .card { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px 12px; }
+  .list { margin: 0 -12px; }
+  .skills { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .skills dd { margin-bottom: 12px; }
+  .scene-note { right: 12px; bottom: 12px; }
+}
+@media (max-width: 620px) {
+  .builds, .beyond { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .stats { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="glow" aria-hidden="true"></div>
+<div class="scene-note" id="sceneNote" aria-hidden="true"><b>A* search</b> routing to your cursor</div>
+
+<div class="page">
+  <header class="side">
+    <div>
+      <p class="where">San Diego, CA</p>
+      <h1>Kia Pousti</h1>
+      <p class="role">Software engineer. C++, Python, applied AI.</p>
+      <p class="pitch">I build fast graph and routing systems and practical AI prototypes. Move your cursor: the background is finding the shortest path to it.</p>
+    </div>
+
+    <nav aria-label="Sections">
+      <ul class="nav">
+        <li><a href="#about">About</a></li>
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#builds">Side builds</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+
+    <div class="links">
+      <a href="https://github.com/kpousti">GitHub</a>
+      <a href="https://www.linkedin.com/in/kiapousti">LinkedIn</a>
+      <a href="mailto:kiapousti@gmail.com">Email</a>
+    </div>
+  </header>
+
+  <main>
+    <section id="about" data-scene="graph">
+      <h2>About</h2>
+      <div class="prose">
+        <p>I studied <strong>Mathematics and Computer Science at UC San Diego</strong>, with a minor in Sociology, and graduated in June 2026. Today I am a <strong>software developer at Solar Turbines</strong>, a Caterpillar company, in its IT rotational program.</p>
+        <p>The work I enjoy most sits where math meets systems: <strong>graph algorithms, routing and data layouts</strong> that make code fast on real hardware. I wrote an A* engine in C++ that routes over about 1.2 million road nodes.</p>
+        <p>I also build <strong>applied AI</strong>: anomaly detection prototypes with tests and case studies, and LLM agents that call tools to answer real questions. Every project below runs a small live demo, right on this page.</p>
+      </div>
+      <ul class="stats">
+        <li><span class="num">1.2M</span><span class="what">road nodes in my A* routing engine, with about 2.5M edges</span></li>
+        <li><span class="num">89%</span><span class="what">smaller route payloads after polyline simplification</span></li>
+        <li><span class="num">0.22 → 0.47</span><span class="what">fault recall, baseline versus Isolation Forest</span></li>
+        <li><span class="num">PR #2973</span><span class="what">Tarjan's algorithm contributed to TheAlgorithms/C++</span></li>
+      </ul>
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track">
+          <span>Graph algorithms</span><span>Routing engines</span><span>Applied AI</span><span>Anomaly detection</span><span>LLM agents</span><span>Systems performance</span><span>Automation</span>
+          <span>Graph algorithms</span><span>Routing engines</span><span>Applied AI</span><span>Anomaly detection</span><span>LLM agents</span><span>Systems performance</span><span>Automation</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="experience" data-scene="grid">
+      <h2>Experience and education</h2>
+      <ul class="list">
+        <li class="card">
+          <div class="when">Aug 2026 to now</div>
+          <div>
+            <h3>Software Developer, IT Rotational Program</h3>
+            <p class="org">Solar Turbines, a Caterpillar company · San Diego, CA</p>
+            <ul class="points">
+              <li>Selected for a competitive rotational program, building and supporting enterprise apps for engineering and business teams.</li>
+              <li>Automated manual business processes with Power Apps and workflow automation, saving the team hours each week.</li>
+              <li>Built and shipped internal websites, using GitHub Copilot across several AI models to move faster.</li>
+              <li>Documented workflows in Visio, delivered work through ServiceNow and Azure DevOps, and analyzed data in Power BI.</li>
+            </ul>
+            <ul class="chips"><li>Power Apps</li><li>Power BI</li><li>ServiceNow</li><li>Azure DevOps</li><li>PowerShell</li></ul>
+          </div>
+        </li>
+        <li class="card">
+          <div class="when">June 2026</div>
+          <div>
+            <h3>B.S. Mathematics–Computer Science</h3>
+            <p class="org">University of California, San Diego · Minor in Sociology</p>
+            <p>Coursework in data structures, algorithms, theory of computation, discrete math, probability, numerical analysis and computer organization.</p>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section id="projects">
+      <h2>Projects</h2>
+      <p class="lede">Each screen runs the project's core idea live in your browser.</p>
+      <div class="features">
+
+        <article class="feature" data-scene="graph">
+          <div class="screen">
+            <div class="screen-bar"><span class="live"><b>A*</b> shortest path</span><span>move your cursor over the map</span></div>
+            <canvas data-demo="astar" aria-label="Animated A* search finding a route around obstacles"></canvas>
+          </div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Route Engine</h3><a href="https://github.com/kpousti/route-engine-demo">View code ↗</a></div>
+            <p>An A* routing engine in modern C++ over real OpenStreetMap data, about 1.2M nodes and 2.5M edges, with a haversine heuristic for geographic cost.</p>
+            <ul class="points">
+              <li>Cache-efficient Compressed Sparse Row graph layout to cut memory use and speed up traversal.</li>
+              <li>Spatial snapping from raw latitude and longitude to the nearest road node.</li>
+              <li>REST API serving GeoJSON routes to a Leaflet map, with payloads about 89% smaller after polyline simplification.</li>
+            </ul>
+            <ul class="chips"><li>C++</li><li>A*</li><li>CSR graphs</li><li>REST</li><li>GeoJSON</li></ul>
+          </div>
+        </article>
+
+        <article class="feature" data-scene="signal">
+          <div class="screen">
+            <div class="screen-bar"><span class="live"><b>Telemetry</b> anomaly detection</span><span>illustration, synthetic data</span></div>
+            <canvas data-demo="telemetry" aria-label="Animated sensor signal with flagged anomalies"></canvas>
+          </div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Industrial AI Notebook</h3><a href="https://github.com/kpousti/industrial-ai-notebook">View code ↗</a></div>
+            <p>A public library of applied-AI prototypes for industrial IT problems. Each one ships with a case study, a pytest suite and GitHub Actions CI, and uses synthetic data only.</p>
+            <ul class="points">
+              <li>Benchmarked a rolling z-score baseline against an Isolation Forest on sensor telemetry.</li>
+              <li>The model doubled fault recall, from 0.22 to 0.47, and caught slow-drift failures the baseline missed.</li>
+            </ul>
+            <ul class="chips"><li>Python</li><li>scikit-learn</li><li>pandas</li><li>pytest</li><li>GitHub Actions</li></ul>
+          </div>
+        </article>
+
+        <article class="feature" data-scene="graph">
+          <div class="screen">
+            <div class="screen-bar"><span class="live"><b>Dijkstra</b> settling nodes by distance</span><span>numbers are path costs</span></div>
+            <canvas data-demo="dijkstra" aria-label="Animated Dijkstra search across a weighted graph"></canvas>
+          </div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Mini Maps, a weighted shortest-path engine</h3><a href="https://github.com/kpousti/mini-maps-cpp">View code ↗</a></div>
+            <p>An adjacency-list graph engine with O(V + E) traversal across weighted and unweighted networks.</p>
+            <ul class="points">
+              <li>BFS and binary-heap Dijkstra, O(E log V), with deterministic path reconstruction.</li>
+              <li>Modular components and a reproducible Make build.</li>
+            </ul>
+            <ul class="chips"><li>C++</li><li>Dijkstra</li><li>BFS</li><li>Make</li></ul>
+          </div>
+        </article>
+
+        <article class="feature" data-scene="scc">
+          <div class="screen">
+            <div class="screen-bar"><span class="live"><b>Tarjan</b> strongly connected components</span><span>each color is one component</span></div>
+            <canvas data-demo="tarjan" aria-label="Animated Tarjan algorithm grouping a directed graph into components"></canvas>
+          </div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Open source: TheAlgorithms/C++</h3><a href="https://github.com/TheAlgorithms/C-Plus-Plus/pull/2973">View PR ↗</a></div>
+            <p>Contributions to a widely used open-source algorithms library, refined through peer code review.</p>
+            <ul class="points">
+              <li>Tarjan's strongly connected components algorithm, PR #2973.</li>
+              <li>Stoer–Wagner global minimum cut, O(VE + V² log V), with assertion-based tests.</li>
+            </ul>
+            <ul class="chips"><li>C++</li><li>Tarjan SCC</li><li>Stoer–Wagner</li></ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="builds" data-scene="grid">
+      <h2>Side builds</h2>
+      <p class="lede">Personal projects I am building for daily use. These are in progress, and the screens show sample data.</p>
+      <div class="builds">
+
+        <article class="build">
+          <div class="screen"><canvas data-demo="voice" style="height:64px" aria-label="Animated voice waveform"></canvas></div>
+          <div class="chat" aria-label="Sample exchange with Kia-bot">
+            <p class="q" data-type>How is the surf tomorrow morning?</p>
+            <p class="tools">→ surf_forecast · tides</p>
+            <p class="a" data-type>Three to four feet with light offshore wind. Best window is 6:30 to 8.</p>
+          </div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Kia-bot</h3><span class="status">Voice agent</span></div>
+            <p>A hands-free voice agent for the car. A phone shortcut sends my question to a FastAPI backend, where Claude picks a tool and answers out loud.</p>
+            <ul class="chips"><li>Python</li><li>FastAPI</li><li>Claude API</li><li>Tool calling</li></ul>
+          </div>
+        </article>
+
+        <article class="build">
+          <div class="screen"><canvas data-demo="backtest" aria-label="Animated equity curve with walk-forward windows"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Quant Backtest Lab</h3><span class="status">Research</span></div>
+            <p>A paper-trading framework for a trend strategy, with walk-forward validation and trading costs modeled. Results are reported as they are.</p>
+            <ul class="chips"><li>Python</li><li>Walk-forward</li><li>Cost modeling</li></ul>
+          </div>
+        </article>
+
+        <article class="build">
+          <div class="screen"><canvas data-demo="leads" aria-label="Animated messages being classified and routed"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Lead Autoresponder</h3><span class="status">Automation</span></div>
+            <p>Reads each inquiry to a small business, classifies intent and urgency, and replies right away. Complaints always go to a person.</p>
+            <ul class="chips"><li>Python</li><li>LLM classification</li><li>Human in the loop</li></ul>
+          </div>
+        </article>
+
+        <article class="build">
+          <div class="screen"><canvas data-demo="city" aria-label="Animated agents reporting to a central dashboard"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Agent City</h3><span class="status">Agent system</span></div>
+            <p>A set of personal agents, each with one job, reporting into a single dashboard that surfaces only what needs a decision from me.</p>
+            <ul class="chips"><li>Agents</li><li>Scheduling</li><li>Dashboard</li></ul>
+          </div>
+        </article>
+
+        <article class="build">
+          <div class="screen"><canvas data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
+            <p>A morning notification on whether the surf is worth the paddle, built on public wave, wind and tide data.</p>
+            <ul class="chips"><li>Automation</li><li>Open-Meteo</li><li>NOAA tides</li></ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="skills" data-scene="scc">
+      <h2>Skills</h2>
+      <dl class="skills">
+        <dt>Languages</dt><dd>C++ (STL, memory management), Python, JavaScript</dd>
+        <dt>Algorithms</dt><dd>A*, Dijkstra, BFS, Tarjan SCC, Stoer–Wagner min-cut, complexity analysis</dd>
+        <dt>Data structures</dt><dd>Compressed Sparse Row, adjacency lists, heaps, trees, hash maps</dd>
+        <dt>ML and data</dt><dd>scikit-learn, pandas, NumPy, anomaly detection with Isolation Forest, precision and recall</dd>
+        <dt>Systems</dt><dd>Memory locality, cache-aware data layout, input validation</dd>
+        <dt>Backend</dt><dd>REST APIs, HTTP, GeoJSON</dd>
+        <dt>Enterprise</dt><dd>Power Apps, Power BI, ServiceNow, Azure DevOps, PowerShell, Visio, GitHub Copilot</dd>
+        <dt>Tools</dt><dd>Git, GitHub Actions, pytest, CMake, Make, Linux</dd>
+      </dl>
+    </section>
+
+    <section id="beyond" data-scene="waves">
+      <h2>Away from the keyboard</h2>
+      <ul class="beyond">
+        <li><b>Boards</b>Surfing and skateboarding, most weeks of the year.</li>
+        <li><b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.</li>
+        <li><b>Training</b>A push, pull, legs split, tracked and tuned.</li>
+      </ul>
+    </section>
+
+    <section id="contact" data-scene="waves">
+      <h2>Contact</h2>
+      <p class="contact-line">Want to build something, or talk about a role?</p>
+      <div class="prose">
+        <p>I am based in San Diego. Email is the fastest way to reach me.</p>
+      </div>
+      <ul class="contact-list">
+        <li><span>Email</span><a href="mailto:kiapousti@gmail.com">kiapousti@gmail.com</a></li>
+        <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/kiapousti">linkedin.com/in/kiapousti</a></li>
+        <li><span>GitHub</span><a href="https://github.com/kpousti">github.com/kpousti</a></li>
+      </ul>
+    </section>
+
+    <footer>© 2026 Kia Pousti. All rights reserved. Designed and built by Kia Pousti.The A*, Dijkstra and Tarjan demos on this page run the real algorithms in your browser.</footer>
+  </main>
+</div>
+
+<script>
+// ---------- Shared helpers ----------
+var GLOW = '98,152,255', AMBER = '242,181,107', WHITE = '238,243,250', DIM = '132,146,168';
+var PALETTE = ['98,152,255', '242,181,107', '126,214,190', '201,160,255', '238,243,250'];
+var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function rgba(c, a) { return 'rgba(' + c + ',' + a + ')'; }
+// Seeded random generator, so every visit draws the same graphs.
+function rng(seed) {
+  return function () {
+    seed = (seed + 0x6D2B79F5) | 0;
+    var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Repeatable noise in [-0.5, 0.5] for sample number k.
+function hashNoise(k) { var s = Math.sin(k * 12.9898) * 43758.5453; return s - Math.floor(s) - 0.5; }
+
+// ---------- Cursor light ----------
+var pointer = { x: -1, y: -1, active: false };
+(function () {
+  var root = document.documentElement, pending = false;
+  function apply() {
+    root.style.setProperty('--mx', pointer.x + 'px');
+    root.style.setProperty('--my', pointer.y + 'px');
+    pending = false;
+  }
+  window.addEventListener('pointermove', function (e) {
+    pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true;
+    if (!pending) { pending = true; requestAnimationFrame(apply); } // one update per frame
+  }, { passive: true });
+  // Each project card also gets its own light, positioned relative to the card.
+  document.querySelectorAll('.feature, .build').forEach(function (card) {
+    card.addEventListener('pointermove', function (e) {
+      var r = card.getBoundingClientRect();
+      card.style.setProperty('--cx', (e.clientX - r.left) + 'px');
+      card.style.setProperty('--cy', (e.clientY - r.top) + 'px');
+    }, { passive: true });
+  });
+})();
+
+// ---------- Nav highlight for the section on screen ----------
+(function () {
+  var links = document.querySelectorAll('.nav a');
+  if (!('IntersectionObserver' in window) || !links.length) return;
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting || !byId[entry.target.id]) return;
+      links.forEach(function (a) { a.classList.remove('active'); });
+      byId[entry.target.id].classList.add('active');
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('main section').forEach(function (s) { observer.observe(s); });
+  links[0].classList.add('active');
+})();
+
+// ---------- Project demo screens ----------
+(function () {
+  var FONT = '11px "IBM Plex Mono", ui-monospace, monospace';
+  function text(ctx, str, x, y, color, align) {
+    ctx.font = FONT; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = color; ctx.fillText(str, x, y);
+  }
+  function dot(ctx, x, y, r, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+  function ring(ctx, x, y, r, color, lw) { ctx.strokeStyle = color; ctx.lineWidth = lw || 1.3; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); }
+
+  var demos = {};
+
+  // Route Engine: real A* on a grid with walls. The goal follows the cursor.
+  demos.astar = {
+    init: function (s, w, h, el) {
+      s.cs = Math.max(14, Math.floor(w / 36));
+      s.gc = Math.floor(w / s.cs); s.gr = Math.floor(h / s.cs);
+      s.ox = (w - s.gc * s.cs) / 2; s.oy = (h - s.gr * s.cs) / 2;
+      var r = rng(11), n = s.gc * s.gr; s.walls = [];
+      for (var i = 0; i < n; i++) s.walls.push(r() < 0.24);
+      s.start = Math.floor(s.gr / 2) * s.gc + 1;
+      s.walls[s.start] = s.walls[s.start - 1] = s.walls[s.start + 1] = false;
+      s.goal = -1; s.hover = -1; s.slot = -1; s.auto = -1; s.res = { visited: [], path: [] }; s.t0 = 0;
+      if (!s.bound) {
+        s.bound = true;
+        el.addEventListener('pointermove', function (e) {
+          var rect = el.getBoundingClientRect();
+          var c = Math.floor((e.clientX - rect.left - s.ox) / s.cs), rw = Math.floor((e.clientY - rect.top - s.oy) / s.cs);
+          s.hover = (c >= 0 && c < s.gc && rw >= 0 && rw < s.gr) ? rw * s.gc + c : -1;
+        });
+        el.addEventListener('pointerleave', function () { s.hover = -1; });
+      }
+    },
+    search: function (s, a, b) {
+      var n = s.gc * s.gr, g = [], f = [], came = [], closed = [], open = [a], visited = [], i;
+      function hx(i) { return Math.abs(i % s.gc - b % s.gc) + Math.abs(Math.floor(i / s.gc) - Math.floor(b / s.gc)); } // Manhattan estimate
+      for (i = 0; i < n; i++) { g.push(Infinity); f.push(Infinity); came.push(-1); closed.push(false); }
+      g[a] = 0; f[a] = hx(a);
+      while (open.length) {
+        var best = 0;
+        for (i = 1; i < open.length; i++) if (f[open[i]] < f[open[best]]) best = i;
+        var cur = open.splice(best, 1)[0];
+        if (closed[cur]) continue;
+        closed[cur] = true; visited.push(cur);
+        if (cur === b) break;
+        var c = cur % s.gc, nbs = [];
+        if (c > 0) nbs.push(cur - 1);
+        if (c < s.gc - 1) nbs.push(cur + 1);
+        if (cur - s.gc >= 0) nbs.push(cur - s.gc);
+        if (cur + s.gc < n) nbs.push(cur + s.gc);
+        for (i = 0; i < nbs.length; i++) {
+          var nb = nbs[i];
+          if (closed[nb] || s.walls[nb]) continue;
+          if (g[cur] + 1 < g[nb]) { g[nb] = g[cur] + 1; came[nb] = cur; f[nb] = g[nb] + hx(nb); open.push(nb); }
+        }
+      }
+      var path = [];
+      if (closed[b]) for (var p = b; p !== -1; p = came[p]) path.unshift(p);
+      return { visited: visited, path: path };
+    },
+    draw: function (ctx, w, h, t, s) {
+      var n = s.gc * s.gr, i, cs = s.cs;
+      var slot = REDUCE ? 0 : Math.floor(t / 2600);
+      if (slot !== s.slot) { // new automatic destination every few seconds
+        s.slot = slot; var rr = rng(slot + 3);
+        for (i = 0; i < 30; i++) { var cell = Math.floor(rr() * n); if (!s.walls[cell] && cell % s.gc > s.gc / 2) { s.auto = cell; break; } }
+      }
+      var goal = (s.hover >= 0 && !s.walls[s.hover] && s.hover !== s.start) ? s.hover : s.auto;
+      if (goal !== s.goal && goal >= 0) { s.goal = goal; s.res = this.search(s, s.start, goal); s.t0 = t; }
+      function cx(i) { return s.ox + (i % s.gc + 0.5) * cs; }
+      function cy(i) { return s.oy + (Math.floor(i / s.gc) + 0.5) * cs; }
+      for (i = 0; i < n; i++) if (s.walls[i]) { ctx.fillStyle = rgba(GLOW, 0.17); ctx.fillRect(cx(i) - cs / 2 + 1.5, cy(i) - cs / 2 + 1.5, cs - 3, cs - 3); }
+      var prog = REDUCE ? 1 : clamp((t - s.t0) / 900, 0, 1);
+      var shown = Math.floor(s.res.visited.length * clamp(prog / 0.65, 0, 1));
+      for (i = 0; i < shown; i++) { var v = s.res.visited[i]; ctx.fillStyle = rgba(GLOW, 0.2); ctx.fillRect(cx(v) - cs / 2 + 1.5, cy(v) - cs / 2 + 1.5, cs - 3, cs - 3); }
+      var segs = Math.floor((s.res.path.length - 1) * clamp((prog - 0.5) / 0.5, 0, 1));
+      if (segs > 0) {
+        ctx.strokeStyle = rgba(AMBER, 0.95); ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cx(s.res.path[0]), cy(s.res.path[0]));
+        for (i = 1; i <= segs; i++) ctx.lineTo(cx(s.res.path[i]), cy(s.res.path[i]));
+        ctx.stroke();
+      }
+      dot(ctx, cx(s.start), cy(s.start), 4, rgba(AMBER, 1));
+      if (s.goal >= 0) { ring(ctx, cx(s.goal), cy(s.goal), 6, rgba(AMBER, 1)); dot(ctx, cx(s.goal), cy(s.goal), 2.5, rgba(AMBER, 1)); }
+      text(ctx, 'explored ' + shown + ' · path ' + Math.max(0, s.res.path.length - 1) + ' steps', w - 10, h - 12, rgba(WHITE, 0.75), 'right');
+    }
+  };
+
+  // Industrial AI Notebook: a streaming signal. The band is the z-score baseline; amber marks what the model flags.
+  demos.telemetry = {
+    value: function (k) {
+      var v = 0.15 * Math.sin(k * 0.09) + hashNoise(k) * 0.16;
+      var m = ((k % 150) + 150) % 150;
+      if (m >= 95 && m <= 130) v += (m - 95) / 35 * 0.3;   // slow drift, stays inside the band
+      if (((k % 47) + 47) % 47 === 0) v += 0.85;             // sudden spike, leaves the band
+      return v;
+    },
+    draw: function (ctx, w, h, t) {
+      var N = Math.max(60, Math.floor(w / 5)), offset = REDUCE ? 120 : t * 0.014, k0 = Math.floor(offset), frac = offset - k0;
+      var mid = h * 0.6, scale = h * 0.42, band = 0.5, j;
+      ctx.fillStyle = rgba(GLOW, 0.07); ctx.fillRect(0, mid - band * scale, w, band * 2 * scale);
+      ctx.strokeStyle = rgba(GLOW, 0.3); ctx.lineWidth = 1; ctx.setLineDash([4, 5]);
+      ctx.beginPath(); ctx.moveTo(0, mid - band * scale); ctx.lineTo(w, mid - band * scale); ctx.moveTo(0, mid + band * scale); ctx.lineTo(w, mid + band * scale); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = rgba(GLOW, 0.9); ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.beginPath();
+      for (j = 0; j <= N + 1; j++) {
+        var x = (j - frac) / N * w, y = mid - this.value(k0 + j) * scale;
+        if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      for (j = 0; j <= N + 1; j++) {
+        var k = k0 + j, m = ((k % 150) + 150) % 150, px = (j - frac) / N * w, py = mid - this.value(k) * scale;
+        if (((k % 47) + 47) % 47 === 0) { ring(ctx, px, py, 8, rgba(AMBER, 1)); dot(ctx, px, py, 3, rgba(AMBER, 1)); }
+        else if (m >= 104 && m <= 130 && k % 4 === 0) dot(ctx, px, py, 2.6, rgba(AMBER, 1));
+      }
+      text(ctx, '● flagged by Isolation Forest', 10, 14, rgba(AMBER, 1));
+      text(ctx, '┄ z-score baseline band', 10, 30, rgba(GLOW, 0.9));
+      text(ctx, 'drift inside the band: baseline misses it', w - 10, h - 12, rgba(WHITE, 0.7), 'right');
+    }
+  };
+
+  // Mini Maps: real Dijkstra on a small weighted graph, settling nodes in distance order.
+  demos.dijkstra = {
+    init: function (s, w, h) {
+      var cols = w < 420 ? 4 : 6, rows = 3, r = rng(5), i, n = cols * rows;
+      s.nodes = []; s.edges = []; s.adj = [];
+      for (i = 0; i < n; i++) {
+        s.nodes.push({ x: (i % cols + 0.5) / cols * w + (r() - 0.5) * w / cols * 0.4, y: 26 + (Math.floor(i / cols) + 0.5) / rows * (h - 40) + (r() - 0.5) * 14 });
+        s.adj.push([]);
+      }
+      function link(a, b) { var wt = 1 + Math.floor(r() * 9); s.edges.push([a, b, wt]); s.adj[a].push([b, wt]); s.adj[b].push([a, wt]); }
+      for (i = 0; i < n; i++) {
+        if (i % cols < cols - 1) link(i, i + 1);
+        if (i + cols < n && (i % cols === 0 || r() > 0.35)) link(i, i + cols);
+      }
+      // Dijkstra from node 0. A linear scan stands in for the heap at this size.
+      var dist = [], prev = [], done = [], order = [];
+      for (i = 0; i < n; i++) { dist.push(Infinity); prev.push(-1); done.push(false); }
+      dist[0] = 0;
+      for (var step = 0; step < n; step++) {
+        var u = -1;
+        for (i = 0; i < n; i++) if (!done[i] && (u < 0 || dist[i] < dist[u])) u = i;
+        if (u < 0 || dist[u] === Infinity) break;
+        done[u] = true; order.push(u);
+        s.adj[u].forEach(function (e) { if (dist[u] + e[1] < dist[e[0]]) { dist[e[0]] = dist[u] + e[1]; prev[e[0]] = u; } });
+      }
+      s.dist = dist; s.prev = prev; s.order = order;
+    },
+    draw: function (ctx, w, h, t, s) {
+      var total = s.order.length, cycle = total * 420 + 2200, i;
+      var count = REDUCE ? total : Math.min(total, Math.floor((t % cycle) / 420) + 1);
+      var settled = {};
+      for (i = 0; i < count; i++) settled[s.order[i]] = true;
+      s.edges.forEach(function (e) {
+        var a = s.nodes[e[0]], b = s.nodes[e[1]];
+        var tree = (s.prev[e[1]] === e[0] && settled[e[1]]) || (s.prev[e[0]] === e[1] && settled[e[0]]);
+        ctx.strokeStyle = tree ? rgba(AMBER, 0.95) : rgba(GLOW, 0.22); ctx.lineWidth = tree ? 2.2 : 1;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        text(ctx, String(e[2]), (a.x + b.x) / 2 + 5, (a.y + b.y) / 2 - 6, rgba(DIM, 0.9), 'center');
+      });
+      s.nodes.forEach(function (p, idx) {
+        if (settled[idx]) {
+          dot(ctx, p.x, p.y, 9, idx === 0 ? rgba(AMBER, 1) : rgba(GLOW, 1));
+          text(ctx, String(s.dist[idx]), p.x, p.y + 0.5, '#0a1220', 'center');
+        } else { dot(ctx, p.x, p.y, 9, '#08101c'); ring(ctx, p.x, p.y, 9, rgba(GLOW, 0.4)); }
+      });
+      text(ctx, 'settled ' + count + ' of ' + total, w - 10, 14, rgba(WHITE, 0.75), 'right');
+    }
+  };
+
+  // Open source: real Tarjan SCC on a small directed graph, replayed step by step.
+  demos.tarjan = {
+    init: function (s, w, h) {
+      var pos = [[0.08, 0.34], [0.22, 0.16], [0.24, 0.66], [0.42, 0.36], [0.58, 0.18], [0.62, 0.62], [0.45, 0.82], [0.82, 0.3], [0.9, 0.72]];
+      s.nodes = pos.map(function (p) { return { x: p[0] * w, y: 12 + p[1] * (h - 24) }; });
+      s.edges = [[0, 1], [1, 2], [2, 0], [2, 3], [1, 3], [3, 4], [4, 5], [5, 6], [6, 3], [4, 7], [5, 8], [7, 8], [8, 7]];
+      var n = s.nodes.length, adj = [], i;
+      for (i = 0; i < n; i++) adj.push([]);
+      s.edges.forEach(function (e) { adj[e[0]].push(e[1]); });
+      var index = 0, idx = [], low = [], onStack = [], stack = [], events = [], comps = 0;
+      for (i = 0; i < n; i++) { idx.push(-1); low.push(0); onStack.push(false); }
+      function visit(v) {
+        idx[v] = low[v] = index++; stack.push(v); onStack[v] = true; events.push({ visit: v });
+        adj[v].forEach(function (nb) {
+          if (idx[nb] < 0) { visit(nb); low[v] = Math.min(low[v], low[nb]); }
+          else if (onStack[nb]) low[v] = Math.min(low[v], idx[nb]);
+        });
+        if (low[v] === idx[v]) { // v is the root of a component: pop it off the stack
+          var members = [], x;
+          do { x = stack.pop(); onStack[x] = false; members.push(x); } while (x !== v);
+          events.push({ comp: comps++, members: members });
+        }
+      }
+      for (i = 0; i < n; i++) if (idx[i] < 0) visit(i);
+      s.events = events;
+    },
+    draw: function (ctx, w, h, t, s) {
+      var total = s.events.length, cycle = total * 480 + 2400;
+      var count = REDUCE ? total : Math.min(total, Math.floor((t % cycle) / 480) + 1);
+      var seen = {}, comp = {}, found = 0, i;
+      for (i = 0; i < count; i++) {
+        var ev = s.events[i];
+        if (ev.visit !== undefined) seen[ev.visit] = true;
+        else { found++; ev.members.forEach(function (m) { comp[m] = ev.comp; }); }
+      }
+      s.edges.forEach(function (e) {
+        var a = s.nodes[e[0]], b = s.nodes[e[1]];
+        var same = comp[e[0]] !== undefined && comp[e[0]] === comp[e[1]];
+        var color = same ? rgba(PALETTE[comp[e[0]] % 5], 0.95) : rgba(GLOW, 0.28);
+        var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy), ux = dx / len, uy = dy / len;
+        var x1 = a.x + ux * 11, y1 = a.y + uy * 11, x2 = b.x - ux * 13, y2 = b.y - uy * 13;
+        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = same ? 2 : 1;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - ux * 7 - uy * 4, y2 - uy * 7 + ux * 4); ctx.lineTo(x2 - ux * 7 + uy * 4, y2 - uy * 7 - ux * 4); ctx.closePath(); ctx.fill(); // arrowhead
+      });
+      s.nodes.forEach(function (p, idx) {
+        if (comp[idx] !== undefined) dot(ctx, p.x, p.y, 9, rgba(PALETTE[comp[idx] % 5], 1));
+        else { dot(ctx, p.x, p.y, 9, '#08101c'); ring(ctx, p.x, p.y, 9, seen[idx] ? rgba(AMBER, 1) : rgba(GLOW, 0.4), seen[idx] ? 2 : 1.3); }
+      });
+      text(ctx, 'components found ' + found, w - 10, h - 12, rgba(WHITE, 0.75), 'right');
+    }
+  };
+
+  // Kia-bot: a voice waveform, with the sample question and answer typed out below it.
+  demos.voice = {
+    init: function (s, w, h, el) {
+      if (s.q) return;
+      function typer(p) { // split a paragraph into shown and hidden parts so the layout never jumps
+        var full = p.textContent, on = document.createElement('span'), off = document.createElement('span'), last = -1;
+        off.className = 'off'; p.textContent = ''; on.textContent = full; p.appendChild(on); p.appendChild(off);
+        return { len: full.length, set: function (k) { k = Math.round(k); if (k === last) return; last = k; on.textContent = full.slice(0, k); off.textContent = full.slice(k); } };
+      }
+      var chat = el.closest('.build').querySelector('.chat');
+      s.q = typer(chat.querySelector('.q')); s.a = typer(chat.querySelector('.a')); s.tools = chat.querySelector('.tools');
+    },
+    draw: function (ctx, w, h, t, s) {
+      var u = REDUCE ? 9000 : t % 11000, listening = !REDUCE && u < 2800;
+      s.q.set(s.q.len * clamp(u / 2600, 0, 1));
+      s.tools.style.opacity = u > 3000 ? 1 : 0.15;
+      s.a.set(s.a.len * clamp((u - 4000) / 3200, 0, 1));
+      var bars = Math.floor(w / 7), mid = h / 2;
+      for (var i = 0; i < bars; i++) {
+        var amp = listening ? 0.25 + 0.75 * Math.abs(Math.sin(i * 0.45 + t * 0.006) * Math.sin(i * 0.13 + t * 0.0031)) : 0.1;
+        var bh = amp * (h - 18);
+        ctx.fillStyle = listening ? rgba(AMBER, 0.9) : rgba(GLOW, 0.45);
+        ctx.fillRect(i * 7 + 2, mid - bh / 2, 3, bh);
+      }
+    }
+  };
+
+  // Quant Backtest Lab: a synthetic equity curve drawn across walk-forward train and test windows.
+  demos.backtest = {
+    init: function (s) {
+      var r = rng(21), a = 1, b = 1, i; s.strat = [a]; s.bench = [b];
+      for (i = 1; i < 120; i++) {
+        var shock = (r() - 0.5) * 0.03;
+        b *= 1 + shock + 0.0006; a *= 1 + shock * 0.55 + 0.0011 + (r() - 0.5) * 0.008;
+        s.bench.push(b); s.strat.push(a);
+      }
+      var all = s.strat.concat(s.bench); s.lo = Math.min.apply(null, all); s.hi = Math.max.apply(null, all);
+    },
+    draw: function (ctx, w, h, t, s) {
+      var n = s.strat.length, prog = REDUCE ? 1 : clamp((t % 9000) / 6000, 0, 1), upto = Math.max(2, Math.floor(n * prog)), i;
+      var folds = 4, fw = w / folds;
+      for (i = 0; i < folds; i++) { // each fold: train on the first part, test on the rest
+        ctx.fillStyle = rgba(GLOW, 0.06); ctx.fillRect(i * fw, 0, fw * 0.68, h);
+        ctx.fillStyle = rgba(AMBER, 0.08); ctx.fillRect(i * fw + fw * 0.68, 0, fw * 0.32, h);
+      }
+      text(ctx, 'train', 6, 12, rgba(GLOW, 0.9)); text(ctx, 'test', fw * 0.68 + 4, 12, rgba(AMBER, 0.95));
+      function y(v) { return h - 12 - (v - s.lo) / (s.hi - s.lo) * (h - 36); }
+      function curve(arr, color, lw) {
+        ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.beginPath();
+        for (var j = 0; j < upto; j++) { var x = j / (n - 1) * w; if (j === 0) ctx.moveTo(x, y(arr[j])); else ctx.lineTo(x, y(arr[j])); }
+        ctx.stroke();
+      }
+      curve(s.bench, rgba(DIM, 0.8), 1.2); curve(s.strat, rgba(AMBER, 1), 1.8);
+      dot(ctx, (upto - 1) / (n - 1) * w, y(s.strat[upto - 1]), 3, rgba(AMBER, 1));
+      text(ctx, 'synthetic prices, not real returns', w - 6, h - 8, rgba(WHITE, 0.6), 'right');
+    }
+  };
+
+  // Lead Autoresponder: messages reach the classifier, then go to auto-reply or to a person.
+  demos.leads = {
+    draw: function (ctx, w, h, t) {
+      var cx = w * 0.42, cy = h / 2, topY = h * 0.26, botY = h * 0.76, endX = w - 74;
+      ctx.strokeStyle = rgba(GLOW, 0.25); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(cx, cy); ctx.lineTo(endX, topY); ctx.moveTo(cx, cy); ctx.lineTo(endX, botY); ctx.stroke();
+      var now = REDUCE ? 20000 : t, first = Math.floor(now / 700) - 6;
+      for (var j = first; j <= first + 6; j++) {
+        var u = (now - j * 700) / 3600;
+        if (u < 0 || u > 1) continue;
+        var human = j % 4 === 3, x, y, color;
+        if (u < 0.45) { x = u / 0.45 * cx; y = cy; color = rgba(WHITE, 0.85); }
+        else { var v = (u - 0.45) / 0.55; x = cx + (endX - cx) * v; y = cy + ((human ? botY : topY) - cy) * v; color = human ? rgba(AMBER, 1) : rgba(GLOW, 1); }
+        dot(ctx, x, y, 3.5, color);
+      }
+      dot(ctx, cx, cy, 13, '#08101c'); ring(ctx, cx, cy, 13, rgba(WHITE, 0.8));
+      text(ctx, 'AI', cx, cy + 0.5, rgba(WHITE, 0.95), 'center');
+      text(ctx, 'inquiries', 6, cy - 14, rgba(DIM, 1));
+      text(ctx, 'auto-reply', w - 6, topY, rgba(GLOW, 1), 'right');
+      text(ctx, 'to a person', w - 6, botY, rgba(AMBER, 1), 'right');
+    }
+  };
+
+  // Agent City: agents in their huts send results to one dashboard.
+  demos.city = {
+    draw: function (ctx, w, h, t) {
+      var cx = w / 2, cy = h / 2, names = ['inbox', 'jobs', 'ideas', 'coach', 'builder', 'markets'], now = REDUCE ? 5000 : t;
+      for (var i = 0; i < 6; i++) {
+        var ang = i / 6 * Math.PI * 2 - Math.PI / 2, x = cx + Math.cos(ang) * w * 0.37, y = cy + Math.sin(ang) * h * 0.33;
+        ctx.strokeStyle = rgba(GLOW, 0.22); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(cx, cy); ctx.stroke();
+        var f = (now * 0.00032 + i * 0.29) % 1; // a result traveling to the dashboard
+        dot(ctx, x + (cx - x) * f, y + (cy - y) * f, 2.6, rgba(i % 3 === 0 ? AMBER : GLOW, 1));
+        ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(WHITE, 0.75); ctx.lineWidth = 1.2; // hut: square with a roof
+        ctx.beginPath(); ctx.moveTo(x - 7, y + 6); ctx.lineTo(x - 7, y - 2); ctx.lineTo(x, y - 9); ctx.lineTo(x + 7, y - 2); ctx.lineTo(x + 7, y + 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+        text(ctx, names[i], x, y + (Math.sin(ang) < -0.5 ? -17 : 16), rgba(DIM, 1), 'center');
+      }
+      var need = 1 + Math.floor(now / 2600) % 3;
+      ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.rect(cx - 44, cy - 12, 88, 24); ctx.fill(); ctx.stroke();
+      text(ctx, 'needs you: ' + need, cx, cy + 0.5, rgba(AMBER, 1), 'center');
+    }
+  };
+
+  // Surf Alert: layered swell with a sample morning alert.
+  demos.surf = {
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 0 : t;
+      for (var layer = 0; layer < 4; layer++) {
+        var base = h * (0.5 + layer * 0.13), amp = 9 - layer * 1.5;
+        ctx.fillStyle = rgba(GLOW, 0.1 + layer * 0.05);
+        ctx.beginPath(); ctx.moveTo(0, h);
+        for (var x = 0; x <= w; x += 6) ctx.lineTo(x, base + Math.sin(x * 0.02 + now * 0.0014 * (1 + layer * 0.3) + layer * 1.7) * amp);
+        ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+      }
+      dot(ctx, w - 30, 28, 9, rgba(AMBER, 0.9));
+      ctx.fillStyle = 'rgba(8,16,28,0.9)'; ctx.strokeStyle = rgba(AMBER, 0.9); ctx.lineWidth = 1;
+      var pw = Math.min(w - 60, 214);
+      ctx.beginPath(); ctx.rect(10, 12, pw, 26); ctx.fill(); ctx.stroke();
+      text(ctx, '6:30 AM · clean, 3 to 4 ft (sample)', 18, 25.5, rgba(WHITE, 0.95));
+    }
+  };
+
+  // Set up every demo canvas, and only animate the ones on screen.
+  var items = [];
+  document.querySelectorAll('canvas[data-demo]').forEach(function (el) {
+    var def = demos[el.getAttribute('data-demo')];
+    if (def) items.push({ el: el, def: def, ctx: el.getContext('2d'), s: {}, w: 0, h: 0, visible: true });
+  });
+  function size(item) {
+    var rect = item.el.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (rect.width < 10) return;
+    item.w = rect.width; item.h = rect.height;
+    item.el.width = Math.round(rect.width * dpr); item.el.height = Math.round(rect.height * dpr);
+    item.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (item.def.init) item.def.init(item.s, item.w, item.h, item.el);
+  }
+  function paint(item, t) {
+    if (!item.w) return;
+    item.ctx.clearRect(0, 0, item.w, item.h);
+    item.def.draw(item.ctx, item.w, item.h, t, item.s);
+  }
+  function frame(t) {
+    for (var i = 0; i < items.length; i++) if (items[i].visible) paint(items[i], t);
+    if (!REDUCE) requestAnimationFrame(frame);
+  }
+  items.forEach(size);
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        for (var i = 0; i < items.length; i++) if (items[i].el === entry.target) items[i].visible = entry.isIntersecting;
+      });
+    }, { rootMargin: '80px' });
+    items.forEach(function (item) { io.observe(item.el); });
+  }
+  window.addEventListener('resize', function () { items.forEach(size); if (REDUCE) frame(0); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (REDUCE) frame(0); });
+  requestAnimationFrame(frame);
+})();
+
+// ---------- Background: one set of points that re-forms for each section ----------
+(function () {
+  var canvas = document.getElementById('bg');
+  var ctx = canvas.getContext && canvas.getContext('2d');
+  if (!ctx) return;
+  var note = document.getElementById('sceneNote');
+  var NOTES = {
+    graph: '<b>A* search</b> routing to your cursor',
+    grid: '<b>Automation</b> manual steps become clean pipelines',
+    signal: '<b>Sensor telemetry</b> amber points are flagged anomalies',
+    scc: '<b>Tarjan SCC</b> cycles grouped into components',
+    waves: '<b>Pacific swell</b> rolling in'
+  };
+  var W, H, cols, rows, n, nodes = null, adj, edges, anomalies, startNode;
+  var scene = 'graph', sceneStart = 0;
+  var route = { goal: -1, visited: [], path: [], t0: 0 };
+  var autoGoal = -1, autoGoalAt = 0;
+
+  // Build the points and the road graph for the current window size.
+  function build() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cols = clamp(Math.round(W / 95), 5, 16);
+    rows = clamp(Math.round(H / 95), 6, 10);
+    n = cols * rows;
+    var r = rng(7), old = nodes, i;
+    nodes = []; adj = []; edges = [];
+    for (i = 0; i < n; i++) {
+      var c = i % cols, rw = Math.floor(i / cols);
+      var ux = (c + 0.5) / cols * W, uy = (rw + 0.5) / rows * H;   // tidy grid spot
+      var gx = ux + (r() - 0.5) * (W / cols) * 0.55;                 // jittered "road map" spot
+      var gy = uy + (r() - 0.5) * (H / rows) * 0.55;
+      nodes.push({ x: old && old[i] ? old[i].x : gx, y: old && old[i] ? old[i].y : gy, tx: gx, ty: gy, gx: gx, gy: gy, ux: ux, uy: uy, noise: r() - 0.5 });
+      adj.push([]);
+    }
+    function link(a, b) { edges.push([a, b]); adj[a].push(b); adj[b].push(a); }
+    for (i = 0; i < n; i++) {
+      var cc = i % cols, rr = Math.floor(i / cols);
+      if (cc < cols - 1) link(i, i + 1);                                   // every row is a road
+      if (rr < rows - 1 && (cc === 0 || r() > 0.3)) link(i, i + cols);     // most cross streets
+      if (cc < cols - 1 && rr < rows - 1 && r() < 0.18) link(i, i + cols + 1); // a few diagonals
+    }
+    anomalies = {};
+    for (i = 0; i < 7; i++) anomalies[Math.floor(r() * n)] = true;
+    startNode = (rows - 1) * cols; // bottom-left corner
+    route.goal = -1; autoGoal = -1;
+  }
+
+  function dist(a, b) {
+    var dx = nodes[a].gx - nodes[b].gx, dy = nodes[a].gy - nodes[b].gy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  // A* shortest path from s to g. Records the order nodes were explored, for the animation.
+  function astar(s, g) {
+    var gScore = [], fScore = [], came = [], closed = [], open = [s], visited = [], i;
+    for (i = 0; i < n; i++) { gScore.push(Infinity); fScore.push(Infinity); came.push(-1); closed.push(false); }
+    gScore[s] = 0; fScore[s] = dist(s, g); // f = cost so far + straight-line estimate to the goal
+    while (open.length) {
+      var best = 0;
+      for (i = 1; i < open.length; i++) if (fScore[open[i]] < fScore[open[best]]) best = i;
+      var cur = open.splice(best, 1)[0];
+      if (closed[cur]) continue;
+      closed[cur] = true; visited.push(cur);
+      if (cur === g) break;
+      for (i = 0; i < adj[cur].length; i++) {
+        var nb = adj[cur][i];
+        if (closed[nb]) continue;
+        var cost = gScore[cur] + dist(cur, nb);
+        if (cost < gScore[nb]) { gScore[nb] = cost; came[nb] = cur; fScore[nb] = cost + dist(nb, g); open.push(nb); }
+      }
+    }
+    var path = [];
+    if (closed[g]) for (var c = g; c !== -1; c = came[c]) path.unshift(c); // walk back from the goal
+    return { visited: visited, path: path };
+  }
+
+  // Pick the destination: the node nearest the cursor, or a wandering one if there is no cursor yet.
+  function pickGoal(now) {
+    var goal;
+    if (pointer.active) {
+      var bestD = Infinity; goal = 0;
+      for (var i = 0; i < n; i++) {
+        var dx = nodes[i].gx - pointer.x, dy = nodes[i].gy - pointer.y, d = dx * dx + dy * dy;
+        if (d < bestD) { bestD = d; goal = i; }
+      }
+    } else {
+      if (autoGoal < 0 || (!REDUCE && now - autoGoalAt > 2600)) {
+        autoGoal = autoGoal < 0 ? cols - 1 : Math.floor(Math.random() * n);
+        autoGoalAt = now;
+      }
+      goal = autoGoal;
+    }
+    if (goal === startNode) goal = cols - 1;
+    if (goal !== route.goal) {
+      var res = astar(startNode, goal);
+      route = { goal: goal, visited: res.visited, path: res.path, t0: now };
+    }
+  }
+
+  // Where each point should sit for the current scene.
+  function setTargets(t) {
+    var perCluster = Math.ceil(n / 5), perRow = Math.ceil(n / 6);
+    var centers = [[0.2, 0.3], [0.5, 0.2], [0.8, 0.32], [0.33, 0.72], [0.68, 0.74]];
+    for (var i = 0; i < n; i++) {
+      var p = nodes[i];
+      if (scene === 'grid') { p.tx = p.ux; p.ty = p.uy; }
+      else if (scene === 'signal') {
+        var k = i / (n - 1);
+        var y = H * 0.56 + p.noise * H * 0.07;
+        if (k > 0.62) y -= (k - 0.62) / 0.38 * H * 0.2;
+        if (anomalies[i]) y += (p.noise >= 0 ? -1 : 1) * H * 0.17;
+        p.tx = 24 + k * (W - 48); p.ty = y;
+      } else if (scene === 'scc') {
+        var cl = i % 5, m = Math.floor(i / 5);
+        var ang = m / perCluster * Math.PI * 2 + (REDUCE ? 0 : t * 0.00012 * (cl % 2 ? 1 : -1));
+        var rad = Math.min(W, H) * (0.09 + 0.05 * (m % 2));
+        p.tx = centers[cl][0] * W + Math.cos(ang) * rad;
+        p.ty = centers[cl][1] * H + Math.sin(ang) * rad;
+      } else if (scene === 'waves') {
+        var row = i % 6, j = Math.floor(i / 6);
+        var x = j / Math.max(1, perRow - 1) * W;
+        var phase = REDUCE ? 0 : t * 0.0011;
+        p.tx = x;
+        p.ty = H * (0.3 + row * 0.1) + Math.sin(x * 0.011 + phase + row * 0.9) * (14 + row * 4);
+      } else { p.tx = p.gx; p.ty = p.gy; }
+    }
+  }
+
+  function line(a, b) { ctx.moveTo(nodes[a].x, nodes[a].y); ctx.lineTo(nodes[b].x, nodes[b].y); }
+  function dot(x, y, r, color, alpha) { ctx.fillStyle = rgba(color, alpha); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+  function ring(x, y, r, color, alpha) { ctx.strokeStyle = rgba(color, alpha); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); }
+
+  function draw(now) {
+    var i, a = clamp((now - sceneStart) / 700, 0, 1); // lines fade in after a scene change
+    setTargets(now);
+    for (i = 0; i < n; i++) { // ease every point toward its target
+      var p = nodes[i], ease = REDUCE ? 1 : 0.085;
+      p.x += (p.tx - p.x) * ease; p.y += (p.ty - p.y) * ease;
+    }
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+    if (scene === 'graph') {
+      pickGoal(now);
+      ctx.strokeStyle = rgba(GLOW, 0.13 * a); ctx.lineWidth = 1;
+      ctx.beginPath(); for (i = 0; i < edges.length; i++) line(edges[i][0], edges[i][1]); ctx.stroke();
+      var prog = REDUCE ? 1 : clamp((now - route.t0) / 520, 0, 1);
+      var shown = Math.floor(route.visited.length * clamp(prog / 0.6, 0, 1));
+      for (i = 0; i < shown; i++) { var v = nodes[route.visited[i]]; dot(v.x, v.y, 2.6, GLOW, 0.5 * a); }
+      var segs = (route.path.length - 1) * clamp((prog - 0.45) / 0.55, 0, 1);
+      if (segs > 0) {
+        ctx.strokeStyle = rgba(AMBER, 0.85 * a); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(nodes[route.path[0]].x, nodes[route.path[0]].y);
+        for (i = 1; i <= Math.floor(segs); i++) ctx.lineTo(nodes[route.path[i]].x, nodes[route.path[i]].y);
+        var whole = Math.floor(segs), frac = segs - whole;
+        if (frac > 0 && whole + 1 < route.path.length) {
+          var p0 = nodes[route.path[whole]], p1 = nodes[route.path[whole + 1]];
+          ctx.lineTo(p0.x + (p1.x - p0.x) * frac, p0.y + (p1.y - p0.y) * frac);
+        }
+        ctx.stroke();
+      }
+      ring(nodes[startNode].x, nodes[startNode].y, 6, AMBER, 0.9 * a);
+      if (route.goal >= 0) { ring(nodes[route.goal].x, nodes[route.goal].y, 6, AMBER, 0.9 * a); dot(nodes[route.goal].x, nodes[route.goal].y, 2.6, AMBER, a); }
+    } else if (scene === 'grid') {
+      ctx.strokeStyle = rgba(GLOW, 0.12 * a); ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (i = 0; i < edges.length; i++) if (edges[i][1] - edges[i][0] !== cols + 1) line(edges[i][0], edges[i][1]);
+      ctx.stroke();
+      for (var rw = 0; rw < rows; rw++) { // one pulse of work moving along each row
+        var f = REDUCE ? (rw * 0.37) % 1 : (now * 0.00009 + rw * 0.37) % 1;
+        dot(f * W, nodes[rw * cols].y, 3, AMBER, 0.85 * a);
+      }
+    } else if (scene === 'signal') {
+      ctx.strokeStyle = rgba(GLOW, 0.4 * a); ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
+      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
+      ctx.stroke();
+      var pulse = REDUCE ? 9 : 8 + Math.sin(now * 0.004) * 2.5;
+      for (i = 0; i < n; i++) if (anomalies[i]) { ring(nodes[i].x, nodes[i].y, pulse, AMBER, 0.9 * a); dot(nodes[i].x, nodes[i].y, 3, AMBER, a); }
+    } else if (scene === 'scc') {
+      for (var cl = 0; cl < 5; cl++) {
+        ctx.strokeStyle = rgba(PALETTE[cl], 0.3 * a); ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (i = cl; i < n; i += 5) line(i, i + 5 < n ? i + 5 : cl); // close each ring
+        ctx.stroke();
+      }
+      ctx.strokeStyle = rgba(GLOW, 0.1 * a);
+      ctx.beginPath(); line(0, 1); line(1, 2); line(3, 4); line(0, 3); ctx.stroke(); // links between components
+    } else if (scene === 'waves') {
+      for (var row = 0; row < 6; row++) {
+        ctx.strokeStyle = rgba(row === 2 ? AMBER : GLOW, (0.2 + row * 0.04) * a); ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(nodes[row].x, nodes[row].y);
+        for (i = row + 6; i < n; i += 6) ctx.lineTo(nodes[i].x, nodes[i].y);
+        ctx.stroke();
+      }
+    }
+
+    for (i = 0; i < n; i++) dot(nodes[i].x, nodes[i].y, 1.7, scene === 'scc' ? PALETTE[i % 5] : GLOW, 0.5);
+    requestAnimationFrame(draw);
+  }
+
+  // Choose the scene from whichever tagged block crosses a line 40% down the screen.
+  var tagged = document.querySelectorAll('[data-scene]');
+  function pickScene() {
+    var probe = window.innerHeight * 0.4, best = null, bestGap = Infinity;
+    for (var i = 0; i < tagged.length; i++) {
+      var rect = tagged[i].getBoundingClientRect();
+      var gap = rect.top > probe ? rect.top - probe : rect.bottom < probe ? probe - rect.bottom : 0;
+      if (gap < bestGap) { bestGap = gap; best = tagged[i]; }
+    }
+    var next = best ? best.getAttribute('data-scene') : 'graph';
+    if (next !== scene) {
+      scene = next; sceneStart = performance.now(); route.goal = -1;
+      note.innerHTML = NOTES[scene] || '';
+    }
+  }
+
+  build();
+  pickScene();
+  window.addEventListener('scroll', pickScene, { passive: true });
+  window.addEventListener('resize', function () { build(); pickScene(); });
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
