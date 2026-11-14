@@ -197,12 +197,6 @@ h1 {
 .stats li { padding: 20px; display: flex; flex-direction: column; justify-content: center; }
 .stats .num { font-family: var(--font-display); font-weight: 700; font-stretch: 90%; font-size: clamp(1.5rem, 2.4vw, 1.85rem); line-height: 1.1; color: var(--bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stats .what { margin-top: 8px; font-size: 0.86rem; color: var(--text-dim); line-height: 1.4; }
-.ticker { margin: 44px 0 0; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 0; }
-.ticker-track { display: flex; gap: 36px; width: max-content; animation: slide 38s linear infinite; }
-.ticker span { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
-.ticker span::before { content: "◆"; color: var(--accent); margin-right: 36px; font-size: 8px; vertical-align: middle; }
-@keyframes slide { to { transform: translateX(-50%); } }
-
 /* Experience */
 .xp { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; }
 .xp article { padding: 28px 30px; }
@@ -263,6 +257,32 @@ h1 {
 .chat .tools { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); transition: opacity 0.3s; }
 .chat .off { visibility: hidden; }
 
+/* Pinned story: stays on screen while the scroll scrubs through four stages. */
+.pin { margin: 0 auto 72px; }
+.pin.live { height: 340vh; }
+.pin-stage {
+  max-width: 1080px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); gap: 36px; align-items: center;
+}
+.pin.live .pin-stage { position: sticky; top: calc(var(--bar-h) + 10px); height: calc(100vh - var(--bar-h) - 20px); height: calc(100svh - var(--bar-h) - 20px); }
+.pin-title { font-family: var(--font-display); font-weight: 700; font-stretch: 92%; font-size: clamp(1.6rem, 3vw, 2.3rem); line-height: 1.08; letter-spacing: -0.02em; color: var(--bright); margin: 0 0 26px; text-wrap: balance; }
+.pin-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 18px; }
+.pin-step { padding-left: 16px; border-left: 2px solid var(--line); font-size: 0.95rem; color: var(--text); opacity: 0.38; transition: opacity var(--t-med), border-color var(--t-med); }
+.pin-step b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; transition: color var(--t-med); }
+.pin-step.on { opacity: 1; border-color: var(--accent); }
+.pin-step.on b { color: var(--accent); }
+.pin:not(.live) .pin-step { opacity: 1; }
+.pin-meter { margin-top: 28px; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.pin-meter i { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); }
+.pin:not(.live) .pin-meter { display: none; }
+.pin-screen { border: 1px solid var(--line); border-radius: 16px; background: #08101c; overflow: hidden; }
+.pin-screen canvas { display: block; width: 100%; height: min(58vh, 470px); }
+
+.skip { position: fixed; left: 12px; top: -60px; z-index: 20; padding: 8px 14px; border-radius: 8px; background: var(--accent); color: var(--ink); font-weight: 500; }
+.skip:focus { top: 10px; }
+.has-touch { display: none; }
+@media (hover: none) { .has-mouse { display: none; } .has-touch { display: inline; } }
+
 /* Skills */
 .skill-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
 .skill-grid li { padding: 20px; font-size: 0.92rem; }
@@ -295,6 +315,12 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 /* ---------- Smaller screens ---------- */
 @media (max-width: 900px) {
   .about, .xp, .features { grid-template-columns: minmax(0, 1fr); }
+  .pin-stage { grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: center; }
+  .pin-title { margin-bottom: 12px; }
+  .pin.live .pin-step { display: none; }
+  .pin.live .pin-step.on { display: block; min-height: 5.6em; }
+  .pin-meter { margin-top: 12px; }
+  .pin-screen canvas { height: min(46vh, 360px); }
   .builds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .build { grid-column: span 1; }
   .build.wide { grid-column: span 2; }
@@ -328,6 +354,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 <div class="glow" aria-hidden="true"></div>
 <div class="scene-note" id="sceneNote" aria-hidden="true"><b>A* search</b> routing to your cursor</div>
 
+<a class="skip" href="#about">Skip to content</a>
 <header class="bar">
   <a class="mark" href="#top">Kia Pousti</a>
   <nav class="tabs" aria-label="Sections">
@@ -348,7 +375,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
     <p class="eyebrow">Software engineer · San Diego, CA</p>
     <h1>Kia Pousti</h1>
     <p class="hero-role">Fast graph systems. <em>Practical AI.</em></p>
-    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. Move your cursor: the background is finding the shortest path to it.</p>
+    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">Move your cursor: the background is finding the shortest path to it.</span><span class="has-touch">Drag a finger across the screen: the background finds the shortest path to it.</span></p>
     <div class="actions">
       <a class="btn primary" href="#projects">See the work</a>
       <a class="btn" href="#contact">Get in touch</a>
@@ -365,8 +392,8 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">About</p>
-        <h2>Where math meets systems.</h2>
-        <p class="sub">A mathematician's habits, applied to code that has to run fast on real hardware.</p>
+        <h2>I think in graphs.</h2>
+        <p class="sub">A math and computer science degree, applied to code that has to run fast on real hardware.</p>
       </header>
       <div class="about">
         <div class="glass prose" data-reveal>
@@ -380,12 +407,6 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
           <li class="glass" data-reveal><span class="num">0.22 → 0.47</span><span class="what">fault recall, baseline versus Isolation Forest</span></li>
           <li class="glass" data-reveal><span class="num">PR #2973</span><span class="what">Tarjan's algorithm contributed to TheAlgorithms/C++</span></li>
         </ul>
-      </div>
-      <div class="ticker" aria-hidden="true">
-        <div class="ticker-track">
-          <span>Graph algorithms</span><span>Routing engines</span><span>Applied AI</span><span>Anomaly detection</span><span>LLM agents</span><span>Systems performance</span><span>Automation</span>
-          <span>Graph algorithms</span><span>Routing engines</span><span>Applied AI</span><span>Anomaly detection</span><span>LLM agents</span><span>Systems performance</span><span>Automation</span>
-        </div>
       </div>
     </div>
   </section>
@@ -428,12 +449,34 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         <h2>Four projects, all running live.</h2>
         <p class="sub">Each screen runs the project's core idea in your browser. The first one follows your cursor.</p>
       </header>
+    </div>
+
+    <div class="pin" data-scene="story">
+      <div class="pin-stage">
+        <div class="pin-copy">
+          <p class="eyebrow">Inside Route Engine</p>
+          <h3 class="pin-title">One request, start to finish.</h3>
+          <ol class="pin-steps">
+            <li class="pin-step on"><b>01 Snap</b>A raw latitude and longitude is matched to the nearest road node.</li>
+            <li class="pin-step"><b>02 Search</b>A* explores outward, steering by the straight-line distance still to go.</li>
+            <li class="pin-step"><b>03 Route</b>The cheapest path is rebuilt by walking back from the goal.</li>
+            <li class="pin-step"><b>04 Simplify</b>Points the map does not need are dropped. In the real engine, that cuts route payloads by about 89%.</li>
+          </ol>
+          <div class="pin-meter" aria-hidden="true"><i></i></div>
+        </div>
+        <div class="pin-screen">
+          <canvas role="img" aria-label="A route request shown in four stages: snap to road, A* search, route, and simplification"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="wrap">
       <div class="features">
 
         <article class="feature" data-scene="graph" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>A*</b> shortest path</span><span>move your cursor over the map</span></div>
-            <canvas data-demo="astar" aria-label="Animated A* search finding a route around obstacles"></canvas>
+            <canvas role="img" data-demo="astar" aria-label="Animated A* search finding a route around obstacles"></canvas>
           </div>
           <div class="feature-body">
             <div class="feature-head"><h3>Route Engine</h3><a href="https://github.com/kpousti/route-engine-demo">View code ↗</a></div>
@@ -450,7 +493,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         <article class="feature" data-scene="signal" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Telemetry</b> anomaly detection</span><span>illustration, synthetic data</span></div>
-            <canvas data-demo="telemetry" aria-label="Animated sensor signal with flagged anomalies"></canvas>
+            <canvas role="img" data-demo="telemetry" aria-label="Animated sensor signal with flagged anomalies"></canvas>
           </div>
           <div class="feature-body">
             <div class="feature-head"><h3>Industrial AI Notebook</h3><a href="https://github.com/kpousti/industrial-ai-notebook">View code ↗</a></div>
@@ -466,7 +509,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         <article class="feature" data-scene="graph" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Dijkstra</b> settling nodes by distance</span><span>numbers are path costs</span></div>
-            <canvas data-demo="dijkstra" aria-label="Animated Dijkstra search across a weighted graph"></canvas>
+            <canvas role="img" data-demo="dijkstra" aria-label="Animated Dijkstra search across a weighted graph"></canvas>
           </div>
           <div class="feature-body">
             <div class="feature-head"><h3>Mini Maps, a weighted shortest-path engine</h3><a href="https://github.com/kpousti/mini-maps-cpp">View code ↗</a></div>
@@ -482,7 +525,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         <article class="feature" data-scene="scc" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Tarjan</b> strongly connected components</span><span>each color is one component</span></div>
-            <canvas data-demo="tarjan" aria-label="Animated Tarjan algorithm grouping a directed graph into components"></canvas>
+            <canvas role="img" data-demo="tarjan" aria-label="Animated Tarjan algorithm grouping a directed graph into components"></canvas>
           </div>
           <div class="feature-body">
             <div class="feature-head"><h3>Open source: TheAlgorithms/C++</h3><a href="https://github.com/TheAlgorithms/C-Plus-Plus/pull/2973">View PR ↗</a></div>
@@ -508,7 +551,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       <div class="builds">
 
         <article class="build wide" data-reveal>
-          <div class="screen"><canvas data-demo="city" aria-label="Animated overwater huts with agents riding boardwalks to a central hub"></canvas></div>
+          <div class="screen"><canvas role="img" data-demo="city" aria-label="Animated overwater huts with agents riding boardwalks to a central hub"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Agent City</h3><span class="status">Agent system</span></div>
             <p>A set of personal agents, each with one job, pictured as a lagoon of overwater huts. They ride in to one hub, and the dashboard surfaces only what needs a decision from me.</p>
@@ -517,7 +560,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         </article>
 
         <article class="build" data-reveal>
-          <div class="screen"><canvas data-demo="voice" style="height:64px" aria-label="Animated voice waveform"></canvas></div>
+          <div class="screen"><canvas role="img" data-demo="voice" style="height:64px" aria-label="Animated voice waveform"></canvas></div>
           <div class="chat" aria-label="Sample exchange with Kia-bot">
             <p class="q">How is the surf tomorrow morning?</p>
             <p class="tools">→ surf_forecast · tides</p>
@@ -531,7 +574,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         </article>
 
         <article class="build" data-reveal>
-          <div class="screen"><canvas data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
+          <div class="screen"><canvas role="img" data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
             <p>A morning notification on whether the surf is worth the paddle, built on public wave, wind and tide data.</p>
@@ -540,7 +583,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         </article>
 
         <article class="build" data-reveal>
-          <div class="screen"><canvas data-demo="backtest" aria-label="Animated equity curve with walk-forward windows"></canvas></div>
+          <div class="screen"><canvas role="img" data-demo="backtest" aria-label="Animated equity curve with walk-forward windows"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Quant Backtest Lab</h3><span class="status">Research</span></div>
             <p>A paper-trading framework for a trend strategy, with walk-forward validation and trading costs modeled. Results are reported as they are.</p>
@@ -549,7 +592,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         </article>
 
         <article class="build" data-reveal>
-          <div class="screen"><canvas data-demo="leads" aria-label="Animated messages being classified and routed"></canvas></div>
+          <div class="screen"><canvas role="img" data-demo="leads" aria-label="Animated messages being classified and routed"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Lead Autoresponder</h3><span class="status">Automation</span></div>
             <p>Reads each inquiry to a small business, classifies intent and urgency, and replies right away. Complaints always go to a person.</p>
@@ -564,7 +607,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Skills</p>
-        <h2>The toolkit.</h2>
+        <h2>What I build with.</h2>
         <p class="sub">What I reach for, grouped by the job it does.</p>
       </header>
       <ul class="skill-grid">
@@ -596,7 +639,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         <p class="eyebrow">Away from the keyboard</p>
       </header>
       <ul class="beyond">
-        <li class="glass" data-reveal><b>Boards</b>Surfing and skateboarding, most weeks of the year.</li>
+        <li class="glass" data-reveal><b>Boards</b>Surfing and skateboarding.</li>
         <li class="glass" data-reveal><b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.</li>
       </ul>
     </div>
@@ -1204,6 +1247,170 @@ var pointer = { x: -1, y: -1, active: false };
   requestAnimationFrame(frame);
 })();
 
+// ---------- Pinned story: one Route Engine request, scrubbed by the scroll ----------
+(function () {
+  var pin = document.querySelector('.pin');
+  if (!pin) return;
+  var canvas = pin.querySelector('canvas'), ctx = canvas.getContext && canvas.getContext('2d');
+  if (!ctx) return;
+  var steps = pin.querySelectorAll('.pin-step'), meter = pin.querySelector('.pin-meter i');
+  var FONT = '11px "IBM Plex Mono", ui-monospace, monospace';
+  var w = 0, h = 0, nodes, edges, adj, start, goal, tap, visited, raw, keep, kept;
+  var target = REDUCE ? 1 : 0, p = target, visible = true, lastStep = -1;
+  if (!REDUCE) pin.classList.add('live'); // the tall scrolling version only exists when it can animate
+
+  // Build a small road graph, run the real search, and prepare the route's points.
+  function build() {
+    var rect = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (rect.width < 10) return;
+    w = rect.width; h = rect.height;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var cols = w > 520 ? 12 : 7, rows = h > 380 ? 8 : 6, r = rng(42), i, n = cols * rows;
+    var padX = 34, padTop = 46, padBot = 30, cw = (w - padX * 2) / (cols - 1), ch = (h - padTop - padBot) / (rows - 1);
+    nodes = []; edges = []; adj = [];
+    for (i = 0; i < n; i++) {
+      nodes.push({ x: padX + (i % cols) * cw + (r() - 0.5) * cw * 0.5, y: padTop + Math.floor(i / cols) * ch + (r() - 0.5) * ch * 0.5 });
+      adj.push([]);
+    }
+    function link(a, b) { edges.push([a, b]); adj[a].push(b); adj[b].push(a); }
+    for (i = 0; i < n; i++) {
+      var c = i % cols, rw = Math.floor(i / cols);
+      if (c < cols - 1) link(i, i + 1);
+      if (rw < rows - 1 && (c === 0 || r() > 0.34)) link(i, i + cols);
+      if (c < cols - 1 && rw < rows - 1 && r() < 0.16) link(i, i + cols + 1);
+    }
+    start = (rows - 2) * cols;            // lower left
+    goal = cols + (cols - 1);             // upper right
+    tap = { x: nodes[goal].x - cw * 0.3, y: nodes[goal].y - ch * 0.34 }; // the raw position, just off the road
+    function d(a, b) { var dx = nodes[a].x - nodes[b].x, dy = nodes[a].y - nodes[b].y; return Math.sqrt(dx * dx + dy * dy); }
+    // A*: cost so far plus the straight-line distance still to go.
+    var g = [], f = [], came = [], closed = [], open = [start];
+    for (i = 0; i < n; i++) { g.push(Infinity); f.push(Infinity); came.push(-1); closed.push(false); }
+    g[start] = 0; f[start] = d(start, goal); visited = [];
+    while (open.length) {
+      var best = 0;
+      for (i = 1; i < open.length; i++) if (f[open[i]] < f[open[best]]) best = i;
+      var cur = open.splice(best, 1)[0];
+      if (closed[cur]) continue;
+      closed[cur] = true; visited.push(cur);
+      if (cur === goal) break;
+      for (i = 0; i < adj[cur].length; i++) {
+        var nb = adj[cur][i];
+        if (closed[nb]) continue;
+        var cost = g[cur] + d(cur, nb);
+        if (cost < g[nb]) { g[nb] = cost; came[nb] = cur; f[nb] = cost + d(nb, goal); open.push(nb); }
+      }
+    }
+    var path = [];
+    for (var q = goal; q !== -1; q = came[q]) path.unshift(q);
+    // Real roads bend, so give each segment extra points with a slight wobble.
+    raw = [];
+    for (i = 0; i < path.length - 1; i++) {
+      var a = nodes[path[i]], b = nodes[path[i + 1]], dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      for (var k = 0; k < 7; k++) {
+        var u = k / 7, wob = k === 0 ? 0 : (r() - 0.5) * 5;
+        raw.push({ x: a.x + dx * u - dy / len * wob, y: a.y + dy * u + dx / len * wob });
+      }
+    }
+    raw.push({ x: nodes[goal].x, y: nodes[goal].y });
+    // Douglas-Peucker: keep a point only if it sits further than a tolerance from the simplified line.
+    keep = raw.map(function () { return false; });
+    keep[0] = keep[raw.length - 1] = true;
+    (function simplify(lo, hi) {
+      var A = raw[lo], B = raw[hi], far = -1, farD = 3.2, lx = B.x - A.x, ly = B.y - A.y, ll = Math.sqrt(lx * lx + ly * ly) || 1;
+      for (var m = lo + 1; m < hi; m++) {
+        var off = Math.abs((raw[m].x - A.x) * ly - (raw[m].y - A.y) * lx) / ll;
+        if (off > farD) { farD = off; far = m; }
+      }
+      if (far > 0) { keep[far] = true; simplify(lo, far); simplify(far, hi); }
+    })(0, raw.length - 1);
+    kept = keep.filter(Boolean).length;
+  }
+
+  function label(str, x, y, color, align) {
+    ctx.font = FONT; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = color; ctx.fillText(str, x, y);
+  }
+  function seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+  function draw() {
+    if (!w) return;
+    var i, snap = seg(p, 0.02, 0.2), search = seg(p, 0.24, 0.52), route = seg(p, 0.56, 0.74), slim = seg(p, 0.79, 0.96);
+    ctx.clearRect(0, 0, w, h); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // roads
+    ctx.strokeStyle = rgba(GLOW, 0.2); ctx.lineWidth = 1; ctx.beginPath();
+    for (i = 0; i < edges.length; i++) { ctx.moveTo(nodes[edges[i][0]].x, nodes[edges[i][0]].y); ctx.lineTo(nodes[edges[i][1]].x, nodes[edges[i][1]].y); }
+    ctx.stroke();
+    for (i = 0; i < nodes.length; i++) { ctx.fillStyle = rgba(GLOW, 0.45); ctx.beginPath(); ctx.arc(nodes[i].x, nodes[i].y, 1.8, 0, Math.PI * 2); ctx.fill(); }
+    // search: explored nodes appear in the order A* reached them
+    var shown = Math.floor(visited.length * search);
+    for (i = 0; i < shown; i++) { var v = nodes[visited[i]]; ctx.fillStyle = rgba(GLOW, 0.75); ctx.beginPath(); ctx.arc(v.x, v.y, 4, 0, Math.PI * 2); ctx.fill(); }
+    // route: the raw polyline draws in, then thins out
+    var upto = Math.floor((raw.length - 1) * route);
+    if (upto > 0) {
+      ctx.strokeStyle = rgba(AMBER, 0.95 * (1 - slim * 0.75)); ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(raw[0].x, raw[0].y);
+      for (i = 1; i <= upto; i++) ctx.lineTo(raw[i].x, raw[i].y);
+      ctx.stroke();
+      for (i = 0; i <= upto; i++) if (!keep[i]) { ctx.fillStyle = rgba(WHITE, 0.85 * (1 - slim)); ctx.beginPath(); ctx.arc(raw[i].x, raw[i].y, 2, 0, Math.PI * 2); ctx.fill(); }
+    }
+    if (slim > 0) {
+      ctx.strokeStyle = rgba(AMBER, slim); ctx.lineWidth = 2.6; ctx.beginPath(); var first = true;
+      for (i = 0; i < raw.length; i++) if (keep[i]) { if (first) { ctx.moveTo(raw[i].x, raw[i].y); first = false; } else ctx.lineTo(raw[i].x, raw[i].y); }
+      ctx.stroke();
+      for (i = 0; i < raw.length; i++) if (keep[i]) { ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(AMBER, slim); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(raw[i].x, raw[i].y, 3.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    }
+    // start, the raw tap, and the snap onto the road
+    var s0 = nodes[start], g0 = nodes[goal];
+    ctx.fillStyle = rgba(AMBER, 1); ctx.beginPath(); ctx.arc(s0.x, s0.y, 5, 0, Math.PI * 2); ctx.fill();
+    label('start', s0.x, s0.y + 16, rgba(WHITE, 0.85), 'center');
+    ctx.strokeStyle = rgba(WHITE, 0.9); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(tap.x, tap.y, 5, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tap.x - 8, tap.y); ctx.lineTo(tap.x + 8, tap.y); ctx.moveTo(tap.x, tap.y - 8); ctx.lineTo(tap.x, tap.y + 8); ctx.stroke();
+    label('raw lat, lon', tap.x, tap.y - 17, rgba(WHITE, 0.85), 'center');
+    if (snap > 0) {
+      ctx.setLineDash([3, 4]); ctx.strokeStyle = rgba(AMBER, 0.95); ctx.lineWidth = 1.4; ctx.beginPath();
+      ctx.moveTo(tap.x, tap.y); ctx.lineTo(tap.x + (g0.x - tap.x) * snap, tap.y + (g0.y - tap.y) * snap); ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (snap >= 1) {
+      ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(g0.x, g0.y, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = rgba(AMBER, 1); ctx.beginPath(); ctx.arc(g0.x, g0.y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    // readout
+    var out = slim > 0 ? 'points ' + raw.length + ' → ' + Math.round(raw.length - (raw.length - kept) * slim)
+      : route > 0 ? 'route ' + (upto + 1) + ' points'
+      : search > 0 ? 'explored ' + shown + ' of ' + nodes.length + ' nodes'
+      : snap > 0 ? 'snapping to nearest road node' : 'request received';
+    label(out, 14, 20, rgba(AMBER, 1));
+  }
+
+  function setStep() {
+    var idx = p < 0.22 ? 0 : p < 0.54 ? 1 : p < 0.77 ? 2 : 3;
+    if (meter) meter.style.transform = 'scaleX(' + p.toFixed(3) + ')';
+    if (idx === lastStep) return;
+    lastStep = idx;
+    for (var i = 0; i < steps.length; i++) steps[i].classList.toggle('on', REDUCE || i === idx);
+  }
+  function measure() { // how far the pinned block has been scrolled through, 0 to 1
+    if (REDUCE) return;
+    var rect = pin.getBoundingClientRect(), span = rect.height - window.innerHeight;
+    target = span > 0 ? clamp(-rect.top / span, 0, 1) : 0;
+  }
+  function frame() {
+    if (visible) {
+      var next = p + (target - p) * 0.14; // ease toward the scroll position
+      if (Math.abs(next - p) > 0.0004 || lastStep < 0) { p = next; draw(); setStep(); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  build(); measure(); draw(); setStep();
+  if (REDUCE) return;
+  window.addEventListener('scroll', measure, { passive: true });
+  window.addEventListener('resize', function () { build(); measure(); lastStep = -1; });
+  if ('IntersectionObserver' in window) new IntersectionObserver(function (en) { visible = en[0].isIntersecting; }, { rootMargin: '100px' }).observe(pin);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { lastStep = -1; });
+  requestAnimationFrame(frame);
+})();
+
 // ---------- Scroll-in animation: cards rise, headlines reveal word by word, numbers count up ----------
 (function () {
   if (REDUCE || !('IntersectionObserver' in window)) return;
@@ -1262,6 +1469,7 @@ var pointer = { x: -1, y: -1, active: false };
     graph: '<b>A* search</b> routing to your cursor',
     sphere: '<b>Fibonacci sphere</b> scroll to spin it',
     grid: '<b>Automation</b> manual steps become clean pipelines',
+    story: '<b>Route Engine</b> keep scrolling to run the request',
     signal: '<b>Sensor telemetry</b> amber points are flagged anomalies',
     orbits: '<b>Agents in orbit</b> each one reporting to the hub',
     scc: '<b>Tarjan SCC</b> cycles grouped into components',
@@ -1373,7 +1581,7 @@ var pointer = { x: -1, y: -1, active: false };
         var y2 = yy * Math.cos(tilt) - z3 * Math.sin(tilt), z2 = yy * Math.sin(tilt) + z3 * Math.cos(tilt);
         var R = Math.min(W, H) * 0.4;
         p.tx = W * 0.5 + x3 * R; p.ty = H * 0.54 + y2 * R; p.z = z2;
-      } else if (scene === 'grid') {
+      } else if ((scene === 'grid' || scene === 'story')) {
         p.tx = p.ux; p.ty = p.uy - (lpS - 0.3) * H * 0.1;
       } else if (scene === 'signal') {
         // The reading slides sideways as you scroll, like a live chart.
@@ -1444,7 +1652,7 @@ var pointer = { x: -1, y: -1, active: false };
       ctx.strokeStyle = rgba(AMBER, 0.8 * a); ctx.lineWidth = 1.8; ctx.beginPath();
       for (i = 0; i < 12; i++) { var q = nodes[(head + i) % n]; if (i === 0) ctx.moveTo(q.x, q.y); else if ((head + i) % n !== 0) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
       ctx.stroke();
-    } else if (scene === 'grid') {
+    } else if ((scene === 'grid' || scene === 'story')) {
       ctx.strokeStyle = rgba(GLOW, 0.12 * a); ctx.lineWidth = 1;
       ctx.beginPath();
       for (i = 0; i < edges.length; i++) if (edges[i][1] - edges[i][0] !== cols + 1) line(edges[i][0], edges[i][1]);
