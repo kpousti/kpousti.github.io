@@ -4,155 +4,206 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kia Pousti Portfolio</title>
+<meta name="description" content="Kia Pousti: software engineer working in C++, Python and applied AI. Live A*, Dijkstra and Tarjan demos.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Layout idea: sticky identity column on the left, scrolling work on the right.
-   Every project carries its own live demo screen, and behind the page one field of points
-   re-forms for each section: road graph, pipeline, telemetry, graph components, ocean swell. */
+/* Layout idea: a frosted tab bar across the top, then full-width chapters stacked down the page.
+   Each chapter has its own background scene, drawn from one field of points that re-forms
+   and moves with the scroll: road graph, spinning sphere, pipeline, telemetry, orbits, components, swell. */
 :root {
   color-scheme: dark;
   --ink: #0a1220;        /* page background: night water */
-  --panel: #0e1828;      /* cards and demo screens */
+  --panel: 14, 24, 40;   /* glass panels and cards, as r,g,b */
   --line: #223049;       /* hairlines and chip borders */
   --text: #c3cddd;       /* body text */
   --text-dim: #8492a8;   /* secondary text */
   --bright: #eef3fa;     /* headings */
   --accent: #f2b56b;     /* sunset amber */
-  --glow: 98, 152, 255;  /* cursor light and graph lines, as r,g,b */
+  --glow: 98, 152, 255;  /* cursor light and scene color, as r,g,b; JS retints it per chapter */
   --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --bar-h: 56px;
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
-  margin: 0;
-  background: var(--ink);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
+  margin: 0; background: var(--ink); color: var(--text);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.65;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
 }
 a { color: inherit; text-decoration: none; }
-a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 ::selection { background: var(--accent); color: var(--ink); }
 
-/* Animated background canvas and the light that follows the cursor. */
+/* ---------- Fixed layers: scene canvas, cursor light, scene label ---------- */
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .glow {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(560px circle at var(--mx, 70%) var(--my, 22%),
+  background: radial-gradient(560px circle at var(--mx, 50%) var(--my, 30%),
     rgba(var(--glow), 0.15), rgba(var(--glow), 0.05) 45%, transparent 70%);
 }
-/* Small label that says what the background is showing right now. */
 .scene-note {
-  position: fixed; right: 20px; bottom: 18px; z-index: 2;
+  position: fixed; right: 20px; bottom: 18px; z-index: 5;
   max-width: min(360px, calc(100vw - 40px));
   padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px;
   background: rgba(10, 18, 32, 0.85);
-  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim);
-  pointer-events: none;
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim); pointer-events: none;
 }
 .scene-note b { color: var(--accent); font-weight: 500; }
 
-.page {
-  position: relative; z-index: 1;
-  max-width: 1220px; margin: 0 auto; padding: 0 24px;
-  display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 56px;
+/* ---------- Tab bar ---------- */
+.bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10; height: var(--bar-h);
+  display: flex; align-items: center; gap: 20px; padding: 0 22px;
+  background: rgba(10, 18, 32, 0.62);
+  -webkit-backdrop-filter: saturate(160%) blur(18px); backdrop-filter: saturate(160%) blur(18px);
+  border-bottom: 1px solid rgba(34, 48, 73, 0.7);
+}
+.mark { font-family: var(--font-display); font-weight: 700; font-size: 1.08rem; color: var(--bright); white-space: nowrap; }
+.tabs { position: relative; display: flex; gap: 2px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a {
+  position: relative; z-index: 1; padding: 6px 14px; border-radius: 999px;
+  font-size: 13.5px; color: var(--text-dim); white-space: nowrap; transition: color 0.2s;
+}
+.tabs a:hover, .tabs a.active { color: var(--bright); }
+/* The pill that slides under the active tab. JS sets --x, --w and --o on .tabs. */
+.tab-ink {
+  position: absolute; left: 0; top: 50%; height: 30px; margin-top: -15px;
+  width: var(--w, 0px); transform: translateX(var(--x, 0px)); opacity: var(--o, 0);
+  border-radius: 999px; background: rgba(var(--glow), 0.16); border: 1px solid rgba(var(--glow), 0.38);
+  transition: transform 0.38s cubic-bezier(0.3, 0.8, 0.3, 1), width 0.38s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.2s;
+  pointer-events: none;
+}
+.bar-cta {
+  padding: 6px 14px; border: 1px solid var(--accent); border-radius: 999px;
+  font-size: 13px; font-weight: 500; color: var(--accent); white-space: nowrap; transition: background 0.2s, color 0.2s;
+}
+.bar-cta:hover { background: var(--accent); color: var(--ink); }
+/* Thin line under the bar showing how far down the page you are. */
+.progress {
+  position: fixed; top: var(--bar-h); left: 0; z-index: 10; width: 100%; height: 2px;
+  background: var(--accent); transform-origin: 0 50%; transform: scaleX(var(--p, 0));
 }
 
-/* ---------- Left column ---------- */
-.side {
-  position: sticky; top: 0; height: 100vh; padding: 88px 0 56px;
-  display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
+/* ---------- Chapters ---------- */
+main { position: relative; z-index: 1; }
+.chapter { padding: 128px 24px; scroll-margin-top: var(--bar-h); }
+.wrap { max-width: 1080px; margin: 0 auto; }
+.head { max-width: 760px; margin: 0 auto 56px; text-align: center; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 16px;
 }
-.where { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--text-dim); margin: 0 0 18px; }
+h2 {
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(2.1rem, 5.2vw, 3.5rem);
+  line-height: 1.05; letter-spacing: -0.02em; color: var(--bright); margin: 0; text-wrap: balance;
+}
+.sub { font-size: 1.12rem; color: var(--text-dim); margin: 18px auto 0; max-width: 56ch; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; line-height: 1.3; color: var(--bright); margin: 0; text-wrap: balance; }
+
+/* Hero */
+.hero {
+  min-height: 94vh; padding: calc(var(--bar-h) + 72px) 24px 96px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+.hero > * { animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.hero > :nth-child(2) { animation-delay: 0.08s; }
+.hero > :nth-child(3) { animation-delay: 0.16s; }
+.hero > :nth-child(4) { animation-delay: 0.24s; }
+.hero > :nth-child(5) { animation-delay: 0.32s; }
+.hero > :nth-child(6) { animation-delay: 0.4s; }
+.hero > :nth-child(7) { animation-delay: 0.6s; }
+@keyframes rise { from { opacity: 0; transform: translateY(26px); } }
 h1 {
   font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(2.6rem, 5vw, 3.6rem); line-height: 1.02; letter-spacing: -0.02em;
+  font-size: clamp(3.4rem, 11vw, 7.6rem); line-height: 0.95; letter-spacing: -0.035em;
   color: var(--bright); margin: 0;
 }
-.role { font-size: 1.15rem; font-weight: 500; color: var(--bright); margin: 14px 0 0; }
-.pitch { max-width: 36ch; color: var(--text-dim); margin: 14px 0 0; }
-
-.nav { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; list-style: none; }
-.nav a {
-  display: inline-flex; align-items: center; gap: 14px;
-  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--text-dim); transition: color 0.2s;
+.hero-role { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.3rem, 3vw, 1.9rem); color: var(--bright); margin: 22px 0 0; }
+.hero-role em { font-style: normal; color: var(--accent); }
+.hero-pitch { max-width: 52ch; color: var(--text-dim); font-size: 1.08rem; margin: 16px 0 0; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 32px; }
+.btn {
+  padding: 11px 24px; border-radius: 999px; border: 1px solid var(--line);
+  background: rgba(var(--panel), 0.7); color: var(--bright); font-weight: 500;
+  transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.2s;
 }
-.nav a::before { content: ""; width: 28px; height: 1px; background: currentColor; transition: width 0.2s; }
-.nav a:hover, .nav a.active { color: var(--bright); }
-.nav a:hover::before, .nav a.active::before { width: 60px; }
-.nav a.active::before { background: var(--accent); }
-
-.links { display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px; }
+.btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+.btn.primary:hover { background: #ffc98a; color: var(--ink); }
+.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; font-size: 14px; margin-top: 30px; }
 .links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
 .links a:hover { color: var(--accent); border-color: var(--accent); }
-
-/* ---------- Right column ---------- */
-main { padding: 88px 0 120px; display: flex; flex-direction: column; gap: 104px; min-width: 0; }
-section { scroll-margin-top: 88px; }
-h2 {
-  font-family: var(--font-mono); font-weight: 500; font-size: 12px;
-  letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 0 0 22px;
+.cue {
+  margin-top: 56px; display: inline-flex; flex-direction: column; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim);
 }
-.lede { max-width: 62ch; margin: -8px 0 24px; color: var(--text-dim); }
-.prose { max-width: 62ch; display: flex; flex-direction: column; gap: 16px; }
+.cue::after { content: ""; width: 1px; height: 34px; background: linear-gradient(var(--accent), transparent); animation: drip 1.8s ease-in-out infinite; transform-origin: 50% 0; }
+@keyframes drip { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+/* Glass panels keep text readable over the moving scenes. */
+.glass {
+  border: 1px solid var(--line); border-radius: 16px; background: rgba(var(--panel), 0.74);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+
+/* About */
+.about { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 20px; align-items: stretch; }
+.prose { padding: 30px 32px; display: flex; flex-direction: column; gap: 16px; }
 .prose p { margin: 0; }
 .prose strong { color: var(--bright); font-weight: 500; }
-
-.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 32px 0 0; padding: 0; list-style: none; }
-.stats li { padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14, 24, 40, 0.8); }
-.stats .num { display: block; font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1.1; color: var(--bright); font-variant-numeric: tabular-nums; }
-.stats .what { display: block; margin-top: 6px; font-size: 0.86rem; color: var(--text-dim); line-height: 1.4; }
-
-/* Moving strip of focus areas. */
-.ticker { margin: 36px 0 0; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 11px 0; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.stats li { padding: 20px; display: flex; flex-direction: column; justify-content: center; }
+.stats .num { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.5rem, 2.4vw, 1.85rem); line-height: 1.1; color: var(--bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats .what { margin-top: 8px; font-size: 0.86rem; color: var(--text-dim); line-height: 1.4; }
+.ticker { margin: 44px 0 0; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 0; }
 .ticker-track { display: flex; gap: 36px; width: max-content; animation: slide 38s linear infinite; }
 .ticker span { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
 .ticker span::before { content: "◆"; color: var(--accent); margin-right: 36px; font-size: 8px; vertical-align: middle; }
 @keyframes slide { to { transform: translateX(-50%); } }
 
-.list { display: flex; flex-direction: column; gap: 8px; margin: 0 -20px; padding: 0; list-style: none; }
-.card { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 20px; padding: 20px; border-radius: 10px; }
-.when { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); padding-top: 4px; font-variant-numeric: tabular-nums; }
-h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; line-height: 1.3; color: var(--bright); margin: 0; text-wrap: balance; }
-.org { color: var(--text-dim); font-size: 0.94rem; margin: 2px 0 0; }
-.card p { margin: 8px 0 0; font-size: 0.94rem; }
-.points { margin: 10px 0 0; padding: 0 0 0 18px; font-size: 0.94rem; display: flex; flex-direction: column; gap: 6px; }
+/* Experience */
+.xp { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; }
+.xp article { padding: 28px 30px; }
+.when { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+.org { color: var(--text-dim); font-size: 0.94rem; margin: 4px 0 0; }
+.xp p.body { margin: 14px 0 0; font-size: 0.95rem; }
+.points { margin: 14px 0 0; padding: 0 0 0 18px; font-size: 0.94rem; display: flex; flex-direction: column; gap: 7px; }
 .points li::marker { color: var(--accent); }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
 .chips li {
   font-family: var(--font-mono); font-size: 11.5px; color: var(--accent);
-  border: 1px solid var(--line); background: rgba(242, 181, 107, 0.07);
-  border-radius: 999px; padding: 3px 11px;
+  border: 1px solid var(--line); background: rgba(242, 181, 107, 0.07); border-radius: 999px; padding: 3px 11px;
 }
 
-/* ---------- Project cards with a live demo screen ---------- */
-.features { display: flex; flex-direction: column; gap: 22px; }
+/* Project cards with a live demo screen */
+.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.builds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .feature, .build {
-  position: relative; border: 1px solid var(--line); border-radius: 14px;
-  background: rgba(14, 24, 40, 0.9); overflow: hidden;
+  position: relative; border: 1px solid var(--line); border-radius: 16px;
+  background: rgba(var(--panel), 0.92); overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s;
 }
+.feature:hover, .build:hover { border-color: rgba(var(--glow), 0.55); transform: translateY(-3px); }
 /* A light that follows the cursor inside the card. JS sets --cx / --cy. */
 .feature::before, .build::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s;
-  background: radial-gradient(340px circle at var(--cx, 50%) var(--cy, 0%), rgba(var(--glow), 0.13), transparent 70%);
+  background: radial-gradient(340px circle at var(--cx, 50%) var(--cy, 0%), rgba(var(--glow), 0.14), transparent 70%);
 }
 .feature:hover::before, .build:hover::before { opacity: 1; }
 .screen { position: relative; border-bottom: 1px solid var(--line); background: #08101c; }
 .screen canvas { display: block; width: 100%; height: 200px; }
 .build .screen canvas { height: 140px; }
 .screen-bar {
-  display: flex; justify-content: space-between; gap: 12px; padding: 7px 14px;
-  border-bottom: 1px solid var(--line);
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-dim);
+  display: flex; justify-content: space-between; gap: 12px; padding: 7px 14px; border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--text-dim);
 }
+.screen-bar span:last-child { text-align: right; }
 .screen-bar b { color: var(--accent); font-weight: 500; }
 .live::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 7px; vertical-align: 1px; animation: blink 1.6s ease-in-out infinite; }
 @keyframes blink { 50% { opacity: 0.25; } }
@@ -161,13 +212,9 @@ h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; lin
 .feature-head a { font-family: var(--font-mono); font-size: 12px; color: var(--accent); border-bottom: 1px solid transparent; transition: border-color 0.2s; white-space: nowrap; }
 .feature-head a:hover { border-color: var(--accent); }
 .feature-body p { margin: 8px 0 0; font-size: 0.94rem; }
-
-.builds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .build .feature-body { padding: 16px 18px 18px; }
 .build h3 { font-size: 1.04rem; }
 .status { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
-
-/* Kia-bot sample exchange under its waveform. */
 .chat { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 0.86rem; line-height: 1.45; border-bottom: 1px solid var(--line); background: #08101c; }
 .chat p { margin: 0; }
 .chat .q { color: var(--bright); }
@@ -176,38 +223,45 @@ h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; lin
 .chat .tools { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); transition: opacity 0.3s; }
 .chat .off { visibility: hidden; }
 
-.skills { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px 20px; margin: 0; }
-.skills dt { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); padding-top: 3px; }
-.skills dd { margin: 0; font-size: 0.94rem; }
+/* Skills */
+.skill-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.skill-grid li { padding: 20px; font-size: 0.92rem; }
+.skill-grid b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
 
-.beyond { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-.beyond li { padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14, 24, 40, 0.8); font-size: 0.9rem; }
-.beyond b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.02rem; color: var(--bright); margin-bottom: 4px; }
+/* Away + contact */
+.beyond { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.beyond li { padding: 22px; font-size: 0.94rem; text-align: center; }
+.beyond b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
+.contact-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.contact-cards a { display: block; padding: 22px; text-align: center; transition: border-color 0.2s, transform 0.2s; }
+.contact-cards a:hover { border-color: var(--accent); transform: translateY(-3px); }
+.contact-cards span { display: block; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.contact-cards strong { font-weight: 500; color: var(--bright); overflow-wrap: anywhere; }
+footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(--text-dim); position: relative; z-index: 1; }
 
-.contact-line { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; color: var(--bright); margin: 0 0 14px; text-wrap: balance; }
-.contact-list { display: flex; flex-direction: column; gap: 10px; margin: 22px 0 0; padding: 0; list-style: none; font-size: 0.98rem; }
-.contact-list span { display: inline-block; width: 86px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
-.contact-list a { color: var(--bright); border-bottom: 1px solid var(--line); transition: color 0.2s, border-color 0.2s; }
-.contact-list a:hover { color: var(--accent); border-color: var(--accent); }
-footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
+/* ---------- Scroll-in animation. JS adds .pre only to blocks below the fold, then .in when they arrive. ---------- */
+.pre { opacity: 0; transform: translateY(34px); }
+.pre.in { opacity: 1; transform: none; transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
 
-/* ---------- Small screens: one column, nothing sticky ---------- */
+/* ---------- Smaller screens ---------- */
 @media (max-width: 900px) {
-  .page { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 20px; }
-  .side { position: static; height: auto; padding: 56px 0 8px; }
-  .nav { display: none; }
-  main { padding: 48px 0 110px; gap: 76px; }
-  .card { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px 12px; }
-  .list { margin: 0 -12px; }
-  .skills { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-  .skills dd { margin-bottom: 12px; }
-  .scene-note { right: 12px; bottom: 12px; }
+  .about, .xp, .features { grid-template-columns: minmax(0, 1fr); }
+  .builds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chapter { padding: 96px 20px; }
 }
-@media (max-width: 620px) {
-  .builds, .beyond { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 700px) {
+  .bar { padding: 0 14px; gap: 12px; }
+  .bar-cta { display: none; }
+  .tabs { margin: 0; }
+  .tabs a { padding: 6px 11px; }
+  .builds, .beyond, .contact-cards { grid-template-columns: minmax(0, 1fr); }
+  .prose, .xp article { padding: 22px; }
+  .scene-note { right: 12px; bottom: 12px; }
+  .head { margin-bottom: 40px; }
 }
 @media (max-width: 420px) {
-  .stats { grid-template-columns: minmax(0, 1fr); }
+  .stats, .skill-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -220,89 +274,109 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
 <div class="glow" aria-hidden="true"></div>
 <div class="scene-note" id="sceneNote" aria-hidden="true"><b>A* search</b> routing to your cursor</div>
 
-<div class="page">
-  <header class="side">
-    <div>
-      <p class="where">San Diego, CA</p>
-      <h1>Kia Pousti</h1>
-      <p class="role">Software engineer. C++, Python, applied AI.</p>
-      <p class="pitch">I build fast graph and routing systems and practical AI prototypes. Move your cursor: the background is finding the shortest path to it.</p>
+<header class="bar">
+  <a class="mark" href="#top">Kia Pousti</a>
+  <nav class="tabs" aria-label="Sections">
+    <span class="tab-ink" aria-hidden="true"></span>
+    <a href="#about">About</a>
+    <a href="#experience">Experience</a>
+    <a href="#projects">Projects</a>
+    <a href="#builds">Side builds</a>
+    <a href="#skills">Skills</a>
+    <a href="#contact">Contact</a>
+  </nav>
+  <a class="bar-cta" href="#contact">Get in touch</a>
+</header>
+<div class="progress" aria-hidden="true"></div>
+
+<main>
+  <section class="hero" id="top" data-scene="graph">
+    <p class="eyebrow">Software engineer · San Diego, CA</p>
+    <h1>Kia Pousti</h1>
+    <p class="hero-role">Fast graph systems. <em>Practical AI.</em></p>
+    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. Move your cursor: the background is finding the shortest path to it.</p>
+    <div class="actions">
+      <a class="btn primary" href="#projects">See the work</a>
+      <a class="btn" href="#contact">Get in touch</a>
     </div>
-
-    <nav aria-label="Sections">
-      <ul class="nav">
-        <li><a href="#about">About</a></li>
-        <li><a href="#experience">Experience</a></li>
-        <li><a href="#projects">Projects</a></li>
-        <li><a href="#builds">Side builds</a></li>
-        <li><a href="#skills">Skills</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
-    </nav>
-
     <div class="links">
       <a href="https://github.com/kpousti">GitHub</a>
       <a href="https://www.linkedin.com/in/kiapousti">LinkedIn</a>
       <a href="mailto:kiapousti@gmail.com">Email</a>
     </div>
-  </header>
+    <a class="cue" href="#about">Scroll</a>
+  </section>
 
-  <main>
-    <section id="about" data-scene="graph">
-      <h2>About</h2>
-      <div class="prose">
-        <p>I studied <strong>Mathematics and Computer Science at UC San Diego</strong>, with a minor in Sociology, and graduated in June 2026. Today I am a <strong>software developer at Solar Turbines</strong>, a Caterpillar company, in its IT rotational program.</p>
-        <p>The work I enjoy most sits where math meets systems: <strong>graph algorithms, routing and data layouts</strong> that make code fast on real hardware. I wrote an A* engine in C++ that routes over about 1.2 million road nodes.</p>
-        <p>I also build <strong>applied AI</strong>: anomaly detection prototypes with tests and case studies, and LLM agents that call tools to answer real questions. Every project below runs a small live demo, right on this page.</p>
+  <section class="chapter" id="about" data-scene="sphere">
+    <div class="wrap">
+      <header class="head" data-reveal>
+        <p class="eyebrow">About</p>
+        <h2>Where math meets systems.</h2>
+        <p class="sub">A mathematician's habits, applied to code that has to run fast on real hardware.</p>
+      </header>
+      <div class="about">
+        <div class="glass prose" data-reveal>
+          <p>I studied <strong>Mathematics and Computer Science at UC San Diego</strong>, with a minor in Sociology, and graduated in June 2026. Today I am a <strong>software developer at Solar Turbines</strong>, a Caterpillar company, in its IT rotational program.</p>
+          <p>The work I enjoy most is <strong>graph algorithms, routing and data layouts</strong>. I wrote an A* engine in C++ that routes over about 1.2 million road nodes.</p>
+          <p>I also build <strong>applied AI</strong>: anomaly detection prototypes with tests and case studies, and LLM agents that call tools to answer real questions. Every project on this page runs a small live demo.</p>
+        </div>
+        <ul class="stats">
+          <li class="glass" data-reveal><span class="num" data-count="1.2" data-decimals="1" data-suffix="M">1.2M</span><span class="what">road nodes in my A* routing engine, with about 2.5M edges</span></li>
+          <li class="glass" data-reveal><span class="num" data-count="89" data-decimals="0" data-suffix="%">89%</span><span class="what">smaller route payloads after polyline simplification</span></li>
+          <li class="glass" data-reveal><span class="num">0.22 → 0.47</span><span class="what">fault recall, baseline versus Isolation Forest</span></li>
+          <li class="glass" data-reveal><span class="num">PR #2973</span><span class="what">Tarjan's algorithm contributed to TheAlgorithms/C++</span></li>
+        </ul>
       </div>
-      <ul class="stats">
-        <li><span class="num">1.2M</span><span class="what">road nodes in my A* routing engine, with about 2.5M edges</span></li>
-        <li><span class="num">89%</span><span class="what">smaller route payloads after polyline simplification</span></li>
-        <li><span class="num">0.22 → 0.47</span><span class="what">fault recall, baseline versus Isolation Forest</span></li>
-        <li><span class="num">PR #2973</span><span class="what">Tarjan's algorithm contributed to TheAlgorithms/C++</span></li>
-      </ul>
       <div class="ticker" aria-hidden="true">
         <div class="ticker-track">
           <span>Graph algorithms</span><span>Routing engines</span><span>Applied AI</span><span>Anomaly detection</span><span>LLM agents</span><span>Systems performance</span><span>Automation</span>
           <span>Graph algorithms</span><span>Routing engines</span><span>Applied AI</span><span>Anomaly detection</span><span>LLM agents</span><span>Systems performance</span><span>Automation</span>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="experience" data-scene="grid">
-      <h2>Experience and education</h2>
-      <ul class="list">
-        <li class="card">
-          <div class="when">Aug 2026 to now</div>
-          <div>
-            <h3>Software Developer, IT Rotational Program</h3>
-            <p class="org">Solar Turbines, a Caterpillar company · San Diego, CA</p>
-            <ul class="points">
-              <li>Selected for a competitive rotational program, building and supporting enterprise apps for engineering and business teams.</li>
-              <li>Automated manual business processes with Power Apps and workflow automation, saving the team hours each week.</li>
-              <li>Built and shipped internal websites, using GitHub Copilot across several AI models to move faster.</li>
-              <li>Documented workflows in Visio, delivered work through ServiceNow and Azure DevOps, and analyzed data in Power BI.</li>
-            </ul>
-            <ul class="chips"><li>Power Apps</li><li>Power BI</li><li>ServiceNow</li><li>Azure DevOps</li><li>PowerShell</li></ul>
-          </div>
-        </li>
-        <li class="card">
-          <div class="when">June 2026</div>
-          <div>
-            <h3>B.S. Mathematics–Computer Science</h3>
-            <p class="org">University of California, San Diego · Minor in Sociology</p>
-            <p>Coursework in data structures, algorithms, theory of computation, discrete math, probability, numerical analysis and computer organization.</p>
-          </div>
-        </li>
-      </ul>
-    </section>
+  <section class="chapter" id="experience" data-scene="grid">
+    <div class="wrap">
+      <header class="head" data-reveal>
+        <p class="eyebrow">Experience</p>
+        <h2>Manual work, turned into software.</h2>
+        <p class="sub">Enterprise apps and automation for engineering and business teams.</p>
+      </header>
+      <div class="xp">
+        <article class="glass" data-reveal>
+          <p class="when">Aug 2026 to now</p>
+          <h3>Software Developer, IT Rotational Program</h3>
+          <p class="org">Solar Turbines, a Caterpillar company · San Diego, CA</p>
+          <ul class="points">
+            <li>Selected for a competitive rotational program, building and supporting enterprise apps for engineering and business teams.</li>
+            <li>Automated manual business processes with Power Apps and workflow automation, saving the team hours each week.</li>
+            <li>Built and shipped internal websites, using GitHub Copilot across several AI models to move faster.</li>
+            <li>Documented workflows in Visio, delivered work through ServiceNow and Azure DevOps, and analyzed data in Power BI.</li>
+          </ul>
+          <ul class="chips"><li>Power Apps</li><li>Power BI</li><li>ServiceNow</li><li>Azure DevOps</li><li>PowerShell</li></ul>
+        </article>
+        <article class="glass" data-reveal>
+          <p class="when">June 2026</p>
+          <h3>B.S. Mathematics–Computer Science</h3>
+          <p class="org">University of California, San Diego · Minor in Sociology</p>
+          <p class="body">Coursework in data structures, algorithms, theory of computation, discrete math, probability, numerical analysis and computer organization.</p>
+          <ul class="chips"><li>Algorithms</li><li>Probability</li><li>Numerical analysis</li><li>Theory of computation</li></ul>
+        </article>
+      </div>
+    </div>
+  </section>
 
-    <section id="projects">
-      <h2>Projects</h2>
-      <p class="lede">Each screen runs the project's core idea live in your browser.</p>
+  <section class="chapter" id="projects">
+    <div class="wrap">
+      <header class="head" data-reveal>
+        <p class="eyebrow">Projects</p>
+        <h2>Four projects, all running live.</h2>
+        <p class="sub">Each screen runs the project's core idea in your browser. The first one follows your cursor.</p>
+      </header>
       <div class="features">
 
-        <article class="feature" data-scene="graph">
+        <article class="feature" data-scene="graph" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>A*</b> shortest path</span><span>move your cursor over the map</span></div>
             <canvas data-demo="astar" aria-label="Animated A* search finding a route around obstacles"></canvas>
@@ -319,7 +393,7 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
 
-        <article class="feature" data-scene="signal">
+        <article class="feature" data-scene="signal" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Telemetry</b> anomaly detection</span><span>illustration, synthetic data</span></div>
             <canvas data-demo="telemetry" aria-label="Animated sensor signal with flagged anomalies"></canvas>
@@ -335,7 +409,7 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
 
-        <article class="feature" data-scene="graph">
+        <article class="feature" data-scene="graph" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Dijkstra</b> settling nodes by distance</span><span>numbers are path costs</span></div>
             <canvas data-demo="dijkstra" aria-label="Animated Dijkstra search across a weighted graph"></canvas>
@@ -351,7 +425,7 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
 
-        <article class="feature" data-scene="scc">
+        <article class="feature" data-scene="scc" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Tarjan</b> strongly connected components</span><span>each color is one component</span></div>
             <canvas data-demo="tarjan" aria-label="Animated Tarjan algorithm grouping a directed graph into components"></canvas>
@@ -367,19 +441,24 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="builds" data-scene="grid">
-      <h2>Side builds</h2>
-      <p class="lede">Personal projects I am building for daily use. These are in progress, and the screens show sample data.</p>
+  <section class="chapter" id="builds" data-scene="orbits">
+    <div class="wrap">
+      <header class="head" data-reveal>
+        <p class="eyebrow">Side builds</p>
+        <h2>Built for my own daily use.</h2>
+        <p class="sub">Personal projects, still in progress. The screens show sample data.</p>
+      </header>
       <div class="builds">
 
-        <article class="build">
+        <article class="build" data-reveal>
           <div class="screen"><canvas data-demo="voice" style="height:64px" aria-label="Animated voice waveform"></canvas></div>
           <div class="chat" aria-label="Sample exchange with Kia-bot">
-            <p class="q" data-type>How is the surf tomorrow morning?</p>
+            <p class="q">How is the surf tomorrow morning?</p>
             <p class="tools">→ surf_forecast · tides</p>
-            <p class="a" data-type>Three to four feet with light offshore wind. Best window is 6:30 to 8.</p>
+            <p class="a">Three to four feet with light offshore wind. Best window is 6:30 to 8.</p>
           </div>
           <div class="feature-body">
             <div class="feature-head"><h3>Kia-bot</h3><span class="status">Voice agent</span></div>
@@ -388,7 +467,7 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
 
-        <article class="build">
+        <article class="build" data-reveal>
           <div class="screen"><canvas data-demo="backtest" aria-label="Animated equity curve with walk-forward windows"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Quant Backtest Lab</h3><span class="status">Research</span></div>
@@ -397,7 +476,7 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
 
-        <article class="build">
+        <article class="build" data-reveal>
           <div class="screen"><canvas data-demo="leads" aria-label="Animated messages being classified and routed"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Lead Autoresponder</h3><span class="status">Automation</span></div>
@@ -406,7 +485,7 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
 
-        <article class="build">
+        <article class="build" data-reveal>
           <div class="screen"><canvas data-demo="city" aria-label="Animated agents reporting to a central dashboard"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Agent City</h3><span class="status">Agent system</span></div>
@@ -415,7 +494,7 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
 
-        <article class="build">
+        <article class="build" data-reveal>
           <div class="screen"><canvas data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
@@ -424,47 +503,54 @@ footer { font-size: 13px; color: var(--text-dim); max-width: 62ch; }
           </div>
         </article>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="skills" data-scene="scc">
-      <h2>Skills</h2>
-      <dl class="skills">
-        <dt>Languages</dt><dd>C++ (STL, memory management), Python, JavaScript</dd>
-        <dt>Algorithms</dt><dd>A*, Dijkstra, BFS, Tarjan SCC, Stoer–Wagner min-cut, complexity analysis</dd>
-        <dt>Data structures</dt><dd>Compressed Sparse Row, adjacency lists, heaps, trees, hash maps</dd>
-        <dt>ML and data</dt><dd>scikit-learn, pandas, NumPy, anomaly detection with Isolation Forest, precision and recall</dd>
-        <dt>Systems</dt><dd>Memory locality, cache-aware data layout, input validation</dd>
-        <dt>Backend</dt><dd>REST APIs, HTTP, GeoJSON</dd>
-        <dt>Enterprise</dt><dd>Power Apps, Power BI, ServiceNow, Azure DevOps, PowerShell, Visio, GitHub Copilot</dd>
-        <dt>Tools</dt><dd>Git, GitHub Actions, pytest, CMake, Make, Linux</dd>
-      </dl>
-    </section>
+  <section class="chapter" id="skills" data-scene="scc">
+    <div class="wrap">
+      <header class="head" data-reveal>
+        <p class="eyebrow">Skills</p>
+        <h2>The toolkit.</h2>
+        <p class="sub">What I reach for, grouped by the job it does.</p>
+      </header>
+      <ul class="skill-grid">
+        <li class="glass" data-reveal><b>Languages</b>C++ (STL, memory management), Python, JavaScript</li>
+        <li class="glass" data-reveal><b>Algorithms</b>A*, Dijkstra, BFS, Tarjan SCC, Stoer–Wagner min-cut, complexity analysis</li>
+        <li class="glass" data-reveal><b>Data structures</b>Compressed Sparse Row, adjacency lists, heaps, trees, hash maps</li>
+        <li class="glass" data-reveal><b>ML and data</b>scikit-learn, pandas, NumPy, Isolation Forest, precision and recall</li>
+        <li class="glass" data-reveal><b>Systems</b>Memory locality, cache-aware data layout, input validation</li>
+        <li class="glass" data-reveal><b>Backend</b>REST APIs, HTTP, GeoJSON</li>
+        <li class="glass" data-reveal><b>Enterprise</b>Power Apps, Power BI, ServiceNow, Azure DevOps, PowerShell, Visio, GitHub Copilot</li>
+        <li class="glass" data-reveal><b>Tools</b>Git, GitHub Actions, pytest, CMake, Make, Linux</li>
+      </ul>
+    </div>
+  </section>
 
-    <section id="beyond" data-scene="waves">
-      <h2>Away from the keyboard</h2>
+  <section class="chapter" id="contact" data-scene="waves">
+    <div class="wrap">
+      <header class="head" data-reveal>
+        <p class="eyebrow">Contact</p>
+        <h2>Want to build something, or talk about a role?</h2>
+        <p class="sub">I am based in San Diego. Email is the fastest way to reach me.</p>
+      </header>
+      <ul class="contact-cards">
+        <li data-reveal><a class="glass" href="mailto:kiapousti@gmail.com"><span>Email</span><strong>kiapousti@gmail.com</strong></a></li>
+        <li data-reveal><a class="glass" href="https://www.linkedin.com/in/kiapousti"><span>LinkedIn</span><strong>linkedin.com/in/kiapousti</strong></a></li>
+        <li data-reveal><a class="glass" href="https://github.com/kpousti"><span>GitHub</span><strong>github.com/kpousti</strong></a></li>
+      </ul>
+      <header class="head" data-reveal style="margin-top:96px;margin-bottom:28px">
+        <p class="eyebrow">Away from the keyboard</p>
+      </header>
       <ul class="beyond">
-        <li><b>Boards</b>Surfing and skateboarding, most weeks of the year.</li>
-        <li><b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.</li>
-        <li><b>Training</b>A push, pull, legs split, tracked and tuned.</li>
+        <li class="glass" data-reveal><b>Boards</b>Surfing and skateboarding, most weeks of the year.</li>
+        <li class="glass" data-reveal><b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.</li>
+        <li class="glass" data-reveal><b>Training</b>A push, pull, legs split, tracked and tuned.</li>
       </ul>
-    </section>
+    </div>
+  </section>
+</main>
 
-    <section id="contact" data-scene="waves">
-      <h2>Contact</h2>
-      <p class="contact-line">Want to build something, or talk about a role?</p>
-      <div class="prose">
-        <p>I am based in San Diego. Email is the fastest way to reach me.</p>
-      </div>
-      <ul class="contact-list">
-        <li><span>Email</span><a href="mailto:kiapousti@gmail.com">kiapousti@gmail.com</a></li>
-        <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/kiapousti">linkedin.com/in/kiapousti</a></li>
-        <li><span>GitHub</span><a href="https://github.com/kpousti">github.com/kpousti</a></li>
-      </ul>
-    </section>
-
-    <footer>© 2026 Kia Pousti. All rights reserved. Designed and built by Kia Pousti.The A*, Dijkstra and Tarjan demos on this page run the real algorithms in your browser.</footer>
-  </main>
-</div>
+<footer>© 2026 Kia Pousti. All rights reserved. Designed and built by Kia Pousti. The A*, Dijkstra and Tarjan demos on this page run the real algorithms in your browser.</footer>
 
 <script>
 // ---------- Shared helpers ----------
@@ -484,6 +570,13 @@ function rng(seed) {
 }
 // Repeatable noise in [-0.5, 0.5] for sample number k.
 function hashNoise(k) { var s = Math.sin(k * 12.9898) * 43758.5453; return s - Math.floor(s) - 0.5; }
+// A synthetic sensor reading for sample k: gentle wave, noise, a slow drift and the odd spike.
+function signalValue(k) {
+  var v = 0.15 * Math.sin(k * 0.09) + hashNoise(k) * 0.16, m = ((k % 150) + 150) % 150;
+  if (m >= 95 && m <= 130) v += (m - 95) / 35 * 0.3;
+  if (((k % 47) + 47) % 47 === 0) v += 0.85;
+  return v;
+}
 
 // ---------- Cursor light ----------
 var pointer = { x: -1, y: -1, active: false };
@@ -508,25 +601,37 @@ var pointer = { x: -1, y: -1, active: false };
   });
 })();
 
-// ---------- Nav highlight for the section on screen ----------
+// ---------- Tab bar: sliding highlight and page progress ----------
 (function () {
-  var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
-  if (!links.length) return;
-  // Pair each nav link with the section it points to.
+  var tabs = document.querySelector('.tabs');
+  var links = Array.prototype.slice.call(tabs.querySelectorAll('a'));
+  // Pair each tab with the section it points to.
   var pairs = links.map(function (a) {
     return { link: a, section: document.getElementById(a.getAttribute('href').slice(1)) };
   }).filter(function (p) { return p.section; });
+  var last = null;
   function update() {
-    var probe = window.innerHeight * 0.35, current = pairs[0];
-    // The current section is the last one whose top has passed the probe line.
+    var doc = document.documentElement, probe = window.innerHeight * 0.35, current = null;
+    // The current section is the last one whose top has passed the probe line. None yet means the hero.
     pairs.forEach(function (p) { if (p.section.getBoundingClientRect().top <= probe) current = p; });
     // At the very bottom the last section may be too short to reach the line, so pick it directly.
-    var doc = document.documentElement;
     if (window.innerHeight + window.scrollY >= doc.scrollHeight - 4) current = pairs[pairs.length - 1];
-    links.forEach(function (a) { a.classList.toggle('active', a === current.link); });
+    links.forEach(function (a) { a.classList.toggle('active', !!current && a === current.link); });
+    if (current) { // slide the pill under the active tab
+      tabs.style.setProperty('--x', current.link.offsetLeft + 'px');
+      tabs.style.setProperty('--w', current.link.offsetWidth + 'px');
+      tabs.style.setProperty('--o', '1');
+      if (current !== last && tabs.scrollWidth > tabs.clientWidth) { // on phones, keep the active tab in view
+        tabs.scrollTo({ left: current.link.offsetLeft - 24, behavior: REDUCE ? 'auto' : 'smooth' });
+      }
+    } else tabs.style.setProperty('--o', '0');
+    last = current;
+    var span = doc.scrollHeight - window.innerHeight;
+    doc.style.setProperty('--p', span > 0 ? clamp(window.scrollY / span, 0, 1) : 0);
   }
   window.addEventListener('scroll', update, { passive: true });
   window.addEventListener('resize', update);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(update); // tab widths change once fonts load
   update();
 })();
 
@@ -910,21 +1015,54 @@ var pointer = { x: -1, y: -1, active: false };
   requestAnimationFrame(frame);
 })();
 
-// ---------- Background: one set of points that re-forms for each section ----------
+// ---------- Scroll-in animation and counting numbers ----------
+(function () {
+  if (REDUCE || !('IntersectionObserver' in window)) return;
+  function countUp(el) { // run a stat from zero up to its value
+    var target = parseFloat(el.getAttribute('data-count')), dec = parseInt(el.getAttribute('data-decimals'), 10) || 0;
+    var suffix = el.getAttribute('data-suffix') || '', t0 = performance.now();
+    function tick(now) {
+      var u = clamp((now - t0) / 1100, 0, 1), eased = 1 - Math.pow(1 - u, 3);
+      el.textContent = (target * eased).toFixed(dec) + suffix;
+      if (u < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('in'); io.unobserve(entry.target);
+      entry.target.querySelectorAll('[data-count]').forEach(countUp);
+    });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('[data-reveal]').forEach(function (el) {
+    // Only hide blocks that start below the fold, so the first screen is complete on load.
+    if (el.getBoundingClientRect().top < window.innerHeight * 0.92) return;
+    // Cards in the same row arrive one after another.
+    var sibs = Array.prototype.slice.call(el.parentNode.children), col = sibs.indexOf(el) % 4;
+    el.style.transitionDelay = (col * 70) + 'ms';
+    el.classList.add('pre'); io.observe(el);
+  });
+})();
+
+// ---------- Background: one set of points that re-forms for each chapter and moves with the scroll ----------
 (function () {
   var canvas = document.getElementById('bg');
   var ctx = canvas.getContext && canvas.getContext('2d');
   if (!ctx) return;
-  var note = document.getElementById('sceneNote');
+  var note = document.getElementById('sceneNote'), root = document.documentElement;
   var NOTES = {
     graph: '<b>A* search</b> routing to your cursor',
+    sphere: '<b>Fibonacci sphere</b> scroll to spin it',
     grid: '<b>Automation</b> manual steps become clean pipelines',
     signal: '<b>Sensor telemetry</b> amber points are flagged anomalies',
+    orbits: '<b>Agents in orbit</b> each one reporting to the hub',
     scc: '<b>Tarjan SCC</b> cycles grouped into components',
     waves: '<b>Pacific swell</b> rolling in'
   };
-  var W, H, cols, rows, n, nodes = null, adj, edges, anomalies, startNode;
-  var scene = 'graph', sceneStart = 0;
+  var TINT = { graph: GLOW, sphere: PALETTE[2], grid: GLOW, signal: GLOW, orbits: PALETTE[3], scc: GLOW, waves: GLOW };
+  var W, H, cols, rows, n, nodes = null, adj, edges, startNode;
+  var scene = 'graph', sceneStart = 0, lp = 0; // lp: how far the current chapter has scrolled through the screen
   var route = { goal: -1, visited: [], path: [], t0: 0 };
   var autoGoal = -1, autoGoalAt = 0;
 
@@ -944,7 +1082,7 @@ var pointer = { x: -1, y: -1, active: false };
       var ux = (c + 0.5) / cols * W, uy = (rw + 0.5) / rows * H;   // tidy grid spot
       var gx = ux + (r() - 0.5) * (W / cols) * 0.55;                 // jittered "road map" spot
       var gy = uy + (r() - 0.5) * (H / rows) * 0.55;
-      nodes.push({ x: old && old[i] ? old[i].x : gx, y: old && old[i] ? old[i].y : gy, tx: gx, ty: gy, gx: gx, gy: gy, ux: ux, uy: uy, noise: r() - 0.5 });
+      nodes.push({ x: old && old[i] ? old[i].x : gx, y: old && old[i] ? old[i].y : gy, tx: gx, ty: gy, gx: gx, gy: gy, ux: ux, uy: uy, depth: 0.35 + r() * 0.65, z: 0, hot: false });
       adj.push([]);
     }
     function link(a, b) { edges.push([a, b]); adj[a].push(b); adj[b].push(a); }
@@ -954,8 +1092,6 @@ var pointer = { x: -1, y: -1, active: false };
       if (rr < rows - 1 && (cc === 0 || r() > 0.3)) link(i, i + cols);     // most cross streets
       if (cc < cols - 1 && rr < rows - 1 && r() < 0.18) link(i, i + cols + 1); // a few diagonals
     }
-    anomalies = {};
-    for (i = 0; i < 7; i++) anomalies[Math.floor(r() * n)] = true;
     startNode = (rows - 1) * cols; // bottom-left corner
     route.goal = -1; autoGoal = -1;
   }
@@ -995,7 +1131,7 @@ var pointer = { x: -1, y: -1, active: false };
     if (pointer.active) {
       var bestD = Infinity; goal = 0;
       for (var i = 0; i < n; i++) {
-        var dx = nodes[i].gx - pointer.x, dy = nodes[i].gy - pointer.y, d = dx * dx + dy * dy;
+        var dx = nodes[i].tx - pointer.x, dy = nodes[i].ty - pointer.y, d = dx * dx + dy * dy;
         if (d < bestD) { bestD = d; goal = i; }
       }
     } else {
@@ -1012,32 +1148,47 @@ var pointer = { x: -1, y: -1, active: false };
     }
   }
 
-  // Where each point should sit for the current scene.
+  // Where each point should sit for the current scene. lp (scroll) and t (time) both drive the motion.
   function setTargets(t) {
-    var perCluster = Math.ceil(n / 5), perRow = Math.ceil(n / 6);
+    var time = REDUCE ? 0 : t, i, p;
+    var perCluster = Math.ceil(n / 5), perRow = Math.ceil(n / 6), perRing = Math.ceil(n / 4);
     var centers = [[0.2, 0.3], [0.5, 0.2], [0.8, 0.32], [0.33, 0.72], [0.68, 0.74]];
-    for (var i = 0; i < n; i++) {
-      var p = nodes[i];
-      if (scene === 'grid') { p.tx = p.ux; p.ty = p.uy; }
-      else if (scene === 'signal') {
-        var k = i / (n - 1);
-        var y = H * 0.56 + p.noise * H * 0.07;
-        if (k > 0.62) y -= (k - 0.62) / 0.38 * H * 0.2;
-        if (anomalies[i]) y += (p.noise >= 0 ? -1 : 1) * H * 0.17;
-        p.tx = 24 + k * (W - 48); p.ty = y;
+    for (i = 0; i < n; i++) {
+      p = nodes[i]; p.hot = false; p.z = 0;
+      if (scene === 'graph') {
+        // Parallax: nearer points travel further as the page scrolls.
+        p.tx = p.gx; p.ty = p.gy - (lp - 0.3) * H * 0.24 * p.depth;
+      } else if (scene === 'sphere') {
+        // Points spread evenly over a sphere by the golden angle; scrolling spins it.
+        var yy = 1 - 2 * (i + 0.5) / n, rad = Math.sqrt(1 - yy * yy);
+        var th = i * 2.39996 + lp * 4.2 + time * 0.00016;
+        var x3 = Math.cos(th) * rad, z3 = Math.sin(th) * rad, tilt = 0.38;
+        var y2 = yy * Math.cos(tilt) - z3 * Math.sin(tilt), z2 = yy * Math.sin(tilt) + z3 * Math.cos(tilt);
+        var R = Math.min(W, H) * 0.4;
+        p.tx = W * 0.5 + x3 * R; p.ty = H * 0.54 + y2 * R; p.z = z2;
+      } else if (scene === 'grid') {
+        p.tx = p.ux; p.ty = p.uy - (lp - 0.3) * H * 0.1;
+      } else if (scene === 'signal') {
+        // The reading slides sideways as you scroll, like a live chart.
+        var k = i + lp * 60 + time * 0.004, k0 = Math.floor(k), f = k - k0;
+        var v = signalValue(k0) * (1 - f) + signalValue(k0 + 1) * f;
+        p.tx = 24 + i / (n - 1) * (W - 48); p.ty = H * 0.6 - v * H * 0.32; p.hot = v > 0.52;
+      } else if (scene === 'orbits') {
+        // Four tilted rings of agents circling one hub; scrolling turns them in alternating directions.
+        var ring = i % 4, m = Math.floor(i / 4), dir = ring % 2 ? 1 : -1;
+        var ang = m / perRing * Math.PI * 2 + (lp * 3.2 + time * 0.00013) * dir * (1 + ring * 0.18);
+        var rx = Math.min(W, H * 1.5) * (0.17 + ring * 0.1), ry = rx * 0.4;
+        var ox = Math.cos(ang) * rx, oy = Math.sin(ang) * ry, ca = Math.cos(-0.28), sa = Math.sin(-0.28);
+        p.tx = W * 0.5 + ox * ca - oy * sa; p.ty = H * 0.54 + ox * sa + oy * ca; p.hot = m % 7 === 0;
       } else if (scene === 'scc') {
-        var cl = i % 5, m = Math.floor(i / 5);
-        var ang = m / perCluster * Math.PI * 2 + (REDUCE ? 0 : t * 0.00012 * (cl % 2 ? 1 : -1));
-        var rad = Math.min(W, H) * (0.09 + 0.05 * (m % 2));
-        p.tx = centers[cl][0] * W + Math.cos(ang) * rad;
-        p.ty = centers[cl][1] * H + Math.sin(ang) * rad;
-      } else if (scene === 'waves') {
-        var row = i % 6, j = Math.floor(i / 6);
-        var x = j / Math.max(1, perRow - 1) * W;
-        var phase = REDUCE ? 0 : t * 0.0011;
-        p.tx = x;
-        p.ty = H * (0.3 + row * 0.1) + Math.sin(x * 0.011 + phase + row * 0.9) * (14 + row * 4);
-      } else { p.tx = p.gx; p.ty = p.gy; }
+        var cl = i % 5, mm = Math.floor(i / 5);
+        var a2 = mm / perCluster * Math.PI * 2 + (lp * 2.6 + time * 0.00012) * (cl % 2 ? 1 : -1);
+        var rad2 = Math.min(W, H) * (0.09 + 0.05 * (mm % 2));
+        p.tx = centers[cl][0] * W + Math.cos(a2) * rad2; p.ty = centers[cl][1] * H + Math.sin(a2) * rad2;
+      } else { // waves
+        var row = i % 6, j = Math.floor(i / 6), x = j / Math.max(1, perRow - 1) * W;
+        p.tx = x; p.ty = H * (0.3 + row * 0.1) + Math.sin(x * 0.011 + time * 0.0011 + lp * 5 + row * 0.9) * (14 + row * 4);
+      }
     }
   }
 
@@ -1046,10 +1197,10 @@ var pointer = { x: -1, y: -1, active: false };
   function ring(x, y, r, color, alpha) { ctx.strokeStyle = rgba(color, alpha); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); }
 
   function draw(now) {
-    var i, a = clamp((now - sceneStart) / 700, 0, 1); // lines fade in after a scene change
+    var i, a = clamp((now - sceneStart) / 700, 0, 1), tint = TINT[scene] || GLOW; // lines fade in after a scene change
     setTargets(now);
     for (i = 0; i < n; i++) { // ease every point toward its target
-      var p = nodes[i], ease = REDUCE ? 1 : 0.085;
+      var p = nodes[i], ease = REDUCE ? 1 : 0.1;
       p.x += (p.tx - p.x) * ease; p.y += (p.ty - p.y) * ease;
     }
     ctx.clearRect(0, 0, W, H);
@@ -1076,13 +1227,22 @@ var pointer = { x: -1, y: -1, active: false };
       }
       ring(nodes[startNode].x, nodes[startNode].y, 6, AMBER, 0.9 * a);
       if (route.goal >= 0) { ring(nodes[route.goal].x, nodes[route.goal].y, 6, AMBER, 0.9 * a); dot(nodes[route.goal].x, nodes[route.goal].y, 2.6, AMBER, a); }
+    } else if (scene === 'sphere') {
+      ctx.strokeStyle = rgba(tint, 0.1 * a); ctx.lineWidth = 1; // the spiral that threads every point
+      ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
+      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
+      ctx.stroke();
+      var head = REDUCE ? 20 : Math.floor(now * 0.012) % n; // an amber route traveling along the spiral
+      ctx.strokeStyle = rgba(AMBER, 0.8 * a); ctx.lineWidth = 1.8; ctx.beginPath();
+      for (i = 0; i < 12; i++) { var q = nodes[(head + i) % n]; if (i === 0) ctx.moveTo(q.x, q.y); else if ((head + i) % n !== 0) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
+      ctx.stroke();
     } else if (scene === 'grid') {
       ctx.strokeStyle = rgba(GLOW, 0.12 * a); ctx.lineWidth = 1;
       ctx.beginPath();
       for (i = 0; i < edges.length; i++) if (edges[i][1] - edges[i][0] !== cols + 1) line(edges[i][0], edges[i][1]);
       ctx.stroke();
-      for (var rw = 0; rw < rows; rw++) { // one pulse of work moving along each row
-        var f = REDUCE ? (rw * 0.37) % 1 : (now * 0.00009 + rw * 0.37) % 1;
+      for (var rw = 0; rw < rows; rw++) { // one pulse of work moving along each row, pushed along by the scroll
+        var f = (((REDUCE ? 0 : now * 0.00009) + lp * 0.9 + rw * 0.37) % 1 + 1) % 1;
         dot(f * W, nodes[rw * cols].y, 3, AMBER, 0.85 * a);
       }
     } else if (scene === 'signal') {
@@ -1090,8 +1250,18 @@ var pointer = { x: -1, y: -1, active: false };
       ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
       for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
       ctx.stroke();
-      var pulse = REDUCE ? 9 : 8 + Math.sin(now * 0.004) * 2.5;
-      for (i = 0; i < n; i++) if (anomalies[i]) { ring(nodes[i].x, nodes[i].y, pulse, AMBER, 0.9 * a); dot(nodes[i].x, nodes[i].y, 3, AMBER, a); }
+      for (i = 0; i < n; i++) if (nodes[i].hot) { ring(nodes[i].x, nodes[i].y, 9, AMBER, 0.9 * a); dot(nodes[i].x, nodes[i].y, 3, AMBER, a); }
+    } else if (scene === 'orbits') {
+      ctx.strokeStyle = rgba(tint, 0.16 * a); ctx.lineWidth = 1;
+      for (var rg = 0; rg < 4; rg++) {
+        var orx = Math.min(W, H * 1.5) * (0.17 + rg * 0.1);
+        ctx.beginPath(); ctx.ellipse(W * 0.5, H * 0.54, orx, orx * 0.4, -0.28, 0, Math.PI * 2); ctx.stroke();
+      }
+      dot(W * 0.5, H * 0.54, 5, AMBER, a); ring(W * 0.5, H * 0.54, 12, AMBER, 0.6 * a);
+      for (i = 0; i < n; i++) if (nodes[i].hot) { // a report traveling from an agent to the hub
+        ctx.strokeStyle = rgba(AMBER, 0.22 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(W * 0.5, H * 0.54); ctx.stroke();
+        dot(nodes[i].x, nodes[i].y, 3.2, AMBER, a);
+      }
     } else if (scene === 'scc') {
       for (var cl = 0; cl < 5; cl++) {
         ctx.strokeStyle = rgba(PALETTE[cl], 0.3 * a); ctx.lineWidth = 1;
@@ -1101,7 +1271,7 @@ var pointer = { x: -1, y: -1, active: false };
       }
       ctx.strokeStyle = rgba(GLOW, 0.1 * a);
       ctx.beginPath(); line(0, 1); line(1, 2); line(3, 4); line(0, 3); ctx.stroke(); // links between components
-    } else if (scene === 'waves') {
+    } else { // waves
       for (var row = 0; row < 6; row++) {
         ctx.strokeStyle = rgba(row === 2 ? AMBER : GLOW, (0.2 + row * 0.04) * a); ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.moveTo(nodes[row].x, nodes[row].y);
@@ -1110,23 +1280,29 @@ var pointer = { x: -1, y: -1, active: false };
       }
     }
 
-    for (i = 0; i < n; i++) dot(nodes[i].x, nodes[i].y, 1.7, scene === 'scc' ? PALETTE[i % 5] : GLOW, 0.5);
+    for (i = 0; i < n; i++) { // the points themselves, always visible
+      var nd = nodes[i];
+      if (scene === 'sphere') dot(nd.x, nd.y, 1.1 + (nd.z + 1) * 1.1, tint, 0.2 + (nd.z + 1) * 0.3); // nearer points are larger and brighter
+      else dot(nd.x, nd.y, 1.7, scene === 'scc' ? PALETTE[i % 5] : tint, 0.5);
+    }
     requestAnimationFrame(draw);
   }
 
-  // Choose the scene from whichever tagged block crosses a line 40% down the screen.
+  // Choose the scene from whichever tagged block crosses a line 40% down the screen, and measure its scroll progress.
   var tagged = document.querySelectorAll('[data-scene]');
   function pickScene() {
-    var probe = window.innerHeight * 0.4, best = null, bestGap = Infinity;
+    var probe = window.innerHeight * 0.4, best = null, bestGap = Infinity, bestRect = null;
     for (var i = 0; i < tagged.length; i++) {
       var rect = tagged[i].getBoundingClientRect();
       var gap = rect.top > probe ? rect.top - probe : rect.bottom < probe ? probe - rect.bottom : 0;
-      if (gap < bestGap) { bestGap = gap; best = tagged[i]; }
+      if (gap < bestGap) { bestGap = gap; best = tagged[i]; bestRect = rect; }
     }
+    if (bestRect) lp = clamp((probe - bestRect.top) / Math.max(bestRect.height, 1), -0.5, 1.5);
     var next = best ? best.getAttribute('data-scene') : 'graph';
     if (next !== scene) {
       scene = next; sceneStart = performance.now(); route.goal = -1;
       note.innerHTML = NOTES[scene] || '';
+      root.style.setProperty('--glow', TINT[scene] || GLOW); // retint the cursor light and tab pill for this chapter
     }
   }
 
