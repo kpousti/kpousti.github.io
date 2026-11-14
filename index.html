@@ -510,19 +510,24 @@ var pointer = { x: -1, y: -1, active: false };
 
 // ---------- Nav highlight for the section on screen ----------
 (function () {
-  var links = document.querySelectorAll('.nav a');
-  if (!('IntersectionObserver' in window) || !links.length) return;
-  var byId = {};
-  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
-  var observer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (!entry.isIntersecting || !byId[entry.target.id]) return;
-      links.forEach(function (a) { a.classList.remove('active'); });
-      byId[entry.target.id].classList.add('active');
-    });
-  }, { rootMargin: '-30% 0px -60% 0px' });
-  document.querySelectorAll('main section').forEach(function (s) { observer.observe(s); });
-  links[0].classList.add('active');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+  if (!links.length) return;
+  // Pair each nav link with the section it points to.
+  var pairs = links.map(function (a) {
+    return { link: a, section: document.getElementById(a.getAttribute('href').slice(1)) };
+  }).filter(function (p) { return p.section; });
+  function update() {
+    var probe = window.innerHeight * 0.35, current = pairs[0];
+    // The current section is the last one whose top has passed the probe line.
+    pairs.forEach(function (p) { if (p.section.getBoundingClientRect().top <= probe) current = p; });
+    // At the very bottom the last section may be too short to reach the line, so pick it directly.
+    var doc = document.documentElement;
+    if (window.innerHeight + window.scrollY >= doc.scrollHeight - 4) current = pairs[pairs.length - 1];
+    links.forEach(function (a) { a.classList.toggle('active', a === current.link); });
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
 })();
 
 // ---------- Project demo screens ----------
