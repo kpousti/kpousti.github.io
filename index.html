@@ -198,7 +198,17 @@ h1 {
 .stats .num { font-family: var(--font-display); font-weight: 700; font-stretch: 90%; font-size: clamp(1.5rem, 2.4vw, 1.85rem); line-height: 1.1; color: var(--bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stats .what { margin-top: 8px; font-size: 0.86rem; color: var(--text-dim); line-height: 1.4; }
 /* Experience */
-.xp { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; }
+.xp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.xp .job { padding: 0; overflow: hidden; display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); }
+.job-text { padding: 28px 30px; }
+.job .points strong { color: var(--accent); font-weight: 500; }
+.job .screen { border-bottom: 0; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+.job .screen canvas { flex: 1; height: 100%; min-height: 270px; }
+.wins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.wins li { padding: 20px; font-size: 0.92rem; transition: border-color var(--t-med), transform var(--t-med) var(--ease-out); }
+.wins li:hover { border-color: var(--accent); transform: translateY(-3px); }
+.wins b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.wins strong { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.12rem; line-height: 1.25; color: var(--bright); margin-bottom: 6px; }
 .xp article { padding: 28px 30px; }
 .when { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
 .org { color: var(--text-dim); font-size: 0.94rem; margin: 4px 0 0; }
@@ -289,25 +299,14 @@ h1 {
 .skill-grid b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
 
 /* Away + contact */
-.beyond { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
-.beyond li { transition: border-color var(--t-med), transform var(--t-med) var(--ease-out); }
+.beyond { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.beyond .wide { grid-column: span 2; }
+.beyond li { padding: 0 20px 22px; overflow: hidden; transition: border-color var(--t-med), transform var(--t-med) var(--ease-out); }
 .beyond li:hover { border-color: var(--accent); transform: translateY(-3px); }
-.ico { display: block; width: 44px; height: 44px; margin: 0 auto 12px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.bounce { animation: bounce 0.9s cubic-bezier(0.3, 0, 0.7, 1) infinite alternate; }
-@keyframes bounce { from { transform: translateY(-16px); } to { transform: translateY(3px); } }
-.swell { animation: swell 2.6s ease-in-out infinite alternate; }
-.swell.late { animation-delay: -1.3s; opacity: 0.5; }
-@keyframes swell { from { transform: translateX(-4px); } to { transform: translateX(4px); } }
-.shine { transform-origin: 38px 12px; animation: shine 1.8s ease-in-out infinite; }
-@keyframes shine { 0%, 100% { transform: scale(0.3); opacity: 0.2; } 50% { transform: scale(1); opacity: 1; } }
-.scan { animation: scan 1.4s steps(2) infinite; }
-@keyframes scan { 50% { opacity: 0.25; } }
-.page { transform-origin: 24px 26px; animation: page 2.4s ease-in-out infinite; }
-@keyframes page { 0%, 100% { transform: skewY(0deg); } 50% { transform: skewY(-10deg) translateX(3px); } }
-.trend { stroke-dasharray: 46; animation: trend 2.8s var(--ease-in-out) infinite; }
-@keyframes trend { 0% { stroke-dashoffset: 46; } 60%, 100% { stroke-dashoffset: 0; } }
-.beyond li { padding: 22px; font-size: 0.94rem; text-align: center; }
-.beyond b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
+.mini { display: block; width: calc(100% + 40px); height: 124px; margin: 0 -20px 16px; background: #08101c; border-bottom: 1px solid var(--line); } }
+.beyond li { font-size: 0.94rem; text-align: left; }
+.beyond i { color: var(--bright); }
+.beyond b { display: block; text-align: left; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
 .contact-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
 .contact-cards a { display: block; padding: 22px; text-align: center; transition: border-color 0.2s, transform 0.2s; }
 .contact-cards a:hover { border-color: var(--accent); transform: translateY(-3px); }
@@ -332,6 +331,11 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 /* ---------- Smaller screens ---------- */
 @media (max-width: 900px) {
   .about, .xp, .features { grid-template-columns: minmax(0, 1fr); }
+  .xp .job { grid-template-columns: minmax(0, 1fr); }
+  .job .screen { border-left: 0; border-top: 1px solid var(--line); }
+  .job .screen canvas { min-height: 230px; }
+  .wins { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .beyond { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pin-stage { grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: center; }
   .pin-title { margin-bottom: 12px; }
   .pin.live .pin-step { display: none; }
@@ -359,7 +363,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
   .head { margin-bottom: 40px; }
 }
 @media (max-width: 420px) {
-  .stats, .skill-grid { grid-template-columns: minmax(0, 1fr); }
+  .stats, .skill-grid, .wins { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -435,22 +439,34 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       <header class="head" data-reveal>
         <p class="eyebrow">Experience</p>
         <h2>Manual work, turned into software.</h2>
-        <p class="sub">Enterprise apps and automation for engineering and business teams.</p>
+        <p class="sub">I build the apps and automations that give engineering and business teams their hours back.</p>
       </header>
       <div class="xp">
-        <article class="glass" data-reveal>
-          <p class="when">Aug 2026 to now</p>
-          <h3>Software Developer, IT Rotational Program</h3>
-          <p class="org">Solar Turbines, a Caterpillar company · San Diego, CA</p>
-          <ul class="points">
-            <li>Selected for a competitive rotational program, building and supporting enterprise apps for engineering and business teams.</li>
-            <li>Automated manual business processes with Power Apps and workflow automation, saving the team hours each week.</li>
-            <li>Built and shipped internal websites, using GitHub Copilot across several AI models to move faster.</li>
-            <li>Documented workflows in Visio, delivered work through ServiceNow and Azure DevOps, and analyzed data in Power BI.</li>
-          </ul>
-          <ul class="chips"><li>Power Apps</li><li>Power BI</li><li>ServiceNow</li><li>Azure DevOps</li><li>PowerShell</li></ul>
+        <article class="glass job" data-reveal>
+          <div class="job-text">
+            <p class="when">Aug 2026 to now</p>
+            <h3>Software Developer, IT Rotational Program</h3>
+            <p class="org">Solar Turbines, a Caterpillar company · San Diego, CA</p>
+            <ul class="points">
+              <li>Selected for a competitive rotational program, building and supporting enterprise apps for engineering and business teams.</li>
+              <li>Automated manual business processes with Power Apps and workflow automation, <strong>saving the team hours of work each week</strong>.</li>
+              <li>Built and shipped internal websites, using GitHub Copilot across several AI models to move faster.</li>
+              <li>Tracked and delivered work through ServiceNow and Azure DevOps, analyzed data in Power BI, and wrote PowerShell scripts in a sandbox environment.</li>
+            </ul>
+            <ul class="chips"><li>Power Apps</li><li>GitHub Copilot</li><li>PowerShell</li><li>Power BI</li><li>ServiceNow</li><li>Azure DevOps</li><li>Visio</li></ul>
+          </div>
+          <div class="screen">
+            <div class="screen-bar"><span class="live"><b>Automation</b> one task, two ways</span><span>illustration</span></div>
+            <canvas role="img" data-demo="flow" aria-label="A four-step task shown twice: waiting at each step when done by hand, and running straight through when automated"></canvas>
+          </div>
         </article>
-        <article class="glass" data-reveal>
+        <ul class="wins">
+          <li class="glass" data-reveal><b>Power Apps</b><strong>Hours saved every week</strong>Manual business processes replaced with apps and automated workflows.</li>
+          <li class="glass" data-reveal><b>GitHub Copilot</b><strong>AI-assisted builds</strong>Internal websites shipped faster by working across several AI models.</li>
+          <li class="glass" data-reveal><b>PowerShell</b><strong>Sandbox method</strong>Scripts are written and run in a sandbox environment.</li>
+          <li class="glass" data-reveal><b>Visio · ServiceNow · Azure DevOps</b><strong>Documented and tracked</strong>Process and system diagrams for stakeholders, with work delivered through tickets and boards.</li>
+        </ul>
+        <article class="glass edu" data-reveal>
           <p class="when">June 2026</p>
           <h3>B.S. Mathematics–Computer Science</h3>
           <p class="org">University of California, San Diego · Minor in Sociology</p>
@@ -629,7 +645,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         </article>
 
         <article data-scene="spiral" class="build" data-reveal>
-          <div class="screen"><canvas role="img" data-demo="golden" aria-label="Animated Fibonacci squares forming a golden spiral"></canvas></div>
+          <div class="screen"><canvas role="img" data-demo="studygame" aria-label="Animated flashcards flipping from question to answer while an XP bar fills"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Math 163 Study Game</h3><span class="status">Study tool</span></div>
             <p>An interactive study guide I made for a history of mathematics course: flashcards, matching games and quizzes with XP, from Greek geometry to Renaissance algebra.</p>
@@ -672,32 +688,37 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         <li data-reveal><a class="glass" href="https://www.linkedin.com/in/kiapousti"><span>LinkedIn</span><strong>linkedin.com/in/kiapousti</strong></a></li>
         <li data-reveal><a class="glass" href="https://github.com/kpousti"><span>GitHub</span><strong>github.com/kpousti</strong></a></li>
       </ul>
-      <header class="head" data-reveal style="margin-top:96px;margin-bottom:28px">
-        <p class="eyebrow">Away from the keyboard</p>
+      <header class="head" data-reveal style="margin-top:112px;margin-bottom:40px">
+        <p class="eyebrow">Off the clock</p>
+        <h2>Away from the keyboard.</h2>
       </header>
       <ul class="beyond">
+        <li class="glass wide" data-reveal>
+          <canvas role="img" class="mini" data-demo="m_eboard" aria-label="An electric skateboard with current flowing from battery to speed controller to motor"></canvas>
+          <b>Mechanically inclined</b>Helped design and integrate an ESC, the speed controller, for an electric skateboard to raise its top speed and efficiency. I also sourced and mounted a replacement motor in my car myself, a job that runs thousands at a shop.
+        </li>
         <li class="glass" data-reveal>
-          <svg class="ico i-ball" viewBox="0 0 48 48" aria-hidden="true"><line x1="8" y1="42" x2="40" y2="42"/><circle class="bounce" cx="24" cy="30" r="8"/></svg>
+          <canvas role="img" class="mini" data-demo="m_sports" aria-label="A basketball, a soccer ball and a volleyball bouncing"></canvas>
           <b>Sports</b>Basketball, soccer and volleyball.
         </li>
         <li class="glass" data-reveal>
-          <svg class="ico i-wave" viewBox="0 0 48 48" aria-hidden="true"><path class="swell" d="M2 30 C10 18 16 18 24 30 S38 42 46 30"/><path class="swell late" d="M2 38 C10 28 16 28 24 38 S38 48 46 38"/></svg>
+          <canvas role="img" class="mini" data-demo="m_boards" aria-label="A surfboard riding a wave above a rolling skateboard"></canvas>
           <b>Boards</b>Surfing and skating.
         </li>
         <li class="glass" data-reveal>
-          <svg class="ico i-car" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 32 L10 22 H32 L40 28 H44 V36 H6 Z"/><circle cx="15" cy="37" r="4"/><circle cx="35" cy="37" r="4"/><path class="shine" d="M38 8 V16 M34 12 H42"/></svg>
+          <canvas role="img" class="mini" data-demo="m_car" aria-label="A motor lowered into a car, then a polish shine sweeping across it"></canvas>
           <b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.
         </li>
         <li class="glass" data-reveal>
-          <svg class="ico i-tv" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M18 6 L24 14 L30 6"/><path class="scan" d="M12 22 H36 M12 28 H30"/></svg>
-          <b>On the screen</b>Family Guy.
+          <canvas role="img" class="mini" data-demo="m_family" aria-label="A house with lit windows, four figures holding hands and a heart rising"></canvas>
+          <b>Family</b>I am a family guy.
         </li>
         <li class="glass" data-reveal>
-          <svg class="ico i-book" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 12 C18 8 10 8 6 10 V38 C10 36 18 36 24 40 C30 36 38 36 42 38 V10 C38 8 30 8 24 12 Z"/><path class="page" d="M24 12 V40"/></svg>
-          <b>Reading</b>Self-improvement books.
+          <canvas role="img" class="mini" data-demo="m_books" aria-label="Two stacked books with an open book turning a page on top"></canvas>
+          <b>Reading</b>Self-improvement books, such as <i>Future Proofing You</i> by Jay Samit and <i>Man's Search for Meaning</i> by Viktor E. Frankl.
         </li>
         <li class="glass" data-reveal>
-          <svg class="ico i-chart" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 6 V42 H44"/><path class="trend" d="M10 34 L18 28 L24 31 L32 18 L42 10"/></svg>
+          <canvas role="img" class="mini" data-demo="m_market" aria-label="A line chart climbing across a grid"></canvas>
           <b>Markets</b>I invest in the market, with positive returns so far, and I am working toward a career in the quant field.
         </li>
       </ul>
@@ -1377,6 +1398,218 @@ var pointer = { x: -1, y: -1, active: false };
       var hi = s.sq[shown - 1].f, lo = shown > 1 ? s.sq[shown - 2].f : 1;
       text(ctx, hi + ' / ' + lo + ' = ' + (hi / lo).toFixed(3), 10, 14, rgba(WHITE, 0.95));
       text(ctx, 'golden ratio = 1.618...', w - 10, 14, rgba(AMBER, 1), 'right');
+    }
+  };
+
+  // ----- helpers for the small scenes -----
+  function wheel(ctx, x, y, r, ang, color) { // a spinning wheel with three spokes
+    ring(ctx, x, y, r, color, 1.6);
+    ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (var k = 0; k < 3; k++) { var a = ang + k * Math.PI * 2 / 3; ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+    ctx.stroke();
+  }
+  function box(ctx, x, y, w, h, fill, stroke) {
+    ctx.beginPath(); ctx.rect(x, y, w, h);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.2; ctx.stroke(); }
+  }
+
+  // Work: the same four-step task done by hand, and automated.
+  demos.flow = {
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 3100 : t, names = ['request', 'approve', 'update', 'notify'], x0 = w * 0.13, x1 = w * 0.87, i;
+      function nx(k) { return x0 + (x1 - x0) * k / 3; }
+      [[h * 0.3, 'by hand', rgba(WHITE, 0.6)], [h * 0.72, 'automated', rgba(AMBER, 1)]].forEach(function (lane, li) {
+        var y = lane[0];
+        text(ctx, lane[1], 14, y - 34, lane[2]);
+        ctx.strokeStyle = li ? rgba(AMBER, 0.5) : rgba(GLOW, 0.3); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(nx(0), y); ctx.lineTo(nx(3), y); ctx.stroke();
+        for (i = 0; i < 4; i++) {
+          box(ctx, nx(i) - 30, y - 12, 60, 24, '#08101c', li ? rgba(AMBER, 0.9) : rgba(GLOW, 0.6));
+          text(ctx, names[i], nx(i), y + 0.5, li ? rgba(AMBER, 1) : rgba(WHITE, 0.75), 'center');
+        }
+      });
+      // By hand: the task waits at every step until someone gets to it.
+      var pm = (now % 12000) / 12000 * 4, st = Math.min(3, Math.floor(pm)), within = pm - st, move = clamp((within - 0.72) / 0.28, 0, 1);
+      var mx = st < 3 ? nx(st) + (nx(st + 1) - nx(st)) * move : nx(3), my = h * 0.3 - 22;
+      dot(ctx, mx, my, 4.5, rgba(WHITE, 0.95));
+      if (move === 0) { // a clock ticking while it waits
+        ring(ctx, mx + 16, my, 6, rgba(WHITE, 0.7), 1.2);
+        ctx.strokeStyle = rgba(WHITE, 0.9); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(mx + 16, my); ctx.lineTo(mx + 16 + Math.cos(now * 0.006) * 4.5, my + Math.sin(now * 0.006) * 4.5); ctx.stroke();
+      }
+      // Automated: tasks run straight through, one after another.
+      for (i = 0; i < 4; i++) {
+        var u = ((now * 0.00045 + i / 4) % 1), ax = nx(0) + (nx(3) - nx(0)) * u, ay = h * 0.72 - 22;
+        for (var tr = 0; tr < 5; tr++) dot(ctx, ax - tr * 6, ay, 4 - tr * 0.6, rgba(AMBER, 0.9 - tr * 0.18));
+      }
+      text(ctx, 'waits for a person at every step', nx(3) + 30, h * 0.3 + 28, rgba(WHITE, 0.55), 'right');
+      text(ctx, 'runs on its own: hours back every week', nx(3) + 30, h * 0.72 + 28, rgba(AMBER, 0.95), 'right');
+    }
+  };
+
+  // Math 163 study game: flashcards flip from question to answer, and each one earns XP.
+  demos.studygame = {
+    cards: [['Who squared the lune?', 'Hippocrates of Chios'], ['The golden ratio, exactly?', '(1 + √5) / 2'], ['Base of Babylonian numerals?', '60'], ['First to solve the cubic?', 'Scipione del Ferro']],
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 2600 : t, per = 4200, idx = Math.floor(now / per), u = (now % per) / per, card = this.cards[idx % this.cards.length];
+      var narrow = w < 380, cx = narrow ? w / 2 : w * 0.36, cy = narrow ? h * 0.44 : h * 0.52, cw = Math.min(narrow ? w - 40 : w * 0.56, 300), chh = Math.min(h * 0.5, 130);
+      var flip = clamp((u - 0.42) / 0.14, 0, 1), sx = Math.abs(Math.cos(flip * Math.PI)), back = flip > 0.5;
+      var slide = u > 0.93 ? (u - 0.93) / 0.07 : u < 0.06 ? (u / 0.06) - 1 : 0; // leaves to the left, arrives from the right
+      ctx.save(); ctx.translate(cx - slide * w * 0.5, cy); ctx.globalAlpha = 1 - Math.abs(slide); ctx.scale(Math.max(sx, 0.02), 1);
+      ctx.fillStyle = back ? 'rgba(242,181,107,0.14)' : '#0e1828'; ctx.strokeStyle = back ? rgba(AMBER, 1) : rgba(GLOW, 0.8); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.rect(-cw / 2, -chh / 2, cw, chh); ctx.fill(); ctx.stroke();
+      if (sx > 0.35) {
+        text(ctx, back ? 'answer' : 'flashcard ' + (idx % 4 + 1) + ' of 4', -cw / 2 + 12, -chh / 2 + 16, back ? rgba(AMBER, 1) : rgba(DIM, 1));
+        ctx.font = '500 ' + (cw < 230 ? 13 : 16) + 'px "IBM Plex Sans", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = rgba(WHITE, 0.97); ctx.fillText(card[back ? 1 : 0], 0, 6);
+      }
+      ctx.restore(); ctx.globalAlpha = 1;
+      // XP: each answered card adds 50, and four cards fill the bar for a new level
+      var gain = clamp((u - 0.56) / 0.2, 0, 1), xp = (idx % 4) * 50 + gain * 50, level = 1 + Math.floor(idx / 4) % 9;
+      var bx = narrow ? 20 : w * 0.7, bw = narrow ? w - 40 : w * 0.26, by = narrow ? h - 34 : h * 0.52;
+      text(ctx, 'level ' + level, bx, by - 18, rgba(WHITE, 0.9)); text(ctx, Math.round(xp) + ' / 200 XP', bx + bw, by - 18, rgba(AMBER, 1), 'right');
+      box(ctx, bx, by - 5, bw, 10, '#08101c', rgba(GLOW, 0.5)); box(ctx, bx, by - 5, bw * xp / 200, 10, rgba(AMBER, 0.95));
+      if (gain > 0 && gain < 1) text(ctx, '+50 XP', bx + bw * xp / 200, by - 36 - gain * 14, rgba(AMBER, 1 - gain * 0.6), 'center');
+      if (!narrow) for (var s = 0; s < 4; s++) { // streak: one dot per card answered this round
+        var on = s < idx % 4 || (s === idx % 4 && gain >= 1);
+        if (on) dot(ctx, bx + 8 + s * 20, by + 30, 5, rgba(AMBER, 1)); else ring(ctx, bx + 8 + s * 20, by + 30, 5, rgba(GLOW, 0.5), 1.2);
+      }
+    }
+  };
+
+  // ----- Away from the keyboard: one small scene per tile -----
+  demos.m_eboard = { // electric skateboard: battery to ESC to motor, with the speed needle climbing
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 2600 : t, gy = h - 18, cx = w * 0.4, L = Math.min(w * 0.5, 230), spin = now * 0.02, i;
+      ctx.strokeStyle = rgba(GLOW, 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+      for (i = 0; i < 6; i++) { var sxp = ((i * 0.19 - now * 0.0009) % 1 + 1) % 1 * w; ctx.strokeStyle = rgba(WHITE, 0.25); ctx.beginPath(); ctx.moveTo(sxp, gy + 6); ctx.lineTo(sxp + 22, gy + 6); ctx.stroke(); } // road rushing by
+      var dy = gy - 22, x0 = cx - L / 2, x1 = cx + L / 2;
+      ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath();
+      ctx.moveTo(x0 - 12, dy - 7); ctx.quadraticCurveTo(x0, dy, x0 + 14, dy); ctx.lineTo(x1 - 14, dy); ctx.quadraticCurveTo(x1, dy, x1 + 12, dy - 7); ctx.stroke();
+      wheel(ctx, x0 + 26, gy - 8, 8, spin, rgba(WHITE, 0.95)); wheel(ctx, x1 - 26, gy - 8, 8, spin, rgba(WHITE, 0.95));
+      box(ctx, cx - L * 0.3, dy + 3, L * 0.26, 9, '#08101c', rgba(GLOW, 0.9)); text(ctx, 'battery', cx - L * 0.17, dy - 12, rgba(DIM, 1), 'center');
+      box(ctx, cx + L * 0.02, dy + 3, L * 0.16, 9, 'rgba(242,181,107,0.25)', rgba(AMBER, 1)); text(ctx, 'ESC', cx + L * 0.1, dy - 12, rgba(AMBER, 1), 'center');
+      ring(ctx, x1 - 44, gy - 12, 5, rgba(AMBER, 1), 1.5);
+      var ax = cx - L * 0.04, bx = cx + L * 0.18, mx = x1 - 49; // current pulsing along the wires
+      ctx.strokeStyle = rgba(AMBER, 0.5); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(ax, dy + 7); ctx.lineTo(cx + L * 0.02, dy + 7); ctx.moveTo(bx, dy + 7); ctx.lineTo(mx, gy - 12); ctx.stroke();
+      for (i = 0; i < 3; i++) { var f = (now * 0.0016 + i / 3) % 1; dot(ctx, bx + (mx - bx) * f, dy + 7 + (gy - 12 - dy - 7) * f, 2.2, rgba(AMBER, 1)); }
+      var gx = w - Math.min(70, w * 0.16), gcy = h * 0.62, gr = Math.min(36, h * 0.3), up = 0.5 - 0.5 * Math.cos(clamp((now % 5200) / 3600, 0, 1) * Math.PI);
+      ctx.strokeStyle = rgba(GLOW, 0.5); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gx, gcy, gr, Math.PI, 0); ctx.stroke();
+      ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(gx, gcy, gr, Math.PI, Math.PI + up * Math.PI * 0.92); ctx.stroke();
+      var na = Math.PI + up * Math.PI * 0.92; ctx.beginPath(); ctx.moveTo(gx, gcy); ctx.lineTo(gx + Math.cos(na) * (gr - 6), gcy + Math.sin(na) * (gr - 6)); ctx.stroke();
+      text(ctx, 'top speed', gx, gcy + 14, rgba(WHITE, 0.8), 'center');
+    }
+  };
+  demos.m_sports = { // a basketball, a soccer ball and a volleyball, each with its own bounce
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 700 : t, gy = h - 14, r = Math.min(13, h * 0.12);
+      ctx.strokeStyle = rgba(GLOW, 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(10, gy); ctx.lineTo(w - 10, gy); ctx.stroke();
+      [[0.22, AMBER, 0.0052, 0], [0.5, WHITE, 0.0043, 1.3], [0.78, PALETTE[2], 0.0036, 2.4]].forEach(function (b, i) {
+        var up = Math.abs(Math.sin(now * b[2] + b[3])), x = w * b[0], y = gy - r - up * (h - 34 - r * 2);
+        ctx.fillStyle = rgba(GLOW, 0.25 * (1 - up)); ctx.beginPath(); ctx.ellipse(x, gy, r * (1.1 - up * 0.5), 2.5, 0, 0, Math.PI * 2); ctx.fill();
+        ring(ctx, x, y, r, rgba(b[1], 1), 1.8);
+        ctx.strokeStyle = rgba(b[1], 0.9); ctx.lineWidth = 1.1; ctx.beginPath();
+        if (i === 0) { ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.moveTo(x, y - r); ctx.lineTo(x, y + r); } // basketball seams
+        else if (i === 1) { for (var k = 0; k < 5; k++) { var a = now * 0.003 + k * Math.PI * 2 / 5; ctx.lineTo(x + Math.cos(a) * r * 0.45, y + Math.sin(a) * r * 0.45); } ctx.closePath(); } // soccer panel
+        else { ctx.arc(x - r * 0.5, y, r, -0.9, 0.9); ctx.moveTo(x + r * 0.2, y - r * 0.95); ctx.quadraticCurveTo(x - r * 0.2, y, x + r * 0.2, y + r * 0.95); } // volleyball panels
+        ctx.stroke();
+      });
+    }
+  };
+  demos.m_boards = { // a surfboard riding the swell, and a skateboard rolling underneath
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 900 : t, x, wy = h * 0.4, gy = h - 14;
+      function sea(px) { return wy + Math.sin(px * 0.045 - now * 0.0022) * 9; }
+      ctx.strokeStyle = rgba(GLOW, 0.95); ctx.lineWidth = 1.8; ctx.beginPath();
+      for (x = 0; x <= w; x += 5) { if (x) ctx.lineTo(x, sea(x)); else ctx.moveTo(x, sea(x)); }
+      ctx.stroke();
+      var sx = ((now * 0.00011) % 1) * (w + 60) - 30, slope = Math.atan((sea(sx + 4) - sea(sx - 4)) / 8);
+      ctx.save(); ctx.translate(sx, sea(sx) - 4); ctx.rotate(slope); ctx.fillStyle = rgba(AMBER, 1); ctx.beginPath(); ctx.ellipse(0, 0, 17, 3, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.strokeStyle = rgba(GLOW, 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(10, gy); ctx.lineTo(w - 10, gy); ctx.stroke();
+      var kx = w - (((now * 0.00015) % 1) * (w + 80) - 40), ky = gy - 9;
+      ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 2.6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(kx - 24, ky - 5); ctx.quadraticCurveTo(kx - 18, ky, kx - 12, ky); ctx.lineTo(kx + 12, ky); ctx.quadraticCurveTo(kx + 18, ky, kx + 24, ky - 5); ctx.stroke();
+      wheel(ctx, kx - 12, gy - 4, 4, -now * 0.02, rgba(WHITE, 0.95)); wheel(ctx, kx + 12, gy - 4, 4, -now * 0.02, rgba(WHITE, 0.95));
+    }
+  };
+  demos.m_car = { // a motor lowered into the bay, then a polish shine sweeping the body
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 4800 : t, u = (now % 7000) / 7000, gy = h - 14, cx = w / 2, s = Math.min(1, w / 230), drop = clamp(u / 0.4, 0, 1), ease = 1 - Math.pow(1 - drop, 3);
+      ctx.strokeStyle = rgba(GLOW, 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(10, gy); ctx.lineTo(w - 10, gy); ctx.stroke();
+      function P(x, y) { return [cx + x * s, gy + y * s]; }
+      var body = [[-88, -12], [-84, -34], [-52, -40], [-34, -62], [26, -62], [48, -40], [84, -34], [90, -12]];
+      ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+      body.forEach(function (p, i) { var q = P(p[0], p[1]); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
+      ctx.closePath(); ctx.fillStyle = '#0e1828'; ctx.fill(); ctx.stroke();
+      var w1 = P(-54, -10), w2 = P(54, -10);
+      dot(ctx, w1[0], w1[1], 12 * s, '#08101c'); dot(ctx, w2[0], w2[1], 12 * s, '#08101c');
+      wheel(ctx, w1[0], w1[1], 11 * s, 0.4, rgba(WHITE, 0.95)); wheel(ctx, w2[0], w2[1], 11 * s, 1.1, rgba(WHITE, 0.95));
+      var m = P(66, -31 - (1 - ease) * 60); // the motor on its hoist
+      ctx.strokeStyle = rgba(AMBER, 0.7 * (1 - clamp((u - 0.42) / 0.08, 0, 1))); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(m[0], 0); ctx.lineTo(m[0], m[1] - 7 * s); ctx.stroke();
+      box(ctx, m[0] - 11 * s, m[1] - 7 * s, 22 * s, 13 * s, 'rgba(242,181,107,0.3)', rgba(AMBER, 1));
+      if (drop >= 1 && u < 0.5) ring(ctx, m[0], m[1], (10 + (u - 0.4) * 160) * s, rgba(AMBER, 1 - (u - 0.4) * 10), 1.4); // seated
+      var sh = clamp((u - 0.52) / 0.4, 0, 1); // the shine
+      if (sh > 0 && sh < 1) {
+        ctx.save(); ctx.beginPath(); body.forEach(function (p, i) { var q = P(p[0], p[1]); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }); ctx.closePath(); ctx.clip();
+        var bx = cx + (-110 + sh * 220) * s; ctx.fillStyle = rgba(WHITE, 0.4); ctx.beginPath(); ctx.moveTo(bx, gy); ctx.lineTo(bx + 16 * s, gy); ctx.lineTo(bx + 46 * s, gy - 70 * s); ctx.lineTo(bx + 30 * s, gy - 70 * s); ctx.closePath(); ctx.fill(); ctx.restore();
+        var sp = P(-70 + sh * 150, -70); ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(sp[0] - 5, sp[1]); ctx.lineTo(sp[0] + 5, sp[1]); ctx.moveTo(sp[0], sp[1] - 5); ctx.lineTo(sp[0], sp[1] + 5); ctx.stroke();
+      }
+    }
+  };
+  demos.m_family = { // a house with the lights on, family out front, and a heart drifting up
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 900 : t, gy = h - 14, cx = w * 0.4, bw = Math.min(70, w * 0.3), bh = 40, i;
+      ctx.strokeStyle = rgba(GLOW, 0.35); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(10, gy); ctx.lineTo(w - 10, gy); ctx.stroke();
+      ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 2; ctx.lineJoin = 'round';
+      box(ctx, cx - bw / 2, gy - bh, bw, bh, '#0e1828', rgba(WHITE, 0.95));
+      ctx.beginPath(); ctx.moveTo(cx - bw / 2 - 8, gy - bh); ctx.lineTo(cx, gy - bh - 26); ctx.lineTo(cx + bw / 2 + 8, gy - bh); ctx.closePath(); ctx.fillStyle = '#0e1828'; ctx.fill(); ctx.stroke();
+      var glow = 0.55 + 0.45 * Math.sin(now * 0.002);
+      box(ctx, cx - bw / 2 + 8, gy - bh + 9, 14, 12, rgba(AMBER, glow), rgba(AMBER, 1)); box(ctx, cx + bw / 2 - 22, gy - bh + 9, 14, 12, rgba(AMBER, glow), rgba(AMBER, 1));
+      box(ctx, cx - 6, gy - 20, 12, 20, null, rgba(WHITE, 0.95));
+      var hu = (now % 3000) / 3000, hx = cx + Math.sin(hu * 6) * 5, hy = gy - bh - 30 - hu * 26, hs = 5 + hu * 2; // the heart
+      ctx.fillStyle = rgba(AMBER, 1 - hu); ctx.beginPath(); ctx.moveTo(hx, hy + hs);
+      ctx.bezierCurveTo(hx - hs * 1.6, hy - hs * 0.2, hx - hs * 0.6, hy - hs * 1.3, hx, hy - hs * 0.3);
+      ctx.bezierCurveTo(hx + hs * 0.6, hy - hs * 1.3, hx + hs * 1.6, hy - hs * 0.2, hx, hy + hs); ctx.fill();
+      var px = cx + bw / 2 + 26, sizes = [22, 20, 13, 16]; // four figures, hand in hand
+      for (i = 0; i < 4; i++) {
+        var x = px + i * 17, top = gy - sizes[i] - Math.abs(Math.sin(now * 0.004 + i)) * 2;
+        ctx.strokeStyle = rgba(i % 2 ? PALETTE[2] : WHITE, 0.95); ctx.lineWidth = 2; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x, top + 5); ctx.lineTo(x, gy - 1); ctx.stroke();
+        dot(ctx, x, top, 4, rgba(i % 2 ? PALETTE[2] : WHITE, 0.95));
+        if (i < 3) { ctx.strokeStyle = rgba(WHITE, 0.6); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, gy - sizes[i] * 0.45); ctx.lineTo(x + 17, gy - sizes[i + 1] * 0.45); ctx.stroke(); }
+      }
+    }
+  };
+  demos.m_books = { // the two titles as a stack, with an open book turning a page on top
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 600 : t, cx = w / 2, bw = Math.min(w - 30, 214), fs = Math.min(10.5, (bw - 14) / 15.2), gy = h - 12, i;
+      var rows = [["MAN'S SEARCH FOR MEANING", AMBER, 0], ['FUTURE PROOFING YOU', GLOW, 8]];
+      rows.forEach(function (r, k) {
+        var y = gy - 22 - k * 24, x = cx - bw / 2 + r[2] * (k ? 1 : 0);
+        box(ctx, x, y, bw - r[2] * 2, 21, rgba(r[1], 0.14), rgba(r[1], 1));
+        ctx.fillStyle = rgba(r[1], 0.9); ctx.fillRect(x + 5, y, 3, 21); // spine band
+        ctx.font = '500 ' + fs + 'px "IBM Plex Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = rgba(WHITE, 0.95);
+        ctx.fillText(r[0], cx + 3, y + 11);
+      });
+      var by = gy - 48 - 22, pw = 26, ph = 22, u = (now % 3000) / 3000, a = clamp(u / 0.6, 0, 1) * Math.PI; // small open book
+      ctx.strokeStyle = rgba(WHITE, 0.95); ctx.lineWidth = 1.6; ctx.lineJoin = 'round';
+      [-1, 1].forEach(function (side) { ctx.beginPath(); ctx.moveTo(cx, by - ph / 2 + 3); ctx.quadraticCurveTo(cx + side * pw * 0.5, by - ph / 2 - 3, cx + side * pw, by - ph / 2); ctx.lineTo(cx + side * pw, by + ph / 2); ctx.quadraticCurveTo(cx + side * pw * 0.5, by + ph / 2 - 3, cx, by + ph / 2 + 3); ctx.stroke(); });
+      ctx.beginPath(); ctx.moveTo(cx, by - ph / 2 + 3); ctx.lineTo(cx, by + ph / 2 + 3); ctx.stroke();
+      var px = cx + Math.cos(a) * pw, lift = Math.sin(a) * 7;
+      ctx.fillStyle = 'rgba(242,181,107,0.2)'; ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 1.4; ctx.beginPath();
+      ctx.moveTo(cx, by - ph / 2 + 3); ctx.lineTo(px, by - ph / 2 - lift); ctx.lineTo(px, by + ph / 2 - lift); ctx.lineTo(cx, by + ph / 2 + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  };
+  demos.m_market = { // a line climbing across a grid, with the dips left in
+    draw: function (ctx, w, h, t) {
+      var now = REDUCE ? 4200 : t, u = clamp((now % 5600) / 4200, 0, 1), n = 40, i, px, py;
+      ctx.strokeStyle = rgba(GLOW, 0.2); ctx.lineWidth = 1; ctx.beginPath();
+      for (i = 1; i < 4; i++) { ctx.moveTo(12, h * i / 4); ctx.lineTo(w - 12, h * i / 4); }
+      ctx.stroke();
+      ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+      for (i = 0; i <= Math.floor(n * u); i++) {
+        px = 14 + i / n * (w - 28); py = h - 18 - (i / n) * (h - 44) - Math.sin(i * 0.7) * 7 - hashNoise(i * 3.1) * 9;
+        if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+      }
+      ctx.stroke(); dot(ctx, px, py, 4, rgba(WHITE, 1));
     }
   };
 
