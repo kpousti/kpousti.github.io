@@ -1,14 +1,30 @@
 <!DOCTYPE html>
+<!-- Designed and built by Kia Pousti. Copyright 2026. All rights reserved. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kia Pousti Portfolio</title>
 <meta name="description" content="Kia Pousti: software engineer working in C++, Python and applied AI. Live A*, Dijkstra and Tarjan demos.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0a1220">
+<link rel="canonical" href="https://kiapousti.com/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kiapousti.com/">
+<meta property="og:title" content="Kia Pousti: software engineer">
+<meta property="og:description" content="Fast graph systems and practical AI. Live A*, Dijkstra and Tarjan demos.">
+<meta property="og:image" content="https://kiapousti.com/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1220'/%3E%3Cpath d='M7 24 L12 15 L19 18 L25 8' fill='none' stroke='%23f2b56b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='24' r='2.6' fill='%23f2b56b'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='none' stroke='%23f2b56b' stroke-width='1.8'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ibm-plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Kia Pousti","url":"https://kiapousti.com","jobTitle":"Software Developer","worksFor":{"@type":"Organization","name":"Solar Turbines"},"alumniOf":{"@type":"CollegeOrUniversity","name":"University of California, San Diego"},"sameAs":["https://github.com/kpousti","https://www.linkedin.com/in/kiapousti"]}</script>
 <style>
+/* Fonts are served from this site: no third-party request, and the two files the first screen needs are preloaded. */
+@font-face { font-family: "Bricolage Grotesque"; src: url("fonts/bricolage-grotesque.woff2") format("woff2"); font-weight: 200 800; font-stretch: 75% 100%; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Sans"; src: url("fonts/ibm-plex-sans-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Sans"; src: url("fonts/ibm-plex-sans-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
 /* Layout idea: a frosted tab bar across the top, then full-width chapters stacked down the page.
    Each chapter has its own background scene, drawn from one field of points that re-forms
    and moves with the scroll: road graph, spinning sphere, pipeline, telemetry, orbits, components, swell. */
@@ -18,7 +34,7 @@
   --panel: 14, 24, 40;   /* glass panels and cards, as r,g,b */
   --line: #223049;       /* hairlines and chip borders */
   --text: #c3cddd;       /* body text */
-  --text-dim: #8492a8;   /* secondary text */
+  --text-dim: #93a1b8;   /* secondary text: 7.2:1 on the page, so even small labels pass WCAG AAA */
   --bright: #eef3fa;     /* headings */
   --accent: #f2b56b;     /* sunset amber */
   --glow: 98, 152, 255;  /* cursor light and scene color, as r,g,b; JS retints it per chapter */
@@ -26,15 +42,26 @@
   --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   --bar-h: 56px;
+  /* Motion: one entrance curve, one two-way curve, three durations. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 180ms; --t-med: 380ms; --t-slow: 850ms;
+  /* Fluid body size: 16px on phones up to 17px on wide screens. */
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scrollbar-color: #2a3a57 var(--ink); scrollbar-width: thin; }
 body {
   margin: 0; background: var(--ink); color: var(--text);
-  font-family: var(--font-body); font-size: 16px; line-height: 1.65;
-  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  font-family: var(--font-body); font-size: var(--step-0); line-height: 1.62;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto; font-kerning: normal; font-synthesis: none; text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
+p, li { text-wrap: pretty; }
+/* Film grain over the whole page. JS paints the texture once. */
+.grain { position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: 0.04; }
 a { color: inherit; text-decoration: none; }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 ::selection { background: var(--accent); color: var(--ink); }
@@ -81,7 +108,9 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-
 }
 .bar-cta {
   padding: 6px 14px; border: 1px solid var(--accent); border-radius: 999px;
-  font-size: 13px; font-weight: 500; color: var(--accent); white-space: nowrap; transition: background 0.2s, color 0.2s;
+  font-size: 13px; font-weight: 500; color: var(--accent); white-space: nowrap;
+  transform: translate(var(--tx, 0px), var(--ty, 0px));
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-med) var(--ease-out);
 }
 .bar-cta:hover { background: var(--accent); color: var(--ink); }
 /* Thin line under the bar showing how far down the page you are. */
@@ -101,7 +130,7 @@ main { position: relative; z-index: 1; }
 }
 h2 {
   font-family: var(--font-display); font-weight: 700; font-size: clamp(2.1rem, 5.2vw, 3.5rem);
-  line-height: 1.05; letter-spacing: -0.02em; color: var(--bright); margin: 0; text-wrap: balance;
+  line-height: 1.05; letter-spacing: -0.02em; font-stretch: 92%; color: var(--bright); margin: 0; text-wrap: balance;
 }
 .sub { font-size: 1.12rem; color: var(--text-dim); margin: 18px auto 0; max-width: 56ch; text-wrap: balance; }
 h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; line-height: 1.3; color: var(--bright); margin: 0; text-wrap: balance; }
@@ -111,7 +140,7 @@ h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; lin
   min-height: 94vh; padding: calc(var(--bar-h) + 72px) 24px 96px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
-.hero > * { animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.hero > * { animation: rise 0.9s var(--ease-out) both; }
 .hero > :nth-child(2) { animation-delay: 0.08s; }
 .hero > :nth-child(3) { animation-delay: 0.16s; }
 .hero > :nth-child(4) { animation-delay: 0.24s; }
@@ -121,9 +150,15 @@ h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.14rem; lin
 @keyframes rise { from { opacity: 0; transform: translateY(26px); } }
 h1 {
   font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(3.4rem, 11vw, 7.6rem); line-height: 0.95; letter-spacing: -0.035em;
-  color: var(--bright); margin: 0;
+  font-size: clamp(3.4rem, 11.5vw, 8rem); line-height: 0.98; letter-spacing: -0.03em; font-stretch: 86%;
+  color: var(--bright); margin: 0; padding-bottom: 0.06em;
+  /* The cursor light also catches the letters. JS moves --hx / --hy. */
+  background: radial-gradient(540px circle at var(--hx, 50%) var(--hy, 30%), #ffffff 0%, #e3ebf8 32%, #9db3d8 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
+/* The name settles from light and loose to bold and tight. */
+.hero > h1 { animation: settle 1.3s var(--ease-out) both; }
+@keyframes settle { from { opacity: 0; transform: translateY(30px); letter-spacing: 0.03em; font-weight: 300; } }
 .hero-role { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.3rem, 3vw, 1.9rem); color: var(--bright); margin: 22px 0 0; }
 .hero-role em { font-style: normal; color: var(--accent); }
 .hero-pitch { max-width: 52ch; color: var(--text-dim); font-size: 1.08rem; margin: 16px 0 0; }
@@ -131,9 +166,10 @@ h1 {
 .btn {
   padding: 11px 24px; border-radius: 999px; border: 1px solid var(--line);
   background: rgba(var(--panel), 0.7); color: var(--bright); font-weight: 500;
-  transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.2s;
+  transform: translate(var(--tx, 0px), var(--ty, 0px));
+  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast), transform var(--t-med) var(--ease-out);
 }
-.btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--ink); }
 .btn.primary:hover { background: #ffc98a; color: var(--ink); }
 .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; font-size: 14px; margin-top: 30px; }
@@ -159,7 +195,7 @@ h1 {
 .prose strong { color: var(--bright); font-weight: 500; }
 .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 .stats li { padding: 20px; display: flex; flex-direction: column; justify-content: center; }
-.stats .num { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.5rem, 2.4vw, 1.85rem); line-height: 1.1; color: var(--bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats .num { font-family: var(--font-display); font-weight: 700; font-stretch: 90%; font-size: clamp(1.5rem, 2.4vw, 1.85rem); line-height: 1.1; color: var(--bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stats .what { margin-top: 8px; font-size: 0.86rem; color: var(--text-dim); line-height: 1.4; }
 .ticker { margin: 44px 0 0; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 0; }
 .ticker-track { display: flex; gap: 36px; width: max-content; animation: slide 38s linear infinite; }
@@ -183,13 +219,16 @@ h1 {
 
 /* Project cards with a live demo screen */
 .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.builds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.builds { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.build { grid-column: span 2; }
+.build.wide { grid-column: span 4; }
 .feature, .build {
   position: relative; border: 1px solid var(--line); border-radius: 16px;
   background: rgba(var(--panel), 0.92); overflow: hidden;
-  transition: border-color 0.25s, transform 0.25s;
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
+  transition: border-color var(--t-med), box-shadow var(--t-med), transform var(--t-med) var(--ease-out);
 }
-.feature:hover, .build:hover { border-color: rgba(var(--glow), 0.55); transform: translateY(-3px); }
+.feature:hover, .build:hover { --lift: -4px; border-color: rgba(var(--glow), 0.55); box-shadow: 0 26px 60px -34px rgba(var(--glow), 0.55); }
 /* A light that follows the cursor inside the card. JS sets --cx / --cy. */
 .feature::before, .build::before {
   content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s;
@@ -198,7 +237,8 @@ h1 {
 .feature:hover::before, .build:hover::before { opacity: 1; }
 .screen { position: relative; border-bottom: 1px solid var(--line); background: #08101c; }
 .screen canvas { display: block; width: 100%; height: 200px; }
-.build .screen canvas { height: 140px; }
+.build .screen canvas { height: 160px; }
+.build.wide .screen canvas { height: 270px; }
 .screen-bar {
   display: flex; justify-content: space-between; gap: 12px; padding: 7px 14px; border-bottom: 1px solid var(--line);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--text-dim);
@@ -229,7 +269,7 @@ h1 {
 .skill-grid b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
 
 /* Away + contact */
-.beyond { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.beyond { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 720px; margin: 0 auto; padding: 0; list-style: none; }
 .beyond li { padding: 22px; font-size: 0.94rem; text-align: center; }
 .beyond b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
 .contact-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
@@ -240,13 +280,24 @@ h1 {
 footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(--text-dim); position: relative; z-index: 1; }
 
 /* ---------- Scroll-in animation. JS adds .pre only to blocks below the fold, then .in when they arrive. ---------- */
-.pre { opacity: 0; transform: translateY(34px); }
-.pre.in { opacity: 1; transform: none; transition: opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.pre { opacity: 0; transform: translateY(36px); }
+.pre.in { opacity: 1; transform: none; transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
+.w { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0.1em 0 0.16em; margin: -0.1em 0 -0.16em; }
+.w > span { display: inline-block; }
+.head.pre { opacity: 1; transform: none; }
+.head.pre .w > span { transform: translateY(118%); }
+.head.pre .eyebrow, .head.pre .sub { opacity: 0; transform: translateY(14px); }
+.head.pre.in .w > span { transform: none; transition: transform 0.95s var(--ease-out); transition-delay: calc(var(--i) * 55ms); }
+.head.pre.in .eyebrow, .head.pre.in .sub { opacity: 1; transform: none; transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
+.head.pre.in .sub { transition-delay: 0.28s; }
+.colophon { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
 
 /* ---------- Smaller screens ---------- */
 @media (max-width: 900px) {
   .about, .xp, .features { grid-template-columns: minmax(0, 1fr); }
   .builds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .build { grid-column: span 1; }
+  .build.wide { grid-column: span 2; }
   .skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .chapter { padding: 96px 20px; }
 }
@@ -256,6 +307,8 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
   .tabs { margin: 0; }
   .tabs a { padding: 6px 11px; }
   .builds, .beyond, .contact-cards { grid-template-columns: minmax(0, 1fr); }
+  .build.wide { grid-column: span 1; }
+  .build.wide .screen canvas { height: 190px; }
   .prose, .xp article { padding: 22px; }
   .scene-note { right: 12px; bottom: 12px; }
   .head { margin-bottom: 40px; }
@@ -271,6 +324,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 </head>
 <body>
 <canvas id="bg" aria-hidden="true"></canvas>
+<div class="grain" id="grain" aria-hidden="true"></div>
 <div class="glow" aria-hidden="true"></div>
 <div class="scene-note" id="sceneNote" aria-hidden="true"><b>A* search</b> routing to your cursor</div>
 
@@ -453,6 +507,15 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       </header>
       <div class="builds">
 
+        <article class="build wide" data-reveal>
+          <div class="screen"><canvas data-demo="city" aria-label="Animated overwater huts with agents riding boardwalks to a central hub"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Agent City</h3><span class="status">Agent system</span></div>
+            <p>A set of personal agents, each with one job, pictured as a lagoon of overwater huts. They ride in to one hub, and the dashboard surfaces only what needs a decision from me.</p>
+            <ul class="chips"><li>Agents</li><li>Scheduling</li><li>Dashboard</li></ul>
+          </div>
+        </article>
+
         <article class="build" data-reveal>
           <div class="screen"><canvas data-demo="voice" style="height:64px" aria-label="Animated voice waveform"></canvas></div>
           <div class="chat" aria-label="Sample exchange with Kia-bot">
@@ -464,6 +527,15 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
             <div class="feature-head"><h3>Kia-bot</h3><span class="status">Voice agent</span></div>
             <p>A hands-free voice agent for the car. A phone shortcut sends my question to a FastAPI backend, where Claude picks a tool and answers out loud.</p>
             <ul class="chips"><li>Python</li><li>FastAPI</li><li>Claude API</li><li>Tool calling</li></ul>
+          </div>
+        </article>
+
+        <article class="build" data-reveal>
+          <div class="screen"><canvas data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
+            <p>A morning notification on whether the surf is worth the paddle, built on public wave, wind and tide data.</p>
+            <ul class="chips"><li>Automation</li><li>Open-Meteo</li><li>NOAA tides</li></ul>
           </div>
         </article>
 
@@ -482,24 +554,6 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
             <div class="feature-head"><h3>Lead Autoresponder</h3><span class="status">Automation</span></div>
             <p>Reads each inquiry to a small business, classifies intent and urgency, and replies right away. Complaints always go to a person.</p>
             <ul class="chips"><li>Python</li><li>LLM classification</li><li>Human in the loop</li></ul>
-          </div>
-        </article>
-
-        <article class="build" data-reveal>
-          <div class="screen"><canvas data-demo="city" aria-label="Animated agents reporting to a central dashboard"></canvas></div>
-          <div class="feature-body">
-            <div class="feature-head"><h3>Agent City</h3><span class="status">Agent system</span></div>
-            <p>A set of personal agents, each with one job, reporting into a single dashboard that surfaces only what needs a decision from me.</p>
-            <ul class="chips"><li>Agents</li><li>Scheduling</li><li>Dashboard</li></ul>
-          </div>
-        </article>
-
-        <article class="build" data-reveal>
-          <div class="screen"><canvas data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
-          <div class="feature-body">
-            <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
-            <p>A morning notification on whether the surf is worth the paddle, built on public wave, wind and tide data.</p>
-            <ul class="chips"><li>Automation</li><li>Open-Meteo</li><li>NOAA tides</li></ul>
           </div>
         </article>
       </div>
@@ -544,13 +598,12 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       <ul class="beyond">
         <li class="glass" data-reveal><b>Boards</b>Surfing and skateboarding, most weeks of the year.</li>
         <li class="glass" data-reveal><b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.</li>
-        <li class="glass" data-reveal><b>Training</b>A push, pull, legs split, tracked and tuned.</li>
       </ul>
     </div>
   </section>
 </main>
 
-<footer>© 2026 Kia Pousti. All rights reserved. Designed and built by Kia Pousti. The A*, Dijkstra and Tarjan demos on this page run the real algorithms in your browser.</footer>
+<footer>© 2026 Kia Pousti. All rights reserved. Designed and built by Kia Pousti. The A*, Dijkstra and Tarjan demos on this page run the real algorithms in your browser.<span class="colophon">Set in Bricolage Grotesque and IBM Plex. Hand-written HTML, CSS and JavaScript, with no frameworks.</span></footer>
 
 <script>
 // ---------- Shared helpers ----------
@@ -581,10 +634,13 @@ function signalValue(k) {
 // ---------- Cursor light ----------
 var pointer = { x: -1, y: -1, active: false };
 (function () {
-  var root = document.documentElement, pending = false;
+  var root = document.documentElement, pending = false, h1 = document.querySelector('h1');
   function apply() {
     root.style.setProperty('--mx', pointer.x + 'px');
     root.style.setProperty('--my', pointer.y + 'px');
+    var hr = h1.getBoundingClientRect(); // light the name's letters from the same spot
+    h1.style.setProperty('--hx', (pointer.x - hr.left) + 'px');
+    h1.style.setProperty('--hy', (pointer.y - hr.top) + 'px');
     pending = false;
   }
   window.addEventListener('pointermove', function (e) {
@@ -594,11 +650,38 @@ var pointer = { x: -1, y: -1, active: false };
   // Each project card also gets its own light, positioned relative to the card.
   document.querySelectorAll('.feature, .build').forEach(function (card) {
     card.addEventListener('pointermove', function (e) {
-      var r = card.getBoundingClientRect();
+      var r = card.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
       card.style.setProperty('--cx', (e.clientX - r.left) + 'px');
       card.style.setProperty('--cy', (e.clientY - r.top) + 'px');
+      if (REDUCE || e.pointerType !== 'mouse') return;
+      // Tilt a few degrees toward the cursor. Wide cards tilt less so the far edge does not swing.
+      var maxDeg = r.width > 560 ? 1.6 : 2.8;
+      card.style.setProperty('--ry', ((fx - 0.5) * 2 * maxDeg).toFixed(2) + 'deg');
+      card.style.setProperty('--rx', ((0.5 - fy) * 2 * maxDeg).toFixed(2) + 'deg');
     }, { passive: true });
+    card.addEventListener('pointerleave', function () { card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg'); });
   });
+  // Magnetic buttons: they lean toward the cursor, then spring back.
+  if (!REDUCE) document.querySelectorAll('.btn, .bar-cta').forEach(function (btn) {
+    btn.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var r = btn.getBoundingClientRect();
+      btn.style.setProperty('--tx', ((e.clientX - r.left - r.width / 2) * 0.22).toFixed(1) + 'px');
+      btn.style.setProperty('--ty', ((e.clientY - r.top - r.height / 2) * 0.32).toFixed(1) + 'px');
+    }, { passive: true });
+    btn.addEventListener('pointerleave', function () { btn.style.setProperty('--tx', '0px'); btn.style.setProperty('--ty', '0px'); });
+  });
+  // Film grain: paint a small noise tile once and repeat it across the page.
+  (function () {
+    var c = document.createElement('canvas'), g = c.getContext && c.getContext('2d');
+    if (!g) return;
+    c.width = c.height = 140;
+    var img = g.createImageData(140, 140), r = rng(3);
+    for (var i = 0; i < img.data.length; i += 4) { var v = Math.floor(r() * 255); img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+    g.putImageData(img, 0, 0);
+    document.getElementById('grain').style.backgroundImage = 'url(' + c.toDataURL('image/png') + ')';
+  })();
+  if (window.console) console.log('%cKia Pousti%c  Designed and built by hand. kiapousti.com', 'font-weight:700;color:#f2b56b', 'color:#93a1b8');
 })();
 
 // ---------- Tab bar: sliding highlight and page progress ----------
@@ -939,42 +1022,148 @@ var pointer = { x: -1, y: -1, active: false };
     }
   };
 
-  // Agent City: agents in their huts send results to one dashboard.
+  // Agent City: an isometric lagoon. Each agent lives in an overwater hut and rides the boardwalk to the hub to report.
   demos.city = {
-    draw: function (ctx, w, h, t) {
-      var cx = w / 2, cy = h / 2, names = ['inbox', 'jobs', 'ideas', 'coach', 'builder', 'markets'], now = REDUCE ? 5000 : t;
-      for (var i = 0; i < 6; i++) {
-        var ang = i / 6 * Math.PI * 2 - Math.PI / 2, x = cx + Math.cos(ang) * w * 0.37, y = cy + Math.sin(ang) * h * 0.33;
-        ctx.strokeStyle = rgba(GLOW, 0.22); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(cx, cy); ctx.stroke();
-        var f = (now * 0.00032 + i * 0.29) % 1; // a result traveling to the dashboard
-        dot(ctx, x + (cx - x) * f, y + (cy - y) * f, 2.6, rgba(i % 3 === 0 ? AMBER : GLOW, 1));
-        ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(WHITE, 0.75); ctx.lineWidth = 1.2; // hut: square with a roof
-        ctx.beginPath(); ctx.moveTo(x - 7, y + 6); ctx.lineTo(x - 7, y - 2); ctx.lineTo(x, y - 9); ctx.lineTo(x + 7, y - 2); ctx.lineTo(x + 7, y + 6); ctx.closePath(); ctx.fill(); ctx.stroke();
-        text(ctx, names[i], x, y + (Math.sin(ang) < -0.5 ? -17 : 16), rgba(DIM, 1), 'center');
+    init: function (s, w, h) {
+      s.tw = Math.min(w / 9.2, h / 3.2);   // width of one ground tile; a tile is half as tall as it is wide
+      s.cx = w / 2; s.cy = h * 0.6;
+      // Hut positions as (u, v): u runs left to right on screen, v runs from back to front.
+      var spots = [[-6.6, -0.9, 'inbox'], [-3.6, -2.5, 'jobs'], [-3.9, 2.3, 'ideas'], [3.6, -2.5, 'coach'], [3.9, 2.3, 'builder'], [6.6, -0.9, 'markets']];
+      s.huts = spots.map(function (p) {
+        var gx = (p[0] + p[1]) / 2, gy = (p[1] - p[0]) / 2;
+        // Boardwalk: straight along one ground axis to a pier, then along the pier to the hub.
+        var mid = p[0] < 0 ? [0, gy] : [gx, 0];
+        return { gx: gx, gy: gy, v: p[1], name: p[2], path: [[gx, gy], mid, [0, 0]] };
+      });
+    },
+    draw: function (ctx, w, h, t, s) {
+      var now = REDUCE ? 4200 : t, tw = s.tw, i;
+      // Ground point (gx, gy) at height z, projected to the screen.
+      function P(gx, gy, z) { return [s.cx + (gx - gy) * tw / 2, s.cy + (gx + gy) * tw / 4 - (z || 0) * tw / 2]; }
+      function poly(pts, fill, stroke) {
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (var k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
+        ctx.closePath();
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
       }
-      var need = 1 + Math.floor(now / 2600) % 3;
-      ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 1.3;
-      ctx.beginPath(); ctx.rect(cx - 44, cy - 12, 88, 24); ctx.fill(); ctx.stroke();
-      text(ctx, 'needs you: ' + need, cx, cy + 0.5, rgba(AMBER, 1), 'center');
+      // Lagoon: a glow toward the front, plus faint lines of light on the water.
+      var water = ctx.createLinearGradient(0, 0, 0, h);
+      water.addColorStop(0, 'rgba(8,16,28,0)'); water.addColorStop(1, rgba(GLOW, 0.16));
+      ctx.fillStyle = water; ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = rgba(GLOW, 0.07); ctx.lineWidth = 1; ctx.beginPath();
+      for (i = -7; i <= 7; i += 2) { var a = P(i, -8), b = P(i, 8), c = P(-8, i), d = P(8, i); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.moveTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); }
+      ctx.stroke();
+      // Ripples spreading from under each hut.
+      s.huts.forEach(function (hut, idx) {
+        var f = (now * 0.00035 + idx * 0.31) % 1, c0 = P(hut.gx, hut.gy);
+        ctx.strokeStyle = rgba(GLOW, 0.3 * (1 - f)); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(c0[0], c0[1], tw * (0.45 + f * 0.6), tw * (0.45 + f * 0.6) / 2, 0, 0, Math.PI * 2); ctx.stroke();
+      });
+      // Boardwalks.
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(160,118,70,0.75)'; ctx.lineWidth = Math.max(3, tw * 0.11);
+      s.huts.forEach(function (hut) {
+        ctx.beginPath();
+        hut.path.forEach(function (q, k) { var sp = P(q[0], q[1], 0.12); if (k) ctx.lineTo(sp[0], sp[1]); else ctx.moveTo(sp[0], sp[1]); });
+        ctx.stroke();
+      });
+      // Agents riding to the hub and back.
+      var arrivals = 0;
+      s.huts.forEach(function (hut, idx) {
+        var f = (now * 0.00012 + idx * 0.37) % 1, along = f < 0.5 ? f * 2 : 2 - f * 2; // 0 at the hut, 1 at the hub
+        var p0 = hut.path[0], p1 = hut.path[1], p2 = hut.path[2];
+        var l1 = Math.abs(p1[0] - p0[0]) + Math.abs(p1[1] - p0[1]), l2 = Math.abs(p2[0] - p1[0]) + Math.abs(p2[1] - p1[1]);
+        var dd = along * (l1 + l2), q;
+        if (dd <= l1) { var k1 = l1 ? dd / l1 : 0; q = [p0[0] + (p1[0] - p0[0]) * k1, p0[1] + (p1[1] - p0[1]) * k1]; }
+        else { var k2 = l2 ? (dd - l1) / l2 : 0; q = [p1[0] + (p2[0] - p1[0]) * k2, p1[1] + (p2[1] - p1[1]) * k2]; }
+        if (along > 0.9) arrivals++;
+        if (along < 0.06 || along > 0.97) return; // inside a building
+        var sp = P(q[0], q[1], 0.12), sz = Math.max(1.4, tw * 0.035);
+        ring(ctx, sp[0] - sz * 1.6, sp[1], sz, rgba(WHITE, 0.95), 1); ring(ctx, sp[0] + sz * 1.6, sp[1], sz, rgba(WHITE, 0.95), 1); // wheels
+        dot(ctx, sp[0], sp[1] - sz * 2.4, sz * 1.25, rgba(idx % 2 ? AMBER : PALETTE[2], 1)); // rider
+      });
+      // Buildings, drawn back to front. The hub sits at the center.
+      var all = s.huts.map(function (hut, idx) { return { gx: hut.gx, gy: hut.gy, v: hut.v, name: hut.name, size: 0.46, idx: idx }; });
+      all.push({ gx: 0, gy: 0, v: 0, name: '', size: 0.72, hub: true });
+      all.sort(function (m, k) { return m.v - k.v; });
+      all.forEach(function (bd) {
+        var z = bd.size, g = bd.gx, y = bd.gy, floor = 0.3, wall = floor + (bd.hub ? 0.62 : 0.46), peak = wall + (bd.hub ? 1.0 : 0.78), o = z * 1.32;
+        // stilts
+        ctx.strokeStyle = 'rgba(160,118,70,0.8)'; ctx.lineWidth = 1.2; ctx.beginPath();
+        [[g - z, y + z], [g + z, y + z], [g + z, y - z]].forEach(function (cn) { var top = P(cn[0], cn[1], floor), bot = P(cn[0], cn[1], -0.05); ctx.moveTo(top[0], top[1]); ctx.lineTo(bot[0], bot[1]); });
+        ctx.stroke();
+        // deck, then the two walls that face the viewer
+        poly([P(g - z * 1.2, y - z * 1.2, floor), P(g + z * 1.2, y - z * 1.2, floor), P(g + z * 1.2, y + z * 1.2, floor), P(g - z * 1.2, y + z * 1.2, floor)], 'rgba(160,118,70,0.55)', 'rgba(8,16,28,0.6)');
+        poly([P(g - z, y + z, floor), P(g + z, y + z, floor), P(g + z, y + z, wall), P(g - z, y + z, wall)], '#243652', 'rgba(8,16,28,0.7)');
+        poly([P(g + z, y + z, floor), P(g + z, y - z, floor), P(g + z, y - z, wall), P(g + z, y + z, wall)], '#33496b', 'rgba(8,16,28,0.7)');
+        // a lit window that pulses while the hut's agent is home
+        var lit = bd.hub ? 1 : 0.45 + 0.55 * Math.abs(Math.sin(now * 0.0016 + (bd.idx || 0) * 1.3));
+        var wa = P(g - z * 0.45, y + z, floor + 0.14), wb = P(g + z * 0.25, y + z, floor + 0.14), wc = P(g + z * 0.25, y + z, wall - 0.1), wd = P(g - z * 0.45, y + z, wall - 0.1);
+        poly([wa, wb, wc, wd], rgba(AMBER, 0.85 * lit));
+        // thatched roof: two faces meeting at a peak
+        var apex = P(g, y, peak);
+        poly([P(g - o, y + o, wall), P(g + o, y + o, wall), apex], '#b98545', 'rgba(8,16,28,0.6)');
+        poly([P(g + o, y + o, wall), P(g + o, y - o, wall), apex], '#e0a85e', 'rgba(8,16,28,0.6)');
+        var base = P(g, y + z * 1.2, 0);
+        if (bd.hub) {
+          var need = 1 + Math.floor(now / 2600) % 3, top = apex[1] - 22;
+          ctx.strokeStyle = rgba(AMBER, 0.9); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(apex[0], apex[1]); ctx.lineTo(apex[0], top + 10); ctx.stroke();
+          ctx.fillStyle = '#08101c'; ctx.strokeStyle = rgba(AMBER, 1); ctx.beginPath(); ctx.rect(apex[0] - 46, top - 12, 92, 22); ctx.fill(); ctx.stroke();
+          text(ctx, 'needs you: ' + need, apex[0], top - 0.5, rgba(AMBER, 1), 'center');
+          if (arrivals) ring(ctx, base[0], base[1] - tw * 0.1, tw * (0.5 + 0.25 * Math.abs(Math.sin(now * 0.005))), rgba(AMBER, 0.5), 1.2); // a report just landed
+        } else if (w >= 430) text(ctx, bd.name, base[0], base[1] + 13, rgba(WHITE, 0.8), 'center');
+      });
     }
   };
 
-  // Surf Alert: layered swell with a sample morning alert.
+  // Surf Alert: a set wave rolls in and breaks, under the sample morning report.
   demos.surf = {
     draw: function (ctx, w, h, t) {
-      var now = REDUCE ? 0 : t;
-      for (var layer = 0; layer < 4; layer++) {
-        var base = h * (0.5 + layer * 0.13), amp = 9 - layer * 1.5;
-        ctx.fillStyle = rgba(GLOW, 0.1 + layer * 0.05);
+      var now = REDUCE ? 3300 : t, hz = h * 0.46, x, i;
+      // dawn glow and a sun on the horizon
+      var sky = ctx.createLinearGradient(0, hz - 60, 0, hz);
+      sky.addColorStop(0, 'rgba(242,181,107,0)'); sky.addColorStop(1, rgba(AMBER, 0.22));
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hz);
+      dot(ctx, w * 0.8, hz - 2, 12, rgba(AMBER, 0.95));
+      // distant swell lines marching in
+      for (i = 0; i < 3; i++) {
+        ctx.fillStyle = ['#16294a', '#1b3359', '#203c69'][i];
         ctx.beginPath(); ctx.moveTo(0, h);
-        for (var x = 0; x <= w; x += 6) ctx.lineTo(x, base + Math.sin(x * 0.02 + now * 0.0014 * (1 + layer * 0.3) + layer * 1.7) * amp);
+        for (x = 0; x <= w; x += 6) ctx.lineTo(x, hz + i * 9 + Math.sin(x * 0.03 + now * 0.0011 * (1 + i * 0.4) + i * 2) * (2.2 + i));
         ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
       }
-      dot(ctx, w - 30, 28, 9, rgba(AMBER, 0.9));
-      ctx.fillStyle = 'rgba(8,16,28,0.9)'; ctx.strokeStyle = rgba(AMBER, 0.9); ctx.lineWidth = 1;
-      var pw = Math.min(w - 60, 214);
-      ctx.beginPath(); ctx.rect(10, 12, pw, 26); ctx.fill(); ctx.stroke();
-      text(ctx, '6:30 AM · clean, 3 to 4 ft (sample)', 18, 25.5, rgba(WHITE, 0.95));
+      // the set wave: travels left, stands up, then breaks
+      var cyc = (now % 7600) / 7600, x0 = w * (1.12 - cyc * 1.3);
+      var grow = Math.pow(Math.sin(Math.PI * clamp(cyc * 1.15, 0, 1)), 0.8), amp = h * 0.36 * grow, base = hz + 34;
+      function face(px) { // steep on the leading side, long shoulder behind
+        var d = px - x0, sg = d < 0 ? 20 + 14 * (1 - grow) : 78;
+        return base - amp * Math.exp(-(d * d) / (2 * sg * sg)) + Math.sin(px * 0.045 + now * 0.002) * 1.6;
+      }
+      var body = ctx.createLinearGradient(0, base - amp, 0, h);
+      body.addColorStop(0, '#3f78c9'); body.addColorStop(1, '#162c50');
+      ctx.fillStyle = body; ctx.beginPath(); ctx.moveTo(0, h);
+      for (x = 0; x <= w; x += 4) ctx.lineTo(x, face(x));
+      ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+      // foam along the lip, and spray once it starts to break
+      ctx.strokeStyle = rgba(WHITE, 0.9 * grow); ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.beginPath();
+      for (x = x0 - 26; x <= x0 + 34; x += 3) { if (x === x0 - 26) ctx.moveTo(x, face(x)); else ctx.lineTo(x, face(x)); }
+      ctx.stroke();
+      var brk = clamp((cyc - 0.42) / 0.4, 0, 1);
+      if (brk > 0 && grow > 0.05) for (i = 0; i < 16; i++) {
+        var hx = hashNoise(i * 7.1) + 0.5, hy = hashNoise(i * 3.3 + 9) + 0.5, life = (brk * 1.6 + hx) % 1;
+        dot(ctx, x0 - 34 * hx - life * 26, face(x0 - 10) - hy * 20 * life + life * life * 26, 1 + hy * 1.6, rgba(WHITE, 0.85 * (1 - life) * grow));
+      }
+      // whitewater line and the near water in front
+      ctx.fillStyle = '#12233f'; ctx.beginPath(); ctx.moveTo(0, h);
+      for (x = 0; x <= w; x += 6) ctx.lineTo(x, h - 16 + Math.sin(x * 0.028 - now * 0.0016) * 3);
+      ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+      // the report
+      var pw = Math.min(w - 20, 250);
+      ctx.fillStyle = 'rgba(8,16,28,0.86)'; ctx.strokeStyle = rgba(AMBER, 0.9); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.rect(10, 10, pw, 42); ctx.fill(); ctx.stroke();
+      text(ctx, '6:30 AM · clean · sample report', 19, 23, rgba(AMBER, 1));
+      text(ctx, '3 to 4 ft · 14 s · offshore wind', 19, 40, rgba(WHITE, 0.95));
     }
   };
 
@@ -1015,14 +1204,27 @@ var pointer = { x: -1, y: -1, active: false };
   requestAnimationFrame(frame);
 })();
 
-// ---------- Scroll-in animation and counting numbers ----------
+// ---------- Scroll-in animation: cards rise, headlines reveal word by word, numbers count up ----------
 (function () {
   if (REDUCE || !('IntersectionObserver' in window)) return;
+  // Wrap each headline word in a mask so it can slide up from behind its own line.
+  document.querySelectorAll('.head h2').forEach(function (h2) {
+    var words = h2.textContent.trim().split(/\s+/);
+    h2.setAttribute('aria-label', h2.textContent.trim());
+    h2.textContent = '';
+    words.forEach(function (word, i) {
+      var mask = document.createElement('span'), inner = document.createElement('span');
+      mask.className = 'w'; mask.setAttribute('aria-hidden', 'true');
+      inner.textContent = word; inner.style.setProperty('--i', i);
+      mask.appendChild(inner); h2.appendChild(mask);
+      if (i < words.length - 1) h2.appendChild(document.createTextNode(' '));
+    });
+  });
   function countUp(el) { // run a stat from zero up to its value
     var target = parseFloat(el.getAttribute('data-count')), dec = parseInt(el.getAttribute('data-decimals'), 10) || 0;
     var suffix = el.getAttribute('data-suffix') || '', t0 = performance.now();
     function tick(now) {
-      var u = clamp((now - t0) / 1100, 0, 1), eased = 1 - Math.pow(1 - u, 3);
+      var u = clamp((now - t0) / 1200, 0, 1), eased = 1 - Math.pow(1 - u, 4);
       el.textContent = (target * eased).toFixed(dec) + suffix;
       if (u < 1) requestAnimationFrame(tick);
     }
@@ -1031,16 +1233,21 @@ var pointer = { x: -1, y: -1, active: false };
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
-      entry.target.classList.add('in'); io.unobserve(entry.target);
-      entry.target.querySelectorAll('[data-count]').forEach(countUp);
+      var el = entry.target;
+      el.classList.add('in'); io.unobserve(el);
+      el.querySelectorAll('[data-count]').forEach(countUp);
+      // Once it has arrived, drop the animation classes so hover effects respond instantly.
+      setTimeout(function () { el.classList.remove('pre', 'in'); el.style.transitionDelay = ''; }, 2200);
     });
   }, { rootMargin: '0px 0px -8% 0px' });
   document.querySelectorAll('[data-reveal]').forEach(function (el) {
     // Only hide blocks that start below the fold, so the first screen is complete on load.
     if (el.getBoundingClientRect().top < window.innerHeight * 0.92) return;
     // Cards in the same row arrive one after another.
-    var sibs = Array.prototype.slice.call(el.parentNode.children), col = sibs.indexOf(el) % 4;
-    el.style.transitionDelay = (col * 70) + 'ms';
+    if (!el.classList.contains('head')) {
+      var sibs = Array.prototype.slice.call(el.parentNode.children);
+      el.style.transitionDelay = ((sibs.indexOf(el) % 4) * 80) + 'ms';
+    }
     el.classList.add('pre'); io.observe(el);
   });
 })();
@@ -1062,7 +1269,7 @@ var pointer = { x: -1, y: -1, active: false };
   };
   var TINT = { graph: GLOW, sphere: PALETTE[2], grid: GLOW, signal: GLOW, orbits: PALETTE[3], scc: GLOW, waves: GLOW };
   var W, H, cols, rows, n, nodes = null, adj, edges, startNode;
-  var scene = 'graph', sceneStart = 0, lp = 0; // lp: how far the current chapter has scrolled through the screen
+  var scene = 'graph', sceneStart = 0, lp = 0, lpS = 0; // lp: how far the current chapter has scrolled through the screen
   var route = { goal: -1, visited: [], path: [], t0: 0 };
   var autoGoal = -1, autoGoalAt = 0;
 
@@ -1157,37 +1364,37 @@ var pointer = { x: -1, y: -1, active: false };
       p = nodes[i]; p.hot = false; p.z = 0;
       if (scene === 'graph') {
         // Parallax: nearer points travel further as the page scrolls.
-        p.tx = p.gx; p.ty = p.gy - (lp - 0.3) * H * 0.24 * p.depth;
+        p.tx = p.gx; p.ty = p.gy - (lpS - 0.3) * H * 0.24 * p.depth;
       } else if (scene === 'sphere') {
         // Points spread evenly over a sphere by the golden angle; scrolling spins it.
         var yy = 1 - 2 * (i + 0.5) / n, rad = Math.sqrt(1 - yy * yy);
-        var th = i * 2.39996 + lp * 4.2 + time * 0.00016;
+        var th = i * 2.39996 + lpS * 4.2 + time * 0.00016;
         var x3 = Math.cos(th) * rad, z3 = Math.sin(th) * rad, tilt = 0.38;
         var y2 = yy * Math.cos(tilt) - z3 * Math.sin(tilt), z2 = yy * Math.sin(tilt) + z3 * Math.cos(tilt);
         var R = Math.min(W, H) * 0.4;
         p.tx = W * 0.5 + x3 * R; p.ty = H * 0.54 + y2 * R; p.z = z2;
       } else if (scene === 'grid') {
-        p.tx = p.ux; p.ty = p.uy - (lp - 0.3) * H * 0.1;
+        p.tx = p.ux; p.ty = p.uy - (lpS - 0.3) * H * 0.1;
       } else if (scene === 'signal') {
         // The reading slides sideways as you scroll, like a live chart.
-        var k = i + lp * 60 + time * 0.004, k0 = Math.floor(k), f = k - k0;
+        var k = i + lpS * 60 + time * 0.004, k0 = Math.floor(k), f = k - k0;
         var v = signalValue(k0) * (1 - f) + signalValue(k0 + 1) * f;
         p.tx = 24 + i / (n - 1) * (W - 48); p.ty = H * 0.6 - v * H * 0.32; p.hot = v > 0.52;
       } else if (scene === 'orbits') {
         // Four tilted rings of agents circling one hub; scrolling turns them in alternating directions.
         var ring = i % 4, m = Math.floor(i / 4), dir = ring % 2 ? 1 : -1;
-        var ang = m / perRing * Math.PI * 2 + (lp * 3.2 + time * 0.00013) * dir * (1 + ring * 0.18);
+        var ang = m / perRing * Math.PI * 2 + (lpS * 3.2 + time * 0.00013) * dir * (1 + ring * 0.18);
         var rx = Math.min(W, H * 1.5) * (0.17 + ring * 0.1), ry = rx * 0.4;
         var ox = Math.cos(ang) * rx, oy = Math.sin(ang) * ry, ca = Math.cos(-0.28), sa = Math.sin(-0.28);
         p.tx = W * 0.5 + ox * ca - oy * sa; p.ty = H * 0.54 + ox * sa + oy * ca; p.hot = m % 7 === 0;
       } else if (scene === 'scc') {
         var cl = i % 5, mm = Math.floor(i / 5);
-        var a2 = mm / perCluster * Math.PI * 2 + (lp * 2.6 + time * 0.00012) * (cl % 2 ? 1 : -1);
+        var a2 = mm / perCluster * Math.PI * 2 + (lpS * 2.6 + time * 0.00012) * (cl % 2 ? 1 : -1);
         var rad2 = Math.min(W, H) * (0.09 + 0.05 * (mm % 2));
         p.tx = centers[cl][0] * W + Math.cos(a2) * rad2; p.ty = centers[cl][1] * H + Math.sin(a2) * rad2;
       } else { // waves
         var row = i % 6, j = Math.floor(i / 6), x = j / Math.max(1, perRow - 1) * W;
-        p.tx = x; p.ty = H * (0.3 + row * 0.1) + Math.sin(x * 0.011 + time * 0.0011 + lp * 5 + row * 0.9) * (14 + row * 4);
+        p.tx = x; p.ty = H * (0.3 + row * 0.1) + Math.sin(x * 0.011 + time * 0.0011 + lpS * 5 + row * 0.9) * (14 + row * 4);
       }
     }
   }
@@ -1198,6 +1405,7 @@ var pointer = { x: -1, y: -1, active: false };
 
   function draw(now) {
     var i, a = clamp((now - sceneStart) / 700, 0, 1), tint = TINT[scene] || GLOW; // lines fade in after a scene change
+    lpS += (lp - lpS) * (REDUCE ? 1 : 0.09); // smooth the scroll position so scenes glide
     setTargets(now);
     for (i = 0; i < n; i++) { // ease every point toward its target
       var p = nodes[i], ease = REDUCE ? 1 : 0.1;
@@ -1242,7 +1450,7 @@ var pointer = { x: -1, y: -1, active: false };
       for (i = 0; i < edges.length; i++) if (edges[i][1] - edges[i][0] !== cols + 1) line(edges[i][0], edges[i][1]);
       ctx.stroke();
       for (var rw = 0; rw < rows; rw++) { // one pulse of work moving along each row, pushed along by the scroll
-        var f = (((REDUCE ? 0 : now * 0.00009) + lp * 0.9 + rw * 0.37) % 1 + 1) % 1;
+        var f = (((REDUCE ? 0 : now * 0.00009) + lpS * 0.9 + rw * 0.37) % 1 + 1) % 1;
         dot(f * W, nodes[rw * cols].y, 3, AMBER, 0.85 * a);
       }
     } else if (scene === 'signal') {
