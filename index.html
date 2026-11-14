@@ -401,6 +401,16 @@ h1.meshed { color: transparent; }
   .chapter > .wrap > .head:first-child { min-height: 52vh; display: flex; flex-direction: column; justify-content: center; }
 }
 
+/* One project per screen: a card on one side, and that project's shape in the dots behind it. */
+.scene { display: flex; align-items: center; min-height: 100vh; min-height: 100svh; padding: 40px 0; }
+.scene > article { width: min(480px, 100%); }
+.scene[data-side="right"] { justify-content: flex-end; }
+.scene .screen canvas, .scene .build.wide .screen canvas { height: 250px; }
+@media (max-width: 900px) {
+  .scene { display: block; min-height: 0; padding: 46vh 0 24px; } /* the gap above each card is where its shape shows */
+  .scene > article { width: 100%; }
+}
+
 /* Theme picker (previews only). */
 .themes {
   position: fixed; left: 16px; bottom: 16px; z-index: 12; display: flex; gap: 4px; padding: 5px; border-radius: 999px; max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none;
@@ -438,7 +448,6 @@ h1.meshed { color: transparent; }
 </head>
 <body>
 <canvas id="cloud" aria-hidden="true"></canvas>
-<canvas id="bg" aria-hidden="true"></canvas>
 <div class="grain" id="grain" aria-hidden="true"></div>
 <div class="glow" aria-hidden="true"></div>
 <div class="scene-note" id="sceneNote" aria-hidden="true"><b>Point cloud</b> the dots flow around your cursor</div>
@@ -478,7 +487,7 @@ h1.meshed { color: transparent; }
     <a class="cue" href="#about">Scroll</a>
   </section>
 
-  <section class="chapter" id="about" data-scene="sphere">
+  <section class="chapter" id="about" data-shape="turbine" data-size="0.44">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">About</p>
@@ -501,7 +510,7 @@ h1.meshed { color: transparent; }
     </div>
   </section>
 
-  <section class="chapter" id="experience" data-scene="turbine">
+  <section class="chapter" id="experience" data-shape="turbine" data-size="0.52">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Experience</p>
@@ -544,12 +553,12 @@ h1.meshed { color: transparent; }
     </div>
   </section>
 
-  <section class="chapter" id="projects">
+  <section class="chapter" id="projects" data-shape="roads">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Projects</p>
         <h2>Four projects, all running live.</h2>
-        <p class="sub">Each screen runs the project's core idea in your browser. The first one follows your cursor.</p>
+        <p class="sub">One project per screen. Scroll, and the dots behind rebuild into each one.</p>
       </header>
     </div>
 
@@ -573,10 +582,9 @@ h1.meshed { color: transparent; }
     </div>
 
     <div class="wrap wide">
-      <div class="split" data-stage>
-      <aside class="stage" aria-hidden="true"><span>Now playing</span></aside>
-      <div class="features">
+      <div class="scenes">
 
+        <div class="scene" data-shape="roads" data-side="left">
         <article class="feature" data-scene="graph" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>A*</b> shortest path</span><span>move your cursor over the map</span></div>
@@ -593,7 +601,8 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>C++</li><li>A*</li><li>CSR graphs</li><li>REST</li><li>GeoJSON</li></ul>
           </div>
         </article>
-
+        </div>
+        <div class="scene" data-shape="signal" data-side="right">
         <article class="feature" data-scene="signal" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Telemetry</b> anomaly detection</span><span>illustration, synthetic data</span></div>
@@ -609,7 +618,8 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>Python</li><li>scikit-learn</li><li>pandas</li><li>pytest</li><li>GitHub Actions</li></ul>
           </div>
         </article>
-
+        </div>
+        <div class="scene" data-shape="wavefront" data-side="left">
         <article class="feature" data-scene="wavefront" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Dijkstra</b> settling nodes by distance</span><span>numbers are path costs</span></div>
@@ -625,7 +635,8 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>C++</li><li>Dijkstra</li><li>BFS</li><li>Make</li></ul>
           </div>
         </article>
-
+        </div>
+        <div class="scene" data-shape="scc" data-side="right">
         <article class="feature" data-scene="scc" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Tarjan</b> strongly connected components</span><span>each color is one component</span></div>
@@ -641,20 +652,21 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>C++</li><li>Tarjan SCC</li><li>Stoer–Wagner</li></ul>
           </div>
         </article>
-      </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="chapter" id="builds">
+  <section class="chapter" id="builds" data-shape="city">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Side builds</p>
         <h2>Built for my own daily use.</h2>
         <p class="sub">Seven personal projects, some finished and some still in progress. The screens show sample data.</p>
       </header>
-      <div class="builds">
+      <div class="scenes">
 
+        <div class="scene" data-shape="city" data-side="left">
         <article data-scene="orbits" class="build wide" data-reveal>
           <div class="screen"><canvas role="img" data-demo="city" aria-label="Animated overwater huts with agents riding boardwalks to a central hub"></canvas></div>
           <div class="feature-body">
@@ -663,7 +675,18 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>Agents</li><li>Scheduling</li><li>Dashboard</li></ul>
           </div>
         </article>
-
+        </div>
+        <div class="scene" data-shape="wave" data-side="right">
+        <article data-scene="barrel" class="build" data-reveal>
+          <div class="screen"><canvas role="img" data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
+            <p>A morning notification on whether the surf is worth the paddle, built on public wave, wind and tide data.</p>
+            <ul class="chips"><li>Automation</li><li>Open-Meteo</li><li>NOAA tides</li></ul>
+          </div>
+        </article>
+        </div>
+        <div class="scene" data-shape="voice" data-side="left">
         <article data-scene="voice" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="voice" style="height:120px" aria-label="Animated voice waveform"></canvas></div>
           <div class="chat" aria-label="Sample exchange with Kia-bot">
@@ -677,16 +700,8 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>Python</li><li>FastAPI</li><li>Claude API</li><li>Tool calling</li></ul>
           </div>
         </article>
-
-        <article data-scene="barrel" class="build" data-reveal>
-          <div class="screen"><canvas role="img" data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
-          <div class="feature-body">
-            <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
-            <p>A morning notification on whether the surf is worth the paddle, built on public wave, wind and tide data.</p>
-            <ul class="chips"><li>Automation</li><li>Open-Meteo</li><li>NOAA tides</li></ul>
-          </div>
-        </article>
-
+        </div>
+        <div class="scene" data-shape="histogram" data-side="right">
         <article data-scene="histogram" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="backtest" aria-label="Animated equity curve with walk-forward windows"></canvas></div>
           <div class="feature-body">
@@ -695,7 +710,8 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>Python</li><li>Walk-forward</li><li>Cost modeling</li></ul>
           </div>
         </article>
-
+        </div>
+        <div class="scene" data-shape="funnel" data-side="left">
         <article data-scene="funnel" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="leads" aria-label="Animated messages being classified and routed"></canvas></div>
           <div class="feature-body">
@@ -704,7 +720,8 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>Python</li><li>LLM classification</li><li>Human in the loop</li></ul>
           </div>
         </article>
-
+        </div>
+        <div class="scene" data-shape="candles" data-side="right">
         <article data-scene="candles" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="market" aria-label="Animated price falling through pullback tiers below its 52-week high"></canvas></div>
           <div class="feature-body">
@@ -713,7 +730,8 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>JavaScript</li><li>Python</li><li>Twelve Data API</li></ul>
           </div>
         </article>
-
+        </div>
+        <div class="scene" data-shape="spiral" data-side="left">
         <article data-scene="spiral" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="studygame" aria-label="Animated flashcards flipping from question to answer while an XP bar fills"></canvas></div>
           <div class="feature-body">
@@ -722,11 +740,12 @@ h1.meshed { color: transparent; }
             <ul class="chips"><li>HTML</li><li>JavaScript</li><li>Quiz engine</li></ul>
           </div>
         </article>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="chapter" id="skills" data-scene="tree">
+  <section class="chapter" id="skills" data-shape="sphere">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Skills</p>
@@ -746,7 +765,7 @@ h1.meshed { color: transparent; }
     </div>
   </section>
 
-  <section class="chapter" id="contact" data-scene="waves">
+  <section class="chapter" id="contact" data-shape="wave" data-size="0.7">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Contact</p>
@@ -1989,7 +2008,6 @@ var pointer = { x: -1, y: -1, active: false };
 })();
 
 // ---------- Point cloud: one set of dots that is the name, then a turbine, a road network, Agent City and a wave ----------
-var STAGE = { on: false, note: '' }; // set by the Projects stage below, so the cloud can step back while a card's scene plays
 (function () {
   var cv = document.getElementById('cloud'), ctx = cv && cv.getContext && cv.getContext('2d');
   if (!ctx) return;
@@ -2001,6 +2019,7 @@ var STAGE = { on: false, note: '' }; // set by the Projects stage below, so the 
   var rX, rZ, rS;                                                   // roads
   var cX, cY, cZ, cKind;                                            // city
   var wX, wZ, wR;                                                   // wave
+  var gA, gB, gC, gK;                                               // three numbers and a tag per dot, reused by every other shape
   var spin = 0, tiltX = 0, tiltY = 0, scrollTurn = 0, pulseAt = -9999, pulseX = 0, pulseY = 0;
   var oa = { x: 0, y: 0, z: 0, hot: 0 }, ob = { x: 0, y: 0, z: 0, hot: 0 };
   var introOn = !!window.KP_INTRO && !REDUCE, introT0 = 0;
@@ -2031,32 +2050,100 @@ var STAGE = { on: false, note: '' }; // set by the Projects stage below, so the 
       var crest = 0.6 * sech * sech, swell = 0.07 * Math.sin(2.4 * x - t * 0.0016 + wZ[i] * 1.3);
       o.x = x + crest * 0.32; o.y = 0.3 - swell - crest; o.z = wZ[i]; o.hot = crest > 0.36 && wR[i] < 0.5 ? 1 : 0; // foam on the crest
       rotY(o, -0.32); rotX(o, 0.36);
+    },
+    signal: function (i, t, o) { // sensor lines streaming past; the spikes are the anomalies
+      var row = gB.signal[i], x = gA.signal[i], u = x * 2.6 + t * 0.0012 + row * 0.7;
+      var sp = Math.pow(Math.max(0, Math.sin(u * 0.31 + row * 2.1)), 60) * 0.75;
+      o.x = x; o.y = 0.15 - (0.1 * Math.sin(u) + 0.05 * Math.sin(2.3 * u + 1) + sp); o.z = (row - 4.5) * 0.16; o.hot = sp > 0.1 ? 1 : 0;
+      rotY(o, -0.45); rotX(o, 0.32);
+    },
+    wavefront: function (i, t, o) { // Dijkstra: distance spreading out from one corner of a grid
+      var x = gA.wavefront[i], z = gB.wavefront[i], d = Math.sqrt((x + 1.5) * (x + 1.5) + (z + 0.9) * (z + 0.9)), r = (t * 0.00035) % 1 * 3.6, g = Math.exp(-Math.pow((d - r) / 0.16, 2));
+      o.x = x; o.y = -0.3 * g; o.z = z; o.hot = g > 0.6 ? 1 : 0;
+      rotY(o, 0.5 + t * 0.00005); rotX(o, 0.95);
+    },
+    scc: function (i, t, o) { // Tarjan: each ring is one strongly connected component, lit one at a time
+      var c = gC.scc[i];
+      if (gK.scc[i]) { var pr = SCC_PAIRS[c], p0 = SCC[pr[0]], p1 = SCC[pr[1]], f = gA.scc[i]; o.x = p0[0] + (p1[0] - p0[0]) * f; o.y = p0[1] + (p1[1] - p0[1]) * f; o.z = p0[2] + (p1[2] - p0[2]) * f; o.hot = 0; }
+      else { var an = gA.scc[i] + t * 0.0006 * (c % 2 ? 1 : -1), rr = gB.scc[i], tl = c * 1.1, ce = SCC[c]; o.x = ce[0] + Math.cos(an) * rr; o.y = ce[1] + Math.sin(an) * rr * Math.cos(tl); o.z = ce[2] + Math.sin(an) * rr * Math.sin(tl); o.hot = c === Math.floor(t / 1400) % 5 ? 1 : 0; }
+      rotY(o, t * 0.0001); rotX(o, 0.2);
+    },
+    voice: function (i, t, o) { // Kia-bot: a ring of sound bars around a breathing core
+      var a = gA.voice[i], h = gB.voice[i];
+      if (gK.voice[i]) { var R = 0.3 * (1 + 0.12 * Math.sin(t * 0.004)), rad = Math.sqrt(1 - h * h); o.x = Math.cos(a + t * 0.0005) * rad * R; o.y = h * R; o.z = Math.sin(a + t * 0.0005) * rad * R; o.hot = 0; }
+      else { var amp = 0.1 + 0.5 * Math.abs(Math.sin(a * 5 + t * 0.0035)) * (0.5 + 0.5 * Math.sin(t * 0.0021 + a * 2)), r = 0.62 + h * amp; o.x = Math.cos(a) * r; o.y = Math.sin(a) * r; o.z = (h - 0.5) * 0.05; o.hot = h > 0.86 ? 1 : 0; }
+      rotY(o, 0.35); rotX(o, -0.15);
+    },
+    histogram: function (i, t, o) { // backtest returns: a distribution whose center drifts as the sample changes
+      var b = gA.histogram[i], mean = 10 + 2.5 * Math.sin(t * 0.0005), h = Math.exp(-Math.pow((b - mean) / 4, 2));
+      o.x = (b - 10) * 0.15 + gC.histogram[i]; o.y = 0.55 - gB.histogram[i] * h * 1.1; o.z = gC.histogram[i] * 3; o.hot = b === Math.round(mean) ? 1 : 0;
+      rotY(o, -0.4); rotX(o, 0.15);
+    },
+    funnel: function (i, t, o) { // leads spiral down a funnel; the highlighted ones go to a person
+      var s = (gA.funnel[i] + t * 0.00012) % 1, a = gB.funnel[i] + s * 4, r = Math.pow(1 - s, 1.6) + 0.06;
+      o.x = Math.cos(a) * r; o.z = Math.sin(a) * r; o.y = -0.7 + s * 1.4; o.hot = gK.funnel[i];
+      rotX(o, 0.38);
+    },
+    candles: function (i, t, o) { // price candles with their moving average
+      var k = gA.candles[i], u = gB.candles[i];
+      if (gK.candles[i]) { var xx = k + u, m2 = (price(xx) + price(xx - 1) + price(xx - 2) + price(xx - 3)) / 4; o.x = (xx - 13) * 0.13; o.y = 0.2 - m2 * 1.1; o.z = 0.1; o.hot = 1; }
+      else { var op = price(k), cl = price(k + 1), wick = u < 0 || u > 1; o.x = (k - 12.5) * 0.13 + (wick ? 0 : gC.candles[i]); o.y = 0.2 - (op + (cl - op) * u) * 1.1; o.z = wick ? 0 : gC.candles[i]; o.hot = 0; }
+      rotY(o, -0.35 + Math.sin(t * 0.0003) * 0.12); rotX(o, 0.1);
+    },
+    spiral: function (i, t, o) { // the golden angle: every dot turned 137.5 degrees from the last
+      var r = Math.sqrt(i / N), a = i * 2.39996 + t * 0.0002;
+      o.x = Math.cos(a) * r; o.z = Math.sin(a) * r; o.y = 0.2 - (1 - r * r) * 0.5; o.hot = i % 21 === 0 ? 1 : 0;
+      rotX(o, 0.8);
+    },
+    sphere: function (i, t, o) { // points spread evenly over a sphere
+      var y = 1 - 2 * (i + 0.5) / N, rad = Math.sqrt(1 - y * y), a = i * 2.39996 + t * 0.00025 + scrollTurn;
+      o.x = Math.cos(a) * rad * 0.9; o.y = y * 0.9; o.z = Math.sin(a) * rad * 0.9; o.hot = i % 34 === 0 ? 1 : 0;
+      rotX(o, 0.3);
     }
   };
+  var SCC = [[-1, -0.3, 0], [-0.2, 0.45, 0.3], [0.2, -0.5, -0.3], [1, 0.2, 0.2], [0.6, 0.75, -0.4]], SCC_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 3]];
+  function price(k) { return 0.3 * Math.sin(k * 0.33) + 0.16 * Math.sin(k * 1.9) + 0.2 * Math.sin(k * 0.11 + 1) + k * 0.02 - 0.2; }
+  function buildRest() { // scatter the dots over the simpler shapes
+    gA = {}; gB = {}; gC = {}; gK = {};
+    ['signal', 'wavefront', 'scc', 'voice', 'histogram', 'funnel', 'candles'].forEach(function (n) { gA[n] = new Float32Array(N); gB[n] = new Float32Array(N); gC[n] = new Float32Array(N); gK[n] = new Uint8Array(N); });
+    for (var i = 0; i < N; i++) {
+      gA.signal[i] = (rnd() - 0.5) * 3.6; gB.signal[i] = Math.floor(rnd() * 10);
+      gA.wavefront[i] = Math.round((rnd() - 0.5) * 3.2 / 0.1) * 0.1 + (rnd() - 0.5) * 0.015; gB.wavefront[i] = Math.round((rnd() - 0.5) * 2 / 0.1) * 0.1 + (rnd() - 0.5) * 0.015;
+      if (rnd() < 0.2) { gK.scc[i] = 1; gC.scc[i] = Math.floor(rnd() * 5); gA.scc[i] = rnd(); } else { gC.scc[i] = Math.floor(rnd() * 5); gA.scc[i] = rnd() * Math.PI * 2; gB.scc[i] = 0.24 + (rnd() < 0.3 ? rnd() * 0.12 : 0.1); }
+      if (rnd() < 0.3) { gK.voice[i] = 1; gA.voice[i] = rnd() * Math.PI * 2; gB.voice[i] = rnd() * 2 - 1; } else { gA.voice[i] = Math.floor(rnd() * 72) / 72 * Math.PI * 2; gB.voice[i] = rnd(); }
+      gA.histogram[i] = Math.floor(rnd() * 21); gB.histogram[i] = rnd(); gC.histogram[i] = (rnd() - 0.5) * 0.09;
+      gA.funnel[i] = rnd(); gB.funnel[i] = rnd() * Math.PI * 2; gK.funnel[i] = rnd() < 0.12 ? 1 : 0;
+      gA.candles[i] = Math.floor(rnd() * 26); gC.candles[i] = (rnd() - 0.5) * 0.07;
+      if (rnd() < 0.2) { gK.candles[i] = 1; gB.candles[i] = rnd(); } else gB.candles[i] = rnd() < 0.2 ? rnd() * 1.8 - 0.4 : rnd();
+    }
+  }
   var NOTE = {
+    signal: '<b>Sensor telemetry</b> the spikes are flagged anomalies',
+    wavefront: '<b>Dijkstra frontier</b> distance spreading from the source',
+    scc: '<b>Tarjan SCC</b> each ring is one component',
+    voice: '<b>Voiceprint</b> Kia-bot listening',
+    histogram: '<b>Return distribution</b> shifting as the sample changes',
+    funnel: '<b>Lead routing</b> highlighted leads go to a person',
+    candles: '<b>Price path</b> with its moving average',
+    spiral: '<b>Golden angle</b> each dot turned 137.5 degrees from the last',
+    sphere: '<b>Fibonacci sphere</b> evenly spread points',
     name: '<b>' + 'Point cloud</b> the dots flow around your cursor',
     turbine: '<b>Turbine rotor</b> the same dots, re-formed as you scroll',
     roads: '<b>Road network</b> Dijkstra lighting the shortest route',
     city: '<b>Agent City</b> huts over the water',
     wave: '<b>Set wave</b> rolling through'
   };
-  // What the dots are in each chapter, and where they sit: [x, y] as fractions of the screen, then size.
-  var chapters = [
-    { el: hero, shape: 'name' },
-    { el: document.getElementById('about'), shape: 'turbine', lay: [0.5, 0.5, 0.44] },
-    { el: document.getElementById('experience'), shape: 'turbine', lay: [0.5, 0.5, 0.52] },
-    { el: document.getElementById('projects'), shape: 'roads', lay: [0.5, 0.58, 0.6] },
-    { el: document.getElementById('builds'), shape: 'city', lay: [0.5, 0.56, 0.46] },
-    { el: document.getElementById('skills'), shape: 'wave', lay: [0.5, 0.6, 0.6] },
-    { el: document.getElementById('contact'), shape: 'wave', lay: [0.5, 0.62, 0.74] }
-  ];
+  // What the dots are at each point of the page: every block tagged data-shape, in page order. A card on the left pushes its shape right, and the reverse.
+  var chapters = [{ el: hero, shape: 'name' }];
+  document.querySelectorAll('[data-shape]').forEach(function (el) { chapters.push({ el: el, shape: el.getAttribute('data-shape'), side: el.getAttribute('data-side'), size: parseFloat(el.getAttribute('data-size')) || 0.5 }); });
   function measure() {
     for (var i = 0; i < chapters.length; i++) chapters[i].top = chapters[i].el.getBoundingClientRect().top + window.scrollY;
     var r = h1.getBoundingClientRect(); nameDocX = r.left + r.width / 2; nameDocY = r.top + r.height / 2 + window.scrollY;
   }
   function layout(ch, out) {
     if (ch.shape === 'name') { out.x = nameDocX; out.y = nameDocY - window.scrollY; out.s = nameHalf; }
-    else { out.x = ch.lay[0] * W; out.y = ch.lay[1] * H; out.s = ch.lay[2] * M; }
+    else if (W < 900) { out.x = W / 2; out.y = H * (ch.side ? 0.36 : 0.52); out.s = ch.size * M * (ch.side ? 0.8 : 1); } // phones: the shape sits in the gap above the card
+    else { out.x = W * (ch.side === 'left' ? 0.68 : ch.side === 'right' ? 0.32 : 0.5); out.y = H * 0.54; out.s = ch.size * M; }
   }
 
   // ----- Building the shapes -----
@@ -2159,7 +2246,7 @@ var STAGE = { on: false, note: '' }; // set by the Projects stage below, so the 
       nmX = F(); nmY = F(); nmZ = F(); tR = F(); tTh = F(); tT = F(); tZ = F(); tHot = new Uint8Array(N);
       rX = F(); rZ = F(); rS = F(); cX = F(); cY = F(); cZ = F(); cKind = new Uint8Array(N); wX = F(); wZ = F(); wR = F();
       for (i = 0; i < N; i++) { var a = rnd() * Math.PI * 2; key[i] = rnd(); rdx[i] = Math.cos(a) * (0.3 + rnd()); rdy[i] = Math.sin(a) * (0.3 + rnd()); px[i] = W / 2 + rdx[i] * W; py[i] = H / 2 + rdy[i] * H; }
-      buildTurbine(); buildRoads(); buildCity(); buildWave();
+      buildTurbine(); buildRoads(); buildCity(); buildWave(); buildRest();
     }
     buildName(); measure();
     ready = true;
@@ -2176,7 +2263,7 @@ var STAGE = { on: false, note: '' }; // set by the Projects stage below, so the 
   function frame(now) {
     if (!ready) { requestAnimationFrame(frame); return; }
     if (++frameNo % 45 === 0) measure(); // the page settles as fonts and cards load
-    var i, A = 0, B = 0, m = 0, burst = 0.16, probe = window.scrollY + H * 0.6, span = H * 0.42, t = REDUCE ? 0 : now;
+    var i, A = 0, B = 0, m = 0, burst = 0.16, probe = window.scrollY + H * 0.52, span = H * 0.3, t = REDUCE ? 0 : now;
     for (i = 1; i < chapters.length; i++) { var mk = clamp((probe - (chapters[i].top - span)) / (2 * span), 0, 1); if (mk > 0) { A = i - 1; B = i; m = mk; } }
     var chA = chapters[A], chB = chapters[B], sa = chA.shape, sb = chB.shape;
     layout(chA, la); layout(chB, lb);
@@ -2221,15 +2308,13 @@ var STAGE = { on: false, note: '' }; // set by the Projects stage below, so the 
       size[i] = clamp(1.7 - tz * 0.9, 0.9, 2.8) * (hot ? 1.5 : 1) * (W < 700 ? 0.6 : 1); // finer dots on phones, where the name is small
     }
 
-    fade += ((STAGE.on ? 0.22 : 1) - fade) * 0.1; // step back while a project card's own scene is on the stage
-    if (Math.abs(fade - fadeSet) > 0.02) { fadeSet = fade; cv.style.opacity = fade.toFixed(2); }
     ctx.clearRect(0, 0, W, H);
     var styles = [rgba(PAGE.glow, 0.55 * appear), rgba(PAGE.white, 0.62 * appear), rgba(PAGE.white, 0.95 * appear), rgba(PAGE.accent, appear)];
     for (var bk = 0; bk < 4; bk++) {
       ctx.fillStyle = styles[bk];
       for (i = 0; i < N; i++) if (bucket[i] === bk) { var s = size[i]; ctx.fillRect(px[i] - s / 2, py[i] - s / 2, s, s); }
     }
-    var want = STAGE.on ? STAGE.note : NOTE[m < 0.5 ? sa : sb];
+    var want = NOTE[m < 0.5 ? sa : sb] || '';
     if (want !== noteNow) { noteNow = want; note.innerHTML = want; }
     if (!REDUCE) requestAnimationFrame(frame);
   }
@@ -2238,424 +2323,6 @@ var STAGE = { on: false, note: '' }; // set by the Projects stage below, so the 
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
   window.addEventListener('resize', function () { if (ready) { build(); if (REDUCE) frame(0); } });
   if (REDUCE) { window.addEventListener('scroll', function () { frame(0); }, { passive: true }); window.addEventListener('themechange', function () { frame(0); }); }
-})();
-
-// ---------- Background: one set of points that re-forms for each chapter and moves with the scroll ----------
-(function () {
-  var canvas = document.getElementById('bg');
-  var ctx = canvas.getContext && canvas.getContext('2d');
-  if (!ctx) return;
-  var note = document.getElementById('sceneNote'), root = document.documentElement;
-  var NOTES = {
-    drift: '<b>Breadth-first search</b> spreading through the name',
-    graph: '<b>A* search</b> routing to your cursor',
-    sphere: '<b>Fibonacci sphere</b> scroll to spin it',
-    grid: '<b>Automation</b> manual steps become clean pipelines',
-    story: '<b>Route Engine</b> keep scrolling to run the request',
-    signal: '<b>Sensor telemetry</b> highlighted points are flagged anomalies',
-    orbits: '<b>Agents in orbit</b> each one reporting to the hub',
-    scc: '<b>Tarjan SCC</b> cycles grouped into components',
-    waves: '<b>Pacific swell</b> rolling in',
-    turbine: '<b>Turbine rotor</b> scroll to spin it up',
-    tree: '<b>Binary heap</b> tracing a path from leaf to root',
-    wavefront: '<b>Dijkstra frontier</b> distance spreading from the source',
-    voice: '<b>Voiceprint</b> a question on its way to Kia-bot',
-    barrel: '<b>Set wave</b> standing up and pitching',
-    candles: '<b>Price path</b> with its moving average',
-    funnel: '<b>Lead routing</b> highlighted leads go to a person',
-    spiral: '<b>Golden angle</b> each point turned 137.5 degrees from the last',
-    histogram: '<b>Return distribution</b> shifting as the sample changes'
-  };
-  function tints() { return { graph: PAGE.glow, sphere: PAGE.palette[2], grid: PAGE.glow, signal: PAGE.glow, orbits: PAGE.palette[3], scc: PAGE.glow, waves: PAGE.glow, turbine: PAGE.accent, tree: PAGE.palette[3], wavefront: PAGE.palette[2], voice: PAGE.palette[2], barrel: PAGE.glow, candles: PAGE.glow, funnel: PAGE.glow, spiral: PAGE.glow, histogram: PAGE.glow }; }
-  var W, H, cols, rows, n, nodes = null, adj, edges, startNode;
-  var scene = 'drift', sceneStart = 0, lp = 0, lpS = 0; // lp: how far the current chapter has scrolled through the screen
-  var route = { goal: -1, visited: [], path: [], t0: 0 };
-  var autoGoal = -1, autoGoalAt = 0;
-  var stT = { k: 1, x: 0, y: 0 }, sk = 1, sx = 0, sy = 0, LW = 1, stA = 0; // where the scene is drawn: full screen, or shrunk into the Projects stage
-
-  // Build the points and the road graph for the current window size.
-  function build() {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth; H = window.innerHeight;
-    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cols = clamp(Math.round(W / 95), 5, 16);
-    rows = clamp(Math.round(H / 95), 6, 10);
-    n = cols * rows;
-    var r = rng(7), old = nodes, i;
-    nodes = []; adj = []; edges = [];
-    for (i = 0; i < n; i++) {
-      var c = i % cols, rw = Math.floor(i / cols);
-      var ux = (c + 0.5) / cols * W, uy = (rw + 0.5) / rows * H;   // tidy grid spot
-      var gx = ux + (r() - 0.5) * (W / cols) * 0.55;                 // jittered "road map" spot
-      var gy = uy + (r() - 0.5) * (H / rows) * 0.55;
-      nodes.push({ x: old && old[i] ? old[i].x : gx, y: old && old[i] ? old[i].y : gy, tx: gx, ty: gy, gx: gx, gy: gy, ux: ux, uy: uy, depth: 0.35 + r() * 0.65, z: 0, hot: false });
-      adj.push([]);
-    }
-    function link(a, b) { edges.push([a, b]); adj[a].push(b); adj[b].push(a); }
-    for (i = 0; i < n; i++) {
-      var cc = i % cols, rr = Math.floor(i / cols);
-      if (cc < cols - 1) link(i, i + 1);                                   // every row is a road
-      if (rr < rows - 1 && (cc === 0 || r() > 0.3)) link(i, i + cols);     // most cross streets
-      if (cc < cols - 1 && rr < rows - 1 && r() < 0.18) link(i, i + cols + 1); // a few diagonals
-    }
-    startNode = (rows - 1) * cols; // bottom-left corner
-    route.goal = -1; autoGoal = -1;
-  }
-
-  // A synthetic price for step q, used by the price-path scene.
-  function price(q) { return Math.sin(q * 0.05) * 0.5 + Math.sin(q * 0.013 + 1) * 0.9 + hashNoise(q) * 0.3; }
-  function frontier(time) { return ((lpS * 1.3 + time * 0.00011) % 1 + 1) % 1 * Math.sqrt(W * W + H * H); }
-
-  function dist(a, b) {
-    var dx = nodes[a].gx - nodes[b].gx, dy = nodes[a].gy - nodes[b].gy;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-
-  // A* shortest path from s to g. Records the order nodes were explored, for the animation.
-  function astar(s, g) {
-    var gScore = [], fScore = [], came = [], closed = [], open = [s], visited = [], i;
-    for (i = 0; i < n; i++) { gScore.push(Infinity); fScore.push(Infinity); came.push(-1); closed.push(false); }
-    gScore[s] = 0; fScore[s] = dist(s, g); // f = cost so far + straight-line estimate to the goal
-    while (open.length) {
-      var best = 0;
-      for (i = 1; i < open.length; i++) if (fScore[open[i]] < fScore[open[best]]) best = i;
-      var cur = open.splice(best, 1)[0];
-      if (closed[cur]) continue;
-      closed[cur] = true; visited.push(cur);
-      if (cur === g) break;
-      for (i = 0; i < adj[cur].length; i++) {
-        var nb = adj[cur][i];
-        if (closed[nb]) continue;
-        var cost = gScore[cur] + dist(cur, nb);
-        if (cost < gScore[nb]) { gScore[nb] = cost; came[nb] = cur; fScore[nb] = cost + dist(nb, g); open.push(nb); }
-      }
-    }
-    var path = [];
-    if (closed[g]) for (var c = g; c !== -1; c = came[c]) path.unshift(c); // walk back from the goal
-    return { visited: visited, path: path };
-  }
-
-  // Pick the destination: the node nearest the cursor, or a wandering one if there is no cursor yet.
-  function pickGoal(now) {
-    var goal;
-    if (pointer.active) {
-      var bestD = Infinity; goal = 0;
-      for (var i = 0; i < n; i++) {
-        var dx = nodes[i].tx - (pointer.x - (sx - W / 2 * sk)) / sk, dy = nodes[i].ty - (pointer.y - (sy - H / 2 * sk)) / sk, d = dx * dx + dy * dy;
-        if (d < bestD) { bestD = d; goal = i; }
-      }
-    } else {
-      if (autoGoal < 0 || (!REDUCE && now - autoGoalAt > 2600)) {
-        autoGoal = autoGoal < 0 ? cols - 1 : Math.floor(Math.random() * n);
-        autoGoalAt = now;
-      }
-      goal = autoGoal;
-    }
-    if (goal === startNode) goal = cols - 1;
-    if (goal !== route.goal) {
-      var res = astar(startNode, goal);
-      route = { goal: goal, visited: res.visited, path: res.path, t0: now };
-    }
-  }
-
-  // Where each point should sit for the current scene. lp (scroll) and t (time) both drive the motion.
-  function setTargets(t) {
-    var time = REDUCE ? 0 : t, i, p;
-    var perCluster = Math.ceil(n / 5), perRow = Math.ceil(n / 6), perRing = Math.ceil(n / 4);
-    var centers = [[0.2, 0.3], [0.5, 0.2], [0.8, 0.32], [0.33, 0.72], [0.68, 0.74]];
-    for (i = 0; i < n; i++) {
-      p = nodes[i]; p.hot = false; p.z = 0;
-      if (scene === 'drift') {
-        // Quiet drifting points behind the name.
-        p.tx = p.gx + Math.sin(time * 0.0004 + i) * 16; p.ty = p.gy + Math.cos(time * 0.0005 + i * 1.7) * 16 - (lpS - 0.3) * H * 0.24 * p.depth;
-      } else if (scene === 'graph') {
-        // Parallax: nearer points travel further as the page scrolls.
-        p.tx = p.gx; p.ty = p.gy - (lpS - 0.3) * H * 0.24 * p.depth;
-      } else if (scene === 'sphere') {
-        // Points spread evenly over a sphere by the golden angle; scrolling spins it.
-        var yy = 1 - 2 * (i + 0.5) / n, rad = Math.sqrt(1 - yy * yy);
-        var th = i * 2.39996 + lpS * 4.2 + time * 0.00016;
-        var x3 = Math.cos(th) * rad, z3 = Math.sin(th) * rad, tilt = 0.38;
-        var y2 = yy * Math.cos(tilt) - z3 * Math.sin(tilt), z2 = yy * Math.sin(tilt) + z3 * Math.cos(tilt);
-        var R = Math.min(W, H) * 0.4;
-        p.tx = W * 0.5 + x3 * R; p.ty = H * 0.54 + y2 * R; p.z = z2;
-      } else if ((scene === 'grid' || scene === 'story')) {
-        p.tx = p.ux; p.ty = p.uy - (lpS - 0.3) * H * 0.1;
-      } else if (scene === 'signal') {
-        // The reading slides sideways as you scroll, like a live chart.
-        var k = i + lpS * 60 + time * 0.004, k0 = Math.floor(k), f = k - k0;
-        var v = signalValue(k0) * (1 - f) + signalValue(k0 + 1) * f;
-        p.tx = 24 + i / (n - 1) * (W - 48); p.ty = H * 0.6 - v * H * 0.32; p.hot = v > 0.52;
-      } else if (scene === 'orbits') {
-        // Four tilted rings of agents circling one hub; scrolling turns them in alternating directions.
-        var ring = i % 4, m = Math.floor(i / 4), dir = ring % 2 ? 1 : -1;
-        var ang = m / perRing * Math.PI * 2 + (lpS * 3.2 + time * 0.00013) * dir * (1 + ring * 0.18);
-        var rx = Math.min(W, H * 1.5) * (0.17 + ring * 0.1), ry = rx * 0.4;
-        var ox = Math.cos(ang) * rx, oy = Math.sin(ang) * ry, ca = Math.cos(-0.28), sa = Math.sin(-0.28);
-        p.tx = W * 0.5 + ox * ca - oy * sa; p.ty = H * 0.54 + ox * sa + oy * ca; p.hot = m % 7 === 0;
-      } else if (scene === 'scc') {
-        var cl = i % 5, mm = Math.floor(i / 5);
-        var a2 = mm / perCluster * Math.PI * 2 + (lpS * 2.6 + time * 0.00012) * (cl % 2 ? 1 : -1);
-        var rad2 = Math.min(W, H) * (0.09 + 0.05 * (mm % 2));
-        p.tx = centers[cl][0] * W + Math.cos(a2) * rad2; p.ty = centers[cl][1] * H + Math.sin(a2) * rad2;
-      } else if (scene === 'turbine') {
-        // A rotor: nine swept blades around a hub, spun by the scroll.
-        var bl = i % 9, bk = Math.floor(i / 9), bt = (bk + 1) / Math.ceil(n / 9);
-        var ba = bl / 9 * Math.PI * 2 + bt * 1.0 + lpS * 5 + time * 0.0004, br = Math.min(W, H) * 0.44 * (0.13 + 0.87 * bt);
-        p.tx = W * 0.5 + Math.cos(ba) * br; p.ty = H * 0.54 + Math.sin(ba) * br; p.hot = i + 9 >= n;
-      } else if (scene === 'tree') {
-        // A binary heap: node i hangs under node (i - 1) / 2.
-        var lv = Math.floor(Math.log(i + 1) / Math.LN2 + 1e-9), cnt = Math.pow(2, lv), inLv = i + 1 - cnt;
-        p.tx = W * (inLv + 0.5) / cnt + Math.sin(time * 0.0007 + lv * 0.9) * 5; p.ty = H * (0.15 + lv * 0.105);
-      } else if (scene === 'wavefront') {
-        // Dijkstra's frontier: a ring of settled distance sweeping out from the source.
-        var sx = nodes[startNode].gx, sy = nodes[startNode].gy, wd = Math.sqrt((p.gx - sx) * (p.gx - sx) + (p.gy - sy) * (p.gy - sy));
-        var off = wd - frontier(time);
-        p.tx = p.gx; p.ty = p.gy - 16 * Math.exp(-(off * off) / 2600); p.hot = Math.abs(off) < 26; p.z = off < 0 ? 1 : 0;
-      } else if (scene === 'voice') {
-        // A circular voiceprint that pulses like speech.
-        var va = i / n * Math.PI * 2, vamp = (0.5 + 0.5 * Math.sin(i * 0.41 + time * 0.0045)) * (0.55 + 0.45 * Math.sin(i * 0.13 + lpS * 9 + time * 0.0012));
-        var vr = Math.min(W, H) * (0.25 + 0.13 * vamp);
-        p.tx = W * 0.5 + Math.cos(va) * vr; p.ty = H * 0.54 + Math.sin(va) * vr;
-      } else if (scene === 'barrel') {
-        // A set wave: the swell lines lift into a peak whose top pitches forward.
-        var brow = i % 6, bx = Math.floor(i / 6) / Math.max(1, perRow - 1) * W;
-        var peak = W * (((0.85 - lpS * 0.55 - time * 0.00004) % 1.2 + 1.2) % 1.2 - 0.1), bd = bx - peak, sg = bd < 0 ? 70 : 190;
-        var lift = Math.exp(-(bd * bd) / (2 * sg * sg)) * H * 0.3 * (1 - brow * 0.13);
-        p.tx = bx - lift * 0.45 * (1 - brow / 6); p.ty = H * (0.5 + brow * 0.07) - lift + Math.sin(bx * 0.012 + time * 0.001 + brow) * 6; p.hot = brow === 0 && lift > H * 0.12;
-      } else if (scene === 'candles') {
-        // A price path sliding by as you scroll.
-        var ck = i + lpS * 50 + time * 0.003, c0 = Math.floor(ck), cf = ck - c0;
-        p.tx = 20 + i / (n - 1) * (W - 40); p.ty = H * 0.56 - (price(c0) * (1 - cf) + price(c0 + 1) * cf) * H * 0.15;
-      } else if (scene === 'spiral') {
-        // Sunflower packing: every point sits one golden angle past the previous one.
-        var ps = Math.min(W, H) * 0.44 * Math.sqrt((i + 0.5) / n), pa = i * 2.39996 + lpS * 3 + time * 0.0002;
-        p.tx = W * 0.5 + Math.cos(pa) * ps; p.ty = H * 0.54 + Math.sin(pa) * ps;
-      } else if (scene === 'histogram') {
-        // Stacks of points shaped like a bell curve whose center drifts.
-        var hc = i % 21, hl = Math.floor(i / 21), maxL = Math.ceil(n / 21), mu = 10 + Math.sin(lpS * 4 + time * 0.0003) * 3.2;
-        var cap = Math.max(0, Math.round(Math.exp(-Math.pow((hc - mu) / 4.2, 2)) * maxL) - 1);
-        p.tx = W * (0.14 + 0.72 * hc / 20); p.ty = H * 0.8 - Math.min(hl, cap) * Math.min(26, H * 0.58 / maxL); p.hot = Math.abs(hc - mu) < 0.6;
-      } else if (scene === 'funnel') {
-        // Inquiries stream into a classifier, then split: most to auto-reply, some to a person.
-        var fu = ((i / n * 7.31 + time * 0.00005 + lpS * 0.7) % 1 + 1) % 1, spread = ((i * 37) % 19) / 19 - 0.5, down = i % 4 === 3;
-        if (fu < 0.45) { p.tx = fu / 0.45 * W * 0.45; p.ty = H * 0.54 + spread * (1 - fu / 0.45) * H * 0.5; }
-        else { var fv = (fu - 0.45) / 0.55; p.tx = W * 0.45 + fv * W * 0.55; p.ty = H * 0.54 + (down ? 1 : -1) * fv * H * 0.26 + spread * fv * 30; p.hot = down; }
-        if (Math.abs(p.tx - p.x) > W * 0.4) { p.x = p.tx; p.y = p.ty; } // wrapped around: jump, do not fly back across the screen
-      } else { // waves
-        var row = i % 6, j = Math.floor(i / 6), x = j / Math.max(1, perRow - 1) * W;
-        p.tx = x; p.ty = H * (0.3 + row * 0.1) + Math.sin(x * 0.011 + time * 0.0011 + lpS * 5 + row * 0.9) * (14 + row * 4);
-      }
-    }
-  }
-
-  function line(a, b) { ctx.moveTo(nodes[a].x, nodes[a].y); ctx.lineTo(nodes[b].x, nodes[b].y); }
-  function dot(x, y, r, color, alpha) { ctx.fillStyle = rgba(color, alpha); ctx.beginPath(); ctx.arc(x, y, r * LW, 0, Math.PI * 2); ctx.fill(); }
-  function ring(x, y, r, color, alpha) { ctx.strokeStyle = rgba(color, alpha); ctx.lineWidth = LW * 1.2; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); }
-
-  function draw(now) {
-    var i, a = clamp((now - sceneStart) / 700, 0, 1), tint = tints()[scene] || PAGE.glow; // lines fade in after a scene change
-    lpS += (lp - lpS) * (REDUCE ? 1 : 0.09); // smooth the scroll position so scenes glide
-    setTargets(now);
-    for (i = 0; i < n; i++) { // ease every point toward its target
-      var p = nodes[i], ease = REDUCE ? 1 : 0.1;
-      p.x += (p.tx - p.x) * ease; p.y += (p.ty - p.y) * ease;
-    }
-    ctx.clearRect(0, 0, W, H);
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    sk = stT.k; sx = stT.x; sy = stT.y; LW = Math.pow(1 / sk, 0.8);
-    stA += ((STAGE.on ? 1 : 0) - stA) * (REDUCE ? 1 : 0.12); // these scenes now play only inside the Projects stage; the point cloud is the backdrop everywhere else
-    if (stA < 0.02) { requestAnimationFrame(draw); return; }
-    ctx.save(); ctx.globalAlpha = stA; ctx.translate(sx - W / 2 * sk, sy - H / 2 * sk); ctx.scale(sk, sk);
-
-    if (scene === 'drift') {
-      // points only
-    } else if (scene === 'graph') {
-      pickGoal(now);
-      ctx.strokeStyle = rgba(PAGE.glow, 0.13 * a); ctx.lineWidth = LW * 1;
-      ctx.beginPath(); for (i = 0; i < edges.length; i++) line(edges[i][0], edges[i][1]); ctx.stroke();
-      var prog = REDUCE ? 1 : clamp((now - route.t0) / 520, 0, 1);
-      var shown = Math.floor(route.visited.length * clamp(prog / 0.6, 0, 1));
-      for (i = 0; i < shown; i++) { var v = nodes[route.visited[i]]; dot(v.x, v.y, 2.6, PAGE.glow, 0.5 * a); }
-      var segs = (route.path.length - 1) * clamp((prog - 0.45) / 0.55, 0, 1);
-      if (segs > 0) {
-        ctx.strokeStyle = rgba(PAGE.accent, 0.85 * a); ctx.lineWidth = LW * 2;
-        ctx.beginPath(); ctx.moveTo(nodes[route.path[0]].x, nodes[route.path[0]].y);
-        for (i = 1; i <= Math.floor(segs); i++) ctx.lineTo(nodes[route.path[i]].x, nodes[route.path[i]].y);
-        var whole = Math.floor(segs), frac = segs - whole;
-        if (frac > 0 && whole + 1 < route.path.length) {
-          var p0 = nodes[route.path[whole]], p1 = nodes[route.path[whole + 1]];
-          ctx.lineTo(p0.x + (p1.x - p0.x) * frac, p0.y + (p1.y - p0.y) * frac);
-        }
-        ctx.stroke();
-      }
-      ring(nodes[startNode].x, nodes[startNode].y, 6, PAGE.accent, 0.9 * a);
-      if (route.goal >= 0) { ring(nodes[route.goal].x, nodes[route.goal].y, 6, PAGE.accent, 0.9 * a); dot(nodes[route.goal].x, nodes[route.goal].y, 2.6, PAGE.accent, a); }
-    } else if (scene === 'sphere') {
-      ctx.strokeStyle = rgba(tint, 0.1 * a); ctx.lineWidth = LW * 1; // the spiral that threads every point
-      ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
-      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
-      ctx.stroke();
-      var head = REDUCE ? 20 : Math.floor(now * 0.012) % n; // an amber route traveling along the spiral
-      ctx.strokeStyle = rgba(PAGE.accent, 0.8 * a); ctx.lineWidth = LW * 1.8; ctx.beginPath();
-      for (i = 0; i < 12; i++) { var q = nodes[(head + i) % n]; if (i === 0) ctx.moveTo(q.x, q.y); else if ((head + i) % n !== 0) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
-      ctx.stroke();
-    } else if ((scene === 'grid' || scene === 'story')) {
-      ctx.strokeStyle = rgba(PAGE.glow, 0.12 * a); ctx.lineWidth = LW * 1;
-      ctx.beginPath();
-      for (i = 0; i < edges.length; i++) if (edges[i][1] - edges[i][0] !== cols + 1) line(edges[i][0], edges[i][1]);
-      ctx.stroke();
-      for (var rw = 0; rw < rows; rw++) { // one pulse of work moving along each row, pushed along by the scroll
-        var f = (((REDUCE ? 0 : now * 0.00009) + lpS * 0.9 + rw * 0.37) % 1 + 1) % 1;
-        dot(f * W, nodes[rw * cols].y, 3, PAGE.accent, 0.85 * a);
-      }
-    } else if (scene === 'signal') {
-      ctx.strokeStyle = rgba(PAGE.glow, 0.4 * a); ctx.lineWidth = LW * 1.3;
-      ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
-      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
-      ctx.stroke();
-      for (i = 0; i < n; i++) if (nodes[i].hot) { ring(nodes[i].x, nodes[i].y, 9, PAGE.accent, 0.9 * a); dot(nodes[i].x, nodes[i].y, 3, PAGE.accent, a); }
-    } else if (scene === 'orbits') {
-      ctx.strokeStyle = rgba(tint, 0.16 * a); ctx.lineWidth = LW * 1;
-      for (var rg = 0; rg < 4; rg++) {
-        var orx = Math.min(W, H * 1.5) * (0.17 + rg * 0.1);
-        ctx.beginPath(); ctx.ellipse(W * 0.5, H * 0.54, orx, orx * 0.4, -0.28, 0, Math.PI * 2); ctx.stroke();
-      }
-      dot(W * 0.5, H * 0.54, 5, PAGE.accent, a); ring(W * 0.5, H * 0.54, 12, PAGE.accent, 0.6 * a);
-      for (i = 0; i < n; i++) if (nodes[i].hot) { // a report traveling from an agent to the hub
-        ctx.strokeStyle = rgba(PAGE.accent, 0.22 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(W * 0.5, H * 0.54); ctx.stroke();
-        dot(nodes[i].x, nodes[i].y, 3.2, PAGE.accent, a);
-      }
-    } else if (scene === 'scc') {
-      for (var cl = 0; cl < 5; cl++) {
-        ctx.strokeStyle = rgba(PAGE.palette[cl], 0.3 * a); ctx.lineWidth = LW * 1;
-        ctx.beginPath();
-        for (i = cl; i < n; i += 5) line(i, i + 5 < n ? i + 5 : cl); // close each ring
-        ctx.stroke();
-      }
-      ctx.strokeStyle = rgba(PAGE.glow, 0.1 * a);
-      ctx.beginPath(); line(0, 1); line(1, 2); line(3, 4); line(0, 3); ctx.stroke(); // links between components
-    } else if (scene === 'turbine') {
-      for (var b9 = 0; b9 < 9; b9++) { // each blade, from the hub outward
-        ctx.strokeStyle = rgba(tint, 0.34 * a); ctx.lineWidth = LW * 1.3; ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.54);
-        for (i = b9; i < n; i += 9) ctx.lineTo(nodes[i].x, nodes[i].y);
-        ctx.stroke();
-      }
-      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.455, PAGE.glow, 0.25 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.05, PAGE.accent, 0.9 * a);
-      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, PAGE.white, 0.9 * a);
-    } else if (scene === 'tree') {
-      ctx.strokeStyle = rgba(tint, 0.18 * a); ctx.lineWidth = LW * 1; ctx.beginPath();
-      for (i = 1; i < n; i++) line(i, (i - 1) >> 1);
-      ctx.stroke();
-      // one leaf-to-root path lights up, and moves along the bottom row as you scroll
-      var leaf = n - 1 - Math.floor(((lpS * 0.9 + (REDUCE ? 0 : now * 0.00006)) % 1 + 1) % 1 * Math.floor(n / 2));
-      ctx.strokeStyle = rgba(PAGE.accent, 0.9 * a); ctx.lineWidth = LW * 2; ctx.beginPath(); ctx.moveTo(nodes[leaf].x, nodes[leaf].y);
-      for (i = leaf; i > 0; i = (i - 1) >> 1) ctx.lineTo(nodes[(i - 1) >> 1].x, nodes[(i - 1) >> 1].y);
-      ctx.stroke();
-      for (i = leaf; ; i = (i - 1) >> 1) { dot(nodes[i].x, nodes[i].y, 3, PAGE.accent, a); if (i === 0) break; }
-    } else if (scene === 'wavefront') {
-      ctx.strokeStyle = rgba(PAGE.glow, 0.12 * a); ctx.lineWidth = LW * 1;
-      ctx.beginPath(); for (i = 0; i < edges.length; i++) line(edges[i][0], edges[i][1]); ctx.stroke();
-      ring(nodes[startNode].gx, nodes[startNode].gy, frontier(REDUCE ? 0 : now), PAGE.accent, 0.35 * a);
-      for (i = 0; i < n; i++) { if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 3.4, PAGE.accent, a); else if (nodes[i].z > 0) dot(nodes[i].x, nodes[i].y, 2.5, tint, 0.75 * a); }
-      dot(nodes[startNode].gx, nodes[startNode].gy, 5, PAGE.accent, a);
-    } else if (scene === 'voice') {
-      ctx.strokeStyle = rgba(tint, 0.55 * a); ctx.lineWidth = LW * 1.4; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
-      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
-      ctx.closePath(); ctx.stroke();
-      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.2, PAGE.accent, 0.4 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.41, tint, 0.12 * a);
-    } else if (scene === 'barrel') {
-      for (var brw = 0; brw < 6; brw++) {
-        ctx.strokeStyle = rgba(brw === 0 ? PAGE.white : PAGE.glow, (brw === 0 ? 0.7 : 0.24 + brw * 0.04) * a); ctx.lineWidth = LW * brw === 0 ? 1.8 : 1.2;
-        ctx.beginPath(); ctx.moveTo(nodes[brw].x, nodes[brw].y);
-        for (i = brw + 6; i < n; i += 6) { // curve through the midpoints so the wave face is smooth, not angular
-          var pv = nodes[i - 6], cu = nodes[i];
-          ctx.quadraticCurveTo(pv.x, pv.y, (pv.x + cu.x) / 2, (pv.y + cu.y) / 2);
-        }
-        ctx.stroke();
-      }
-      for (i = 0; i < n; i++) if (nodes[i].hot) { // spray off the lip
-        dot(nodes[i].x - 8 - hashNoise(i) * 14, nodes[i].y - 10 - (hashNoise(i * 3) + 0.5) * 16, 1.6, PAGE.white, 0.7 * a);
-        dot(nodes[i].x, nodes[i].y, 2.6, PAGE.white, 0.9 * a);
-      }
-    } else if (scene === 'candles') {
-      for (var fd = 0; fd < 4; fd++) { ctx.fillStyle = rgba(PAGE.accent, 0.045 * a); ctx.fillRect((fd + 0.68) * W / 4, 0, 0.32 * W / 4, H); } // test windows
-      ctx.strokeStyle = rgba(PAGE.glow, 0.5 * a); ctx.lineWidth = LW * 1.3; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
-      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
-      ctx.stroke();
-      ctx.strokeStyle = rgba(PAGE.accent, 0.85 * a); ctx.lineWidth = LW * 1.8; ctx.beginPath(); // moving average of the last 12 points
-      for (i = 11; i < n; i++) { var sum = 0; for (var mk = i - 11; mk <= i; mk++) sum += nodes[mk].y; if (i === 11) ctx.moveTo(nodes[i].x, sum / 12); else ctx.lineTo(nodes[i].x, sum / 12); }
-      ctx.stroke();
-    } else if (scene === 'spiral') {
-      ctx.strokeStyle = rgba(PAGE.glow, 0.14 * a); ctx.lineWidth = LW * 1; ctx.beginPath(); // the 13 spirals one way
-      for (i = 0; i + 13 < n; i++) line(i, i + 13);
-      ctx.stroke();
-      ctx.strokeStyle = rgba(PAGE.accent, 0.3 * a); ctx.beginPath(); // and the 21 the other way: both Fibonacci numbers
-      for (i = 0; i + 21 < n; i++) line(i, i + 21);
-      ctx.stroke();
-    } else if (scene === 'histogram') {
-      ctx.strokeStyle = rgba(PAGE.glow, 0.3 * a); ctx.lineWidth = LW * 1; ctx.beginPath(); ctx.moveTo(W * 0.1, H * 0.8 + 10); ctx.lineTo(W * 0.9, H * 0.8 + 10); ctx.stroke();
-      for (i = 0; i < 21; i++) if (nodes[i].hot) { ctx.strokeStyle = rgba(PAGE.accent, 0.7 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, H * 0.18); ctx.lineTo(nodes[i].x, H * 0.8 + 10); ctx.stroke(); }
-    } else if (scene === 'funnel') {
-      ctx.strokeStyle = rgba(PAGE.glow, 0.14 * a); ctx.lineWidth = LW * 1; ctx.beginPath();
-      ctx.moveTo(0, H * 0.54); ctx.lineTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.28); ctx.moveTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.8);
-      ctx.stroke();
-      ring(W * 0.45, H * 0.54, 16, PAGE.white, 0.7 * a);
-      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, PAGE.accent, a);
-    } else { // waves
-      for (var row = 0; row < 6; row++) {
-        ctx.strokeStyle = rgba(row === 2 ? PAGE.accent : PAGE.glow, (0.2 + row * 0.04) * a); ctx.lineWidth = LW * 1.2;
-        ctx.beginPath(); ctx.moveTo(nodes[row].x, nodes[row].y);
-        for (i = row + 6; i < n; i += 6) ctx.lineTo(nodes[i].x, nodes[i].y);
-        ctx.stroke();
-      }
-    }
-
-    for (i = 0; i < n; i++) { // the points themselves, always visible
-      var nd = nodes[i];
-      if (scene === 'sphere') dot(nd.x, nd.y, 1.1 + (nd.z + 1) * 1.1, tint, 0.2 + (nd.z + 1) * 0.3); // nearer points are larger and brighter
-      else dot(nd.x, nd.y, 1.7, scene === 'scc' ? PAGE.palette[i % 5] : tint, 0.5);
-    }
-    ctx.restore();
-    requestAnimationFrame(draw);
-  }
-
-  // Choose the scene from whichever tagged block crosses a line 40% down the screen, and measure its scroll progress.
-  var tagged = document.querySelectorAll('[data-scene]'), hovered = null;
-  function pickScene() {
-    var probe = window.innerHeight * 0.4, best = null, bestGap = Infinity, bestRect = null;
-    if (hovered) { best = hovered; bestRect = hovered.getBoundingClientRect(); bestGap = -1; } // a hovered card wins
-    for (var i = 0; i < tagged.length; i++) {
-      var rect = tagged[i].getBoundingClientRect();
-      var gap = rect.top > probe ? rect.top - probe : rect.bottom < probe ? probe - rect.bottom : 0;
-      if (gap < bestGap) { bestGap = gap; best = tagged[i]; bestRect = rect; }
-    }
-    if (bestRect) lp = clamp((probe - bestRect.top) / Math.max(bestRect.height, 1), -0.5, 1.5);
-    var holder = best && window.innerWidth >= 1000 && best.closest ? best.closest('[data-stage]') : null, box = holder && holder.querySelector('.stage');
-    if (box) { var sr = box.getBoundingClientRect(); stT.k = Math.min(sr.width / W, sr.height / H) * 0.96; stT.x = sr.left + sr.width / 2; stT.y = sr.top + sr.height / 2; } // play this card's scene inside the stage
-    else { stT.k = 1; stT.x = W / 2; stT.y = H / 2; }
-    var next = best ? best.getAttribute('data-scene') : 'drift';
-    var hr = holder ? holder.getBoundingClientRect() : null;
-    STAGE.on = !!box && hr.top < window.innerHeight * 0.55 && hr.bottom > window.innerHeight * 0.45; STAGE.note = NOTES[next] || '';
-    if (next !== scene) {
-      scene = next; sceneStart = performance.now(); route.goal = -1;
-      root.style.setProperty('--glow', tints()[scene] || PAGE.glow); // retint the cursor light and tab pill for this chapter
-    }
-  }
-
-  document.querySelectorAll('.feature[data-scene], .build[data-scene]').forEach(function (card) {
-    card.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') { hovered = card; pickScene(); } });
-    card.addEventListener('pointerleave', function () { if (hovered === card) { hovered = null; pickScene(); } });
-  });
-
-  build();
-  sx = stT.x = W / 2; sy = stT.y = H / 2;
-  pickScene();
-  window.addEventListener('themechange', function () { root.style.setProperty('--glow', tints()[scene] || PAGE.glow); });
-  window.addEventListener('scroll', pickScene, { passive: true });
-  window.addEventListener('resize', function () { build(); pickScene(); });
-  requestAnimationFrame(draw);
 })();
 </script>
 </body>
