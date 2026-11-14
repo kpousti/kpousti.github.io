@@ -51,7 +51,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scrollbar-color: #2a3a57 var(--ink); scrollbar-width: thin; }
+html { scrollbar-color: #2a3a57 var(--ink); scrollbar-width: thin; }
 body {
   margin: 0; background: var(--ink); color: var(--text);
   font-family: var(--font-body); font-size: var(--step-0); line-height: 1.62;
@@ -411,7 +411,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
     </div>
   </section>
 
-  <section class="chapter" id="experience" data-scene="grid">
+  <section class="chapter" id="experience" data-scene="turbine">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Experience</p>
@@ -506,7 +506,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
           </div>
         </article>
 
-        <article class="feature" data-scene="graph" data-reveal>
+        <article class="feature" data-scene="wavefront" data-reveal>
           <div class="screen">
             <div class="screen-bar"><span class="live"><b>Dijkstra</b> settling nodes by distance</span><span>numbers are path costs</span></div>
             <canvas role="img" data-demo="dijkstra" aria-label="Animated Dijkstra search across a weighted graph"></canvas>
@@ -541,7 +541,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
     </div>
   </section>
 
-  <section class="chapter" id="builds" data-scene="orbits">
+  <section class="chapter" id="builds">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Side builds</p>
@@ -550,7 +550,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       </header>
       <div class="builds">
 
-        <article class="build wide" data-reveal>
+        <article data-scene="orbits" class="build wide" data-reveal>
           <div class="screen"><canvas role="img" data-demo="city" aria-label="Animated overwater huts with agents riding boardwalks to a central hub"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Agent City</h3><span class="status">Agent system</span></div>
@@ -559,7 +559,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
           </div>
         </article>
 
-        <article class="build" data-reveal>
+        <article data-scene="voice" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="voice" style="height:64px" aria-label="Animated voice waveform"></canvas></div>
           <div class="chat" aria-label="Sample exchange with Kia-bot">
             <p class="q">How is the surf tomorrow morning?</p>
@@ -573,7 +573,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
           </div>
         </article>
 
-        <article class="build" data-reveal>
+        <article data-scene="barrel" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="surf" aria-label="Animated ocean waves with a sample surf alert"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Surf Alert</h3><span class="status">Daily alert</span></div>
@@ -582,7 +582,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
           </div>
         </article>
 
-        <article class="build" data-reveal>
+        <article data-scene="candles" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="backtest" aria-label="Animated equity curve with walk-forward windows"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Quant Backtest Lab</h3><span class="status">Research</span></div>
@@ -591,7 +591,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
           </div>
         </article>
 
-        <article class="build" data-reveal>
+        <article data-scene="funnel" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="leads" aria-label="Animated messages being classified and routed"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Lead Autoresponder</h3><span class="status">Automation</span></div>
@@ -603,7 +603,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
     </div>
   </section>
 
-  <section class="chapter" id="skills" data-scene="scc">
+  <section class="chapter" id="skills" data-scene="tree">
     <div class="wrap">
       <header class="head" data-reveal>
         <p class="eyebrow">Skills</p>
@@ -725,6 +725,39 @@ var pointer = { x: -1, y: -1, active: false };
     document.getElementById('grain').style.backgroundImage = 'url(' + c.toDataURL('image/png') + ')';
   })();
   if (window.console) console.log('%cKia Pousti%c  Designed and built by hand. kiapousti.com', 'font-weight:700;color:#f2b56b', 'color:#93a1b8');
+})();
+
+// ---------- In-page links: glide to the section, re-aiming each frame so nothing can throw it off ----------
+(function () {
+  var run = 0;
+  function aim(el) { // where the page must be scrolled for this element to sit just under the tab bar
+    var barH = document.querySelector('.bar').offsetHeight, doc = document.documentElement;
+    var y = el.getBoundingClientRect().top + window.scrollY - barH;
+    return clamp(y, 0, doc.scrollHeight - window.innerHeight);
+  }
+  function glide(el) {
+    var id = ++run, from = window.scrollY, t0 = performance.now();
+    var ms = REDUCE ? 0 : clamp(450 + Math.abs(aim(el) - from) * 0.16, 500, 1500);
+    function step(now) {
+      if (id !== run) return; // a newer click or the visitor took over
+      var u = ms ? clamp((now - t0) / ms, 0, 1) : 1, e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      window.scrollTo(0, from + (aim(el) - from) * e);
+      if (u < 1) requestAnimationFrame(step);
+      else setTimeout(function () { if (id === run) window.scrollTo(0, aim(el)); }, 120); // settle after late layout
+    }
+    requestAnimationFrame(step);
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    var el = document.getElementById(a.getAttribute('href').slice(1));
+    if (!el) return;
+    e.preventDefault();
+    glide(el);
+    try { history.replaceState(null, '', a.getAttribute('href')); } catch (err) {}
+  });
+  // Scrolling by hand cancels the glide.
+  ['wheel', 'touchstart', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { run++; }, { passive: true }); });
 })();
 
 // ---------- Tab bar: sliding highlight and page progress ----------
@@ -1473,9 +1506,16 @@ var pointer = { x: -1, y: -1, active: false };
     signal: '<b>Sensor telemetry</b> amber points are flagged anomalies',
     orbits: '<b>Agents in orbit</b> each one reporting to the hub',
     scc: '<b>Tarjan SCC</b> cycles grouped into components',
-    waves: '<b>Pacific swell</b> rolling in'
+    waves: '<b>Pacific swell</b> rolling in',
+    turbine: '<b>Turbine rotor</b> scroll to spin it up',
+    tree: '<b>Binary heap</b> tracing a path from leaf to root',
+    wavefront: '<b>Dijkstra frontier</b> distance spreading from the source',
+    voice: '<b>Voiceprint</b> a question on its way to Kia-bot',
+    barrel: '<b>Set wave</b> standing up and pitching',
+    candles: '<b>Price path</b> with its moving average',
+    funnel: '<b>Lead routing</b> amber goes to a person'
   };
-  var TINT = { graph: GLOW, sphere: PALETTE[2], grid: GLOW, signal: GLOW, orbits: PALETTE[3], scc: GLOW, waves: GLOW };
+  var TINT = { graph: GLOW, sphere: PALETTE[2], grid: GLOW, signal: GLOW, orbits: PALETTE[3], scc: GLOW, waves: GLOW, turbine: AMBER, tree: PALETTE[3], wavefront: PALETTE[2], voice: PALETTE[2], barrel: GLOW, candles: GLOW, funnel: GLOW };
   var W, H, cols, rows, n, nodes = null, adj, edges, startNode;
   var scene = 'graph', sceneStart = 0, lp = 0, lpS = 0; // lp: how far the current chapter has scrolled through the screen
   var route = { goal: -1, visited: [], path: [], t0: 0 };
@@ -1510,6 +1550,10 @@ var pointer = { x: -1, y: -1, active: false };
     startNode = (rows - 1) * cols; // bottom-left corner
     route.goal = -1; autoGoal = -1;
   }
+
+  // A synthetic price for step q, used by the price-path scene.
+  function price(q) { return Math.sin(q * 0.05) * 0.5 + Math.sin(q * 0.013 + 1) * 0.9 + hashNoise(q) * 0.3; }
+  function frontier(time) { return ((lpS * 1.3 + time * 0.00011) % 1 + 1) % 1 * Math.sqrt(W * W + H * H); }
 
   function dist(a, b) {
     var dx = nodes[a].gx - nodes[b].gx, dy = nodes[a].gy - nodes[b].gy;
@@ -1600,6 +1644,41 @@ var pointer = { x: -1, y: -1, active: false };
         var a2 = mm / perCluster * Math.PI * 2 + (lpS * 2.6 + time * 0.00012) * (cl % 2 ? 1 : -1);
         var rad2 = Math.min(W, H) * (0.09 + 0.05 * (mm % 2));
         p.tx = centers[cl][0] * W + Math.cos(a2) * rad2; p.ty = centers[cl][1] * H + Math.sin(a2) * rad2;
+      } else if (scene === 'turbine') {
+        // A rotor: nine swept blades around a hub, spun by the scroll.
+        var bl = i % 9, bk = Math.floor(i / 9), bt = (bk + 1) / Math.ceil(n / 9);
+        var ba = bl / 9 * Math.PI * 2 + bt * 1.0 + lpS * 5 + time * 0.0004, br = Math.min(W, H) * 0.44 * (0.13 + 0.87 * bt);
+        p.tx = W * 0.5 + Math.cos(ba) * br; p.ty = H * 0.54 + Math.sin(ba) * br; p.hot = i + 9 >= n;
+      } else if (scene === 'tree') {
+        // A binary heap: node i hangs under node (i - 1) / 2.
+        var lv = Math.floor(Math.log(i + 1) / Math.LN2 + 1e-9), cnt = Math.pow(2, lv), inLv = i + 1 - cnt;
+        p.tx = W * (inLv + 0.5) / cnt + Math.sin(time * 0.0007 + lv * 0.9) * 5; p.ty = H * (0.15 + lv * 0.105);
+      } else if (scene === 'wavefront') {
+        // Dijkstra's frontier: a ring of settled distance sweeping out from the source.
+        var sx = nodes[startNode].gx, sy = nodes[startNode].gy, wd = Math.sqrt((p.gx - sx) * (p.gx - sx) + (p.gy - sy) * (p.gy - sy));
+        var off = wd - frontier(time);
+        p.tx = p.gx; p.ty = p.gy - 16 * Math.exp(-(off * off) / 2600); p.hot = Math.abs(off) < 26; p.z = off < 0 ? 1 : 0;
+      } else if (scene === 'voice') {
+        // A circular voiceprint that pulses like speech.
+        var va = i / n * Math.PI * 2, vamp = (0.5 + 0.5 * Math.sin(i * 0.41 + time * 0.0045)) * (0.55 + 0.45 * Math.sin(i * 0.13 + lpS * 9 + time * 0.0012));
+        var vr = Math.min(W, H) * (0.25 + 0.13 * vamp);
+        p.tx = W * 0.5 + Math.cos(va) * vr; p.ty = H * 0.54 + Math.sin(va) * vr;
+      } else if (scene === 'barrel') {
+        // A set wave: the swell lines lift into a peak whose top pitches forward.
+        var brow = i % 6, bx = Math.floor(i / 6) / Math.max(1, perRow - 1) * W;
+        var peak = W * (((0.85 - lpS * 0.55 - time * 0.00004) % 1.2 + 1.2) % 1.2 - 0.1), bd = bx - peak, sg = bd < 0 ? 70 : 190;
+        var lift = Math.exp(-(bd * bd) / (2 * sg * sg)) * H * 0.3 * (1 - brow * 0.13);
+        p.tx = bx - lift * 0.45 * (1 - brow / 6); p.ty = H * (0.5 + brow * 0.07) - lift + Math.sin(bx * 0.012 + time * 0.001 + brow) * 6; p.hot = brow === 0 && lift > H * 0.12;
+      } else if (scene === 'candles') {
+        // A price path sliding by as you scroll.
+        var ck = i + lpS * 50 + time * 0.003, c0 = Math.floor(ck), cf = ck - c0;
+        p.tx = 20 + i / (n - 1) * (W - 40); p.ty = H * 0.56 - (price(c0) * (1 - cf) + price(c0 + 1) * cf) * H * 0.15;
+      } else if (scene === 'funnel') {
+        // Inquiries stream into a classifier, then split: most to auto-reply, some to a person.
+        var fu = ((i / n * 7.31 + time * 0.00005 + lpS * 0.7) % 1 + 1) % 1, spread = ((i * 37) % 19) / 19 - 0.5, down = i % 4 === 3;
+        if (fu < 0.45) { p.tx = fu / 0.45 * W * 0.45; p.ty = H * 0.54 + spread * (1 - fu / 0.45) * H * 0.5; }
+        else { var fv = (fu - 0.45) / 0.55; p.tx = W * 0.45 + fv * W * 0.55; p.ty = H * 0.54 + (down ? 1 : -1) * fv * H * 0.26 + spread * fv * 30; p.hot = down; }
+        if (Math.abs(p.tx - p.x) > W * 0.4) { p.x = p.tx; p.y = p.ty; } // wrapped around: jump, do not fly back across the screen
       } else { // waves
         var row = i % 6, j = Math.floor(i / 6), x = j / Math.max(1, perRow - 1) * W;
         p.tx = x; p.ty = H * (0.3 + row * 0.1) + Math.sin(x * 0.011 + time * 0.0011 + lpS * 5 + row * 0.9) * (14 + row * 4);
@@ -1687,6 +1766,63 @@ var pointer = { x: -1, y: -1, active: false };
       }
       ctx.strokeStyle = rgba(GLOW, 0.1 * a);
       ctx.beginPath(); line(0, 1); line(1, 2); line(3, 4); line(0, 3); ctx.stroke(); // links between components
+    } else if (scene === 'turbine') {
+      for (var b9 = 0; b9 < 9; b9++) { // each blade, from the hub outward
+        ctx.strokeStyle = rgba(tint, 0.34 * a); ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.54);
+        for (i = b9; i < n; i += 9) ctx.lineTo(nodes[i].x, nodes[i].y);
+        ctx.stroke();
+      }
+      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.455, GLOW, 0.25 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.05, AMBER, 0.9 * a);
+      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, WHITE, 0.9 * a);
+    } else if (scene === 'tree') {
+      ctx.strokeStyle = rgba(tint, 0.18 * a); ctx.lineWidth = 1; ctx.beginPath();
+      for (i = 1; i < n; i++) line(i, (i - 1) >> 1);
+      ctx.stroke();
+      // one leaf-to-root path lights up, and moves along the bottom row as you scroll
+      var leaf = n - 1 - Math.floor(((lpS * 0.9 + (REDUCE ? 0 : now * 0.00006)) % 1 + 1) % 1 * Math.floor(n / 2));
+      ctx.strokeStyle = rgba(AMBER, 0.9 * a); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(nodes[leaf].x, nodes[leaf].y);
+      for (i = leaf; i > 0; i = (i - 1) >> 1) ctx.lineTo(nodes[(i - 1) >> 1].x, nodes[(i - 1) >> 1].y);
+      ctx.stroke();
+      for (i = leaf; ; i = (i - 1) >> 1) { dot(nodes[i].x, nodes[i].y, 3, AMBER, a); if (i === 0) break; }
+    } else if (scene === 'wavefront') {
+      ctx.strokeStyle = rgba(GLOW, 0.12 * a); ctx.lineWidth = 1;
+      ctx.beginPath(); for (i = 0; i < edges.length; i++) line(edges[i][0], edges[i][1]); ctx.stroke();
+      ring(nodes[startNode].gx, nodes[startNode].gy, frontier(REDUCE ? 0 : now), AMBER, 0.35 * a);
+      for (i = 0; i < n; i++) { if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 3.4, AMBER, a); else if (nodes[i].z > 0) dot(nodes[i].x, nodes[i].y, 2.5, tint, 0.75 * a); }
+      dot(nodes[startNode].gx, nodes[startNode].gy, 5, AMBER, a);
+    } else if (scene === 'voice') {
+      ctx.strokeStyle = rgba(tint, 0.55 * a); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
+      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
+      ctx.closePath(); ctx.stroke();
+      ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.2, AMBER, 0.4 * a); ring(W * 0.5, H * 0.54, Math.min(W, H) * 0.41, tint, 0.12 * a);
+    } else if (scene === 'barrel') {
+      for (var brw = 0; brw < 6; brw++) {
+        ctx.strokeStyle = rgba(brw === 0 ? WHITE : GLOW, (brw === 0 ? 0.7 : 0.24 + brw * 0.04) * a); ctx.lineWidth = brw === 0 ? 1.8 : 1.2;
+        ctx.beginPath(); ctx.moveTo(nodes[brw].x, nodes[brw].y);
+        for (i = brw + 6; i < n; i += 6) { // curve through the midpoints so the wave face is smooth, not angular
+          var pv = nodes[i - 6], cu = nodes[i];
+          ctx.quadraticCurveTo(pv.x, pv.y, (pv.x + cu.x) / 2, (pv.y + cu.y) / 2);
+        }
+        ctx.stroke();
+      }
+      for (i = 0; i < n; i++) if (nodes[i].hot) { // spray off the lip
+        dot(nodes[i].x - 8 - hashNoise(i) * 14, nodes[i].y - 10 - (hashNoise(i * 3) + 0.5) * 16, 1.6, WHITE, 0.7 * a);
+        dot(nodes[i].x, nodes[i].y, 2.6, WHITE, 0.9 * a);
+      }
+    } else if (scene === 'candles') {
+      for (var fd = 0; fd < 4; fd++) { ctx.fillStyle = rgba(AMBER, 0.045 * a); ctx.fillRect((fd + 0.68) * W / 4, 0, 0.32 * W / 4, H); } // test windows
+      ctx.strokeStyle = rgba(GLOW, 0.5 * a); ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(nodes[0].x, nodes[0].y);
+      for (i = 1; i < n; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
+      ctx.stroke();
+      ctx.strokeStyle = rgba(AMBER, 0.85 * a); ctx.lineWidth = 1.8; ctx.beginPath(); // moving average of the last 12 points
+      for (i = 11; i < n; i++) { var sum = 0; for (var mk = i - 11; mk <= i; mk++) sum += nodes[mk].y; if (i === 11) ctx.moveTo(nodes[i].x, sum / 12); else ctx.lineTo(nodes[i].x, sum / 12); }
+      ctx.stroke();
+    } else if (scene === 'funnel') {
+      ctx.strokeStyle = rgba(GLOW, 0.14 * a); ctx.lineWidth = 1; ctx.beginPath();
+      ctx.moveTo(0, H * 0.54); ctx.lineTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.28); ctx.moveTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.8);
+      ctx.stroke();
+      ring(W * 0.45, H * 0.54, 16, WHITE, 0.7 * a);
+      for (i = 0; i < n; i++) if (nodes[i].hot) dot(nodes[i].x, nodes[i].y, 2.8, AMBER, a);
     } else { // waves
       for (var row = 0; row < 6; row++) {
         ctx.strokeStyle = rgba(row === 2 ? AMBER : GLOW, (0.2 + row * 0.04) * a); ctx.lineWidth = 1.2;
@@ -1705,9 +1841,10 @@ var pointer = { x: -1, y: -1, active: false };
   }
 
   // Choose the scene from whichever tagged block crosses a line 40% down the screen, and measure its scroll progress.
-  var tagged = document.querySelectorAll('[data-scene]');
+  var tagged = document.querySelectorAll('[data-scene]'), hovered = null;
   function pickScene() {
     var probe = window.innerHeight * 0.4, best = null, bestGap = Infinity, bestRect = null;
+    if (hovered) { best = hovered; bestRect = hovered.getBoundingClientRect(); bestGap = -1; } // a hovered card wins
     for (var i = 0; i < tagged.length; i++) {
       var rect = tagged[i].getBoundingClientRect();
       var gap = rect.top > probe ? rect.top - probe : rect.bottom < probe ? probe - rect.bottom : 0;
@@ -1721,6 +1858,11 @@ var pointer = { x: -1, y: -1, active: false };
       root.style.setProperty('--glow', TINT[scene] || GLOW); // retint the cursor light and tab pill for this chapter
     }
   }
+
+  document.querySelectorAll('.feature[data-scene], .build[data-scene]').forEach(function (card) {
+    card.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') { hovered = card; pickScene(); } });
+    card.addEventListener('pointerleave', function () { if (hovered === card) { hovered = null; pickScene(); } });
+  });
 
   build();
   pickScene();
