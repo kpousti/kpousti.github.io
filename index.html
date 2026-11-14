@@ -213,9 +213,9 @@ h1 {
 
 /* Project cards with a live demo screen */
 .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.builds { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
-.build { grid-column: span 2; }
-.build.wide { grid-column: span 4; }
+.builds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.build { grid-column: span 1; }
+.build.wide { grid-column: span 2; }
 .feature, .build {
   position: relative; border: 1px solid var(--line); border-radius: 16px;
   background: rgba(var(--panel), 0.92); overflow: hidden;
@@ -231,8 +231,8 @@ h1 {
 .feature:hover::before, .build:hover::before { opacity: 1; }
 .screen { position: relative; border-bottom: 1px solid var(--line); background: #08101c; }
 .screen canvas { display: block; width: 100%; height: 200px; }
-.build .screen canvas { height: 160px; }
-.build.wide .screen canvas { height: 270px; }
+.build .screen canvas { height: 240px; }
+.build.wide .screen canvas { height: 330px; }
 .screen-bar {
   display: flex; justify-content: space-between; gap: 12px; padding: 7px 14px; border-bottom: 1px solid var(--line);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--text-dim);
@@ -246,10 +246,10 @@ h1 {
 .feature-head a { font-family: var(--font-mono); font-size: 12px; color: var(--accent); border-bottom: 1px solid transparent; transition: border-color 0.2s; white-space: nowrap; }
 .feature-head a:hover { border-color: var(--accent); }
 .feature-body p { margin: 8px 0 0; font-size: 0.94rem; }
-.build .feature-body { padding: 16px 18px 18px; }
-.build h3 { font-size: 1.04rem; }
+.build .feature-body { padding: 20px 22px 22px; }
+.build h3 { font-size: 1.14rem; }
 .status { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
-.chat { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 0.86rem; line-height: 1.45; border-bottom: 1px solid var(--line); background: #08101c; }
+.chat { padding: 14px 20px 16px; min-height: 120px; display: flex; flex-direction: column; gap: 8px; font-size: 0.92rem; line-height: 1.45; border-bottom: 1px solid var(--line); background: #08101c; }
 .chat p { margin: 0; }
 .chat .q { color: var(--bright); }
 .chat .q::before { content: "You  "; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
@@ -259,7 +259,7 @@ h1 {
 
 /* Pinned story: stays on screen while the scroll scrubs through four stages. */
 .pin { margin: 0 auto 72px; }
-.pin.live { height: 340vh; }
+.pin.live { height: 290vh; }
 .pin-stage {
   max-width: 1080px; margin: 0 auto;
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); gap: 36px; align-items: center;
@@ -289,7 +289,23 @@ h1 {
 .skill-grid b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
 
 /* Away + contact */
-.beyond { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 720px; margin: 0 auto; padding: 0; list-style: none; }
+.beyond { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.beyond li { transition: border-color var(--t-med), transform var(--t-med) var(--ease-out); }
+.beyond li:hover { border-color: var(--accent); transform: translateY(-3px); }
+.ico { display: block; width: 44px; height: 44px; margin: 0 auto 12px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bounce { animation: bounce 0.9s cubic-bezier(0.3, 0, 0.7, 1) infinite alternate; }
+@keyframes bounce { from { transform: translateY(-16px); } to { transform: translateY(3px); } }
+.swell { animation: swell 2.6s ease-in-out infinite alternate; }
+.swell.late { animation-delay: -1.3s; opacity: 0.5; }
+@keyframes swell { from { transform: translateX(-4px); } to { transform: translateX(4px); } }
+.shine { transform-origin: 38px 12px; animation: shine 1.8s ease-in-out infinite; }
+@keyframes shine { 0%, 100% { transform: scale(0.3); opacity: 0.2; } 50% { transform: scale(1); opacity: 1; } }
+.scan { animation: scan 1.4s steps(2) infinite; }
+@keyframes scan { 50% { opacity: 0.25; } }
+.page { transform-origin: 24px 26px; animation: page 2.4s ease-in-out infinite; }
+@keyframes page { 0%, 100% { transform: skewY(0deg); } 50% { transform: skewY(-10deg) translateX(3px); } }
+.trend { stroke-dasharray: 46; animation: trend 2.8s var(--ease-in-out) infinite; }
+@keyframes trend { 0% { stroke-dashoffset: 46; } 60%, 100% { stroke-dashoffset: 0; } }
 .beyond li { padding: 22px; font-size: 0.94rem; text-align: center; }
 .beyond b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
 .contact-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
@@ -310,6 +326,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 .head.pre.in .w > span { transform: none; transition: transform 0.95s var(--ease-out); transition-delay: calc(var(--i) * 55ms); }
 .head.pre.in .eyebrow, .head.pre.in .sub { opacity: 1; transform: none; transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
 .head.pre.in .sub { transition-delay: 0.28s; }
+.top-link { display: block; width: max-content; margin: 0 auto 18px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 .colophon { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
 
 /* ---------- Smaller screens ---------- */
@@ -332,8 +349,10 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
   .bar-cta { display: none; }
   .tabs { margin: 0; }
   .tabs a { padding: 6px 11px; }
-  .builds, .beyond, .contact-cards { grid-template-columns: minmax(0, 1fr); }
+  .builds, .contact-cards { grid-template-columns: minmax(0, 1fr); }
+  .beyond { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .build.wide { grid-column: span 1; }
+  .build .screen canvas { height: 200px; }
   .build.wide .screen canvas { height: 190px; }
   .prose, .xp article { padding: 22px; }
   .scene-note { right: 12px; bottom: 12px; }
@@ -372,7 +391,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 
 <main>
   <section class="hero" id="top" data-scene="graph">
-    <p class="eyebrow">Software engineer · San Diego, CA</p>
+    <p class="eyebrow">Software engineer · San Diego, CA<span id="clock"></span></p>
     <h1>Kia Pousti</h1>
     <p class="hero-role">Fast graph systems. <em>Practical AI.</em></p>
     <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">Move your cursor: the background is finding the shortest path to it.</span><span class="has-touch">Drag a finger across the screen: the background finds the shortest path to it.</span></p>
@@ -546,7 +565,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
       <header class="head" data-reveal>
         <p class="eyebrow">Side builds</p>
         <h2>Built for my own daily use.</h2>
-        <p class="sub">Personal projects, still in progress. The screens show sample data.</p>
+        <p class="sub">Seven personal projects, some finished and some still in progress. The screens show sample data. Hover one and the whole background becomes it.</p>
       </header>
       <div class="builds">
 
@@ -560,7 +579,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         </article>
 
         <article data-scene="voice" class="build" data-reveal>
-          <div class="screen"><canvas role="img" data-demo="voice" style="height:64px" aria-label="Animated voice waveform"></canvas></div>
+          <div class="screen"><canvas role="img" data-demo="voice" style="height:120px" aria-label="Animated voice waveform"></canvas></div>
           <div class="chat" aria-label="Sample exchange with Kia-bot">
             <p class="q">How is the surf tomorrow morning?</p>
             <p class="tools">→ surf_forecast · tides</p>
@@ -582,7 +601,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
           </div>
         </article>
 
-        <article data-scene="candles" class="build" data-reveal>
+        <article data-scene="histogram" class="build" data-reveal>
           <div class="screen"><canvas role="img" data-demo="backtest" aria-label="Animated equity curve with walk-forward windows"></canvas></div>
           <div class="feature-body">
             <div class="feature-head"><h3>Quant Backtest Lab</h3><span class="status">Research</span></div>
@@ -597,6 +616,24 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
             <div class="feature-head"><h3>Lead Autoresponder</h3><span class="status">Automation</span></div>
             <p>Reads each inquiry to a small business, classifies intent and urgency, and replies right away. Complaints always go to a person.</p>
             <ul class="chips"><li>Python</li><li>LLM classification</li><li>Human in the loop</li></ul>
+          </div>
+        </article>
+
+        <article data-scene="candles" class="build" data-reveal>
+          <div class="screen"><canvas role="img" data-demo="market" aria-label="Animated price falling through pullback tiers below its 52-week high"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Market Debrief</h3><span class="status">Dashboard</span></div>
+            <p>A daily page for my own portfolio: live prices, upcoming events for each holding, and a signal when a pullback from the 52-week high crosses a set tier.</p>
+            <ul class="chips"><li>JavaScript</li><li>Python</li><li>Twelve Data API</li></ul>
+          </div>
+        </article>
+
+        <article data-scene="spiral" class="build" data-reveal>
+          <div class="screen"><canvas role="img" data-demo="golden" aria-label="Animated Fibonacci squares forming a golden spiral"></canvas></div>
+          <div class="feature-body">
+            <div class="feature-head"><h3>Math 163 Study Game</h3><span class="status">Study tool</span></div>
+            <p>An interactive study guide I made for a history of mathematics course: flashcards, matching games and quizzes with XP, from Greek geometry to Renaissance algebra.</p>
+            <ul class="chips"><li>HTML</li><li>JavaScript</li><li>Quiz engine</li></ul>
           </div>
         </article>
       </div>
@@ -639,14 +676,36 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
         <p class="eyebrow">Away from the keyboard</p>
       </header>
       <ul class="beyond">
-        <li class="glass" data-reveal><b>Boards</b>Surfing and skateboarding.</li>
-        <li class="glass" data-reveal><b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.</li>
+        <li class="glass" data-reveal>
+          <svg class="ico i-ball" viewBox="0 0 48 48" aria-hidden="true"><line x1="8" y1="42" x2="40" y2="42"/><circle class="bounce" cx="24" cy="30" r="8"/></svg>
+          <b>Sports</b>Basketball, soccer and volleyball.
+        </li>
+        <li class="glass" data-reveal>
+          <svg class="ico i-wave" viewBox="0 0 48 48" aria-hidden="true"><path class="swell" d="M2 30 C10 18 16 18 24 30 S38 42 46 30"/><path class="swell late" d="M2 38 C10 28 16 28 24 38 S38 48 46 38"/></svg>
+          <b>Boards</b>Surfing and skating.
+        </li>
+        <li class="glass" data-reveal>
+          <svg class="ico i-car" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 32 L10 22 H32 L40 28 H44 V36 H6 Z"/><circle cx="15" cy="37" r="4"/><circle cx="35" cy="37" r="4"/><path class="shine" d="M38 8 V16 M34 12 H42"/></svg>
+          <b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.
+        </li>
+        <li class="glass" data-reveal>
+          <svg class="ico i-tv" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="36" height="24" rx="3"/><path d="M18 6 L24 14 L30 6"/><path class="scan" d="M12 22 H36 M12 28 H30"/></svg>
+          <b>On the screen</b>Family Guy.
+        </li>
+        <li class="glass" data-reveal>
+          <svg class="ico i-book" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 12 C18 8 10 8 6 10 V38 C10 36 18 36 24 40 C30 36 38 36 42 38 V10 C38 8 30 8 24 12 Z"/><path class="page" d="M24 12 V40"/></svg>
+          <b>Reading</b>Self-improvement books.
+        </li>
+        <li class="glass" data-reveal>
+          <svg class="ico i-chart" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 6 V42 H44"/><path class="trend" d="M10 34 L18 28 L24 31 L32 18 L42 10"/></svg>
+          <b>Markets</b>I invest in the market, with positive returns so far, and I am working toward a career in the quant field.
+        </li>
       </ul>
     </div>
   </section>
 </main>
 
-<footer>© 2026 Kia Pousti. All rights reserved. Designed and built by Kia Pousti. The A*, Dijkstra and Tarjan demos on this page run the real algorithms in your browser.<span class="colophon">Set in Bricolage Grotesque and IBM Plex. Hand-written HTML, CSS and JavaScript, with no frameworks.</span></footer>
+<footer><a class="top-link" href="#top">Back to top ↑</a>© 2026 Kia Pousti. All rights reserved. Designed and built by Kia Pousti. The A*, Dijkstra and Tarjan demos on this page run the real algorithms in your browser.<span class="colophon">Set in Bricolage Grotesque and IBM Plex. Hand-written HTML, CSS and JavaScript, with no frameworks.</span></footer>
 
 <script>
 // ---------- Shared helpers ----------
@@ -725,6 +784,16 @@ var pointer = { x: -1, y: -1, active: false };
     document.getElementById('grain').style.backgroundImage = 'url(' + c.toDataURL('image/png') + ')';
   })();
   if (window.console) console.log('%cKia Pousti%c  Designed and built by hand. kiapousti.com', 'font-weight:700;color:#f2b56b', 'color:#93a1b8');
+})();
+
+// ---------- Hero: show the current time in San Diego ----------
+(function () {
+  var el = document.getElementById('clock');
+  if (!el || !window.Intl) return;
+  function tick() {
+    try { el.textContent = ' · ' + new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Los_Angeles' }).format(new Date()); } catch (e) {}
+  }
+  tick(); setInterval(tick, 30000);
 })();
 
 // ---------- In-page links: glide to the section, re-aiming each frame so nothing can throw it off ----------
@@ -1243,6 +1312,74 @@ var pointer = { x: -1, y: -1, active: false };
     }
   };
 
+  // Market Debrief: a price against its 52-week high, with the pullback tiers that raise a signal.
+  demos.market = {
+    trend: function (k) { // price as a fraction of the high: drifts down into a pullback, then recovers
+      return 1 - 0.17 * (0.5 - 0.5 * Math.cos(k * 0.021)) - 0.045 * (0.5 + 0.5 * Math.sin(k * 0.083));
+    },
+    level: function (k) { return this.trend(k) + hashNoise(k) * 0.012; },
+    draw: function (ctx, w, h, t) {
+      var N = Math.max(70, Math.floor(w / 4)), off = REDUCE ? 150 : t * 0.013, k0 = Math.floor(off), fr = off - k0, self = this, j;
+      var top = 50, bot = h - 26, tiers = [[1, '52-week high'], [0.95, '-5%'], [0.9, '-10%'], [0.8, '-20%']];
+      function y(v) { return top + (1 - v) / 0.26 * (bot - top); }
+      tiers.forEach(function (tr, idx) {
+        ctx.strokeStyle = idx ? rgba(AMBER, 0.45) : rgba(WHITE, 0.5); ctx.lineWidth = 1; ctx.setLineDash(idx ? [4, 5] : []);
+        ctx.beginPath(); ctx.moveTo(0, y(tr[0])); ctx.lineTo(w, y(tr[0])); ctx.stroke();
+        text(ctx, tr[1], w - 8, y(tr[0]) - 8, idx ? rgba(AMBER, 0.95) : rgba(WHITE, 0.8), 'right');
+      });
+      ctx.setLineDash([]);
+      ctx.strokeStyle = rgba(GLOW, 1); ctx.lineWidth = 1.8; ctx.lineJoin = 'round'; ctx.beginPath();
+      for (j = 0; j <= N; j++) { var px = (j - fr) / N * (w * 0.86), py = y(self.level(k0 + j)); if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+      ctx.stroke();
+      for (j = 1; j <= N; j++) { // mark each place the price falls through a tier
+        var a = self.trend(k0 + j - 1), b = self.trend(k0 + j); // the trend, so noise does not count as a new signal
+        for (var q = 1; q < tiers.length; q++) if (a >= tiers[q][0] && b < tiers[q][0]) { var cx = (j - fr) / N * (w * 0.86); ring(ctx, cx, y(tiers[q][0]), 6, rgba(AMBER, 1)); dot(ctx, cx, y(tiers[q][0]), 2.5, rgba(AMBER, 1)); }
+      }
+      var now = self.level(k0 + N), lx = (N - fr) / N * (w * 0.86), hit = now < 0.8 ? 3 : now < 0.9 ? 2 : now < 0.95 ? 1 : 0;
+      dot(ctx, lx, y(now), 4, rgba(WHITE, 1));
+      text(ctx, 'now ' + ((now - 1) * 100).toFixed(1) + '%', 10, 14, rgba(WHITE, 0.95));
+      text(ctx, hit ? 'signal: tier ' + hit + ' pullback' : 'no signal', 10, 30, hit ? rgba(AMBER, 1) : rgba(DIM, 1));
+      text(ctx, 'synthetic prices, not advice', 10, h - 10, rgba(WHITE, 0.55));
+    }
+  };
+
+  // Math 163 study game: Fibonacci squares and the golden spiral, built one square at a time.
+  demos.golden = {
+    init: function (s, w, h) {
+      var fib = [1, 1, 2, 3, 5, 8, 13, 21], dirs = ['down', 'right', 'up', 'left'], box = [0, 0, 1, 1];
+      s.sq = [{ x0: 0, y0: 0, f: 1, dir: 'down' }];
+      for (var i = 1; i < fib.length; i++) { // each new square attaches to the next side of everything so far
+        var f = fib[i], d = dirs[i % 4], q;
+        if (d === 'right') q = { x0: box[2], y0: box[1] }; else if (d === 'up') q = { x0: box[0], y0: box[3] };
+        else if (d === 'left') q = { x0: box[0] - f, y0: box[1] }; else q = { x0: box[0], y0: box[1] - f };
+        q.f = f; q.dir = d; s.sq.push(q);
+        box = [Math.min(box[0], q.x0), Math.min(box[1], q.y0), Math.max(box[2], q.x0 + f), Math.max(box[3], q.y0 + f)];
+      }
+      s.scale = Math.min((w - 36) / (box[2] - box[0]), (h - 40) / (box[3] - box[1]));
+      s.ox = (w - (box[2] - box[0]) * s.scale) / 2 - box[0] * s.scale; s.oy = h - 14 - (h - 28 - (box[3] - box[1]) * s.scale) / 2 + box[1] * s.scale;
+    },
+    draw: function (ctx, w, h, t, s) {
+      var total = s.sq.length, prog = REDUCE ? total : clamp((t % 10000) / 7000, 0, 1) * total, sc = s.scale;
+      var startAng = { down: 180, right: 270, up: 0, left: 90 }, shown = Math.min(total, Math.ceil(prog));
+      s.sq.forEach(function (q, i) {
+        var part = clamp(prog - i, 0, 1);
+        if (part <= 0) return;
+        var X = s.ox + q.x0 * sc, Y = s.oy - (q.y0 + q.f) * sc, S = q.f * sc;
+        ctx.fillStyle = rgba(PALETTE[i % 4], 0.07 * part); ctx.fillRect(X, Y, S, S);
+        ctx.strokeStyle = rgba(GLOW, 0.5 * part); ctx.lineWidth = 1; ctx.strokeRect(X + 0.5, Y + 0.5, S - 1, S - 1);
+        if (S > 20) text(ctx, String(q.f), X + S / 2, Y + S / 2, rgba(WHITE, 0.75 * part), 'center');
+        // quarter turn of the spiral through this square
+        var cxm = q.dir === 'down' || q.dir === 'left' ? q.x0 + q.f : q.x0, cym = q.dir === 'down' || q.dir === 'right' ? q.y0 + q.f : q.y0;
+        var a0 = startAng[q.dir] * Math.PI / 180;
+        ctx.strokeStyle = rgba(AMBER, 1); ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.arc(s.ox + cxm * sc, s.oy - cym * sc, S, -a0, -(a0 + part * Math.PI / 2), true); ctx.stroke();
+      });
+      var hi = s.sq[shown - 1].f, lo = shown > 1 ? s.sq[shown - 2].f : 1;
+      text(ctx, hi + ' / ' + lo + ' = ' + (hi / lo).toFixed(3), 10, 14, rgba(WHITE, 0.95));
+      text(ctx, 'golden ratio = 1.618...', w - 10, 14, rgba(AMBER, 1), 'right');
+    }
+  };
+
   // Set up every demo canvas, and only animate the ones on screen.
   var items = [];
   document.querySelectorAll('canvas[data-demo]').forEach(function (el) {
@@ -1513,9 +1650,11 @@ var pointer = { x: -1, y: -1, active: false };
     voice: '<b>Voiceprint</b> a question on its way to Kia-bot',
     barrel: '<b>Set wave</b> standing up and pitching',
     candles: '<b>Price path</b> with its moving average',
-    funnel: '<b>Lead routing</b> amber goes to a person'
+    funnel: '<b>Lead routing</b> amber goes to a person',
+    spiral: '<b>Golden angle</b> each point turned 137.5 degrees from the last',
+    histogram: '<b>Return distribution</b> shifting as the sample changes'
   };
-  var TINT = { graph: GLOW, sphere: PALETTE[2], grid: GLOW, signal: GLOW, orbits: PALETTE[3], scc: GLOW, waves: GLOW, turbine: AMBER, tree: PALETTE[3], wavefront: PALETTE[2], voice: PALETTE[2], barrel: GLOW, candles: GLOW, funnel: GLOW };
+  var TINT = { graph: GLOW, sphere: PALETTE[2], grid: GLOW, signal: GLOW, orbits: PALETTE[3], scc: GLOW, waves: GLOW, turbine: AMBER, tree: PALETTE[3], wavefront: PALETTE[2], voice: PALETTE[2], barrel: GLOW, candles: GLOW, funnel: GLOW, spiral: GLOW, histogram: GLOW };
   var W, H, cols, rows, n, nodes = null, adj, edges, startNode;
   var scene = 'graph', sceneStart = 0, lp = 0, lpS = 0; // lp: how far the current chapter has scrolled through the screen
   var route = { goal: -1, visited: [], path: [], t0: 0 };
@@ -1673,6 +1812,15 @@ var pointer = { x: -1, y: -1, active: false };
         // A price path sliding by as you scroll.
         var ck = i + lpS * 50 + time * 0.003, c0 = Math.floor(ck), cf = ck - c0;
         p.tx = 20 + i / (n - 1) * (W - 40); p.ty = H * 0.56 - (price(c0) * (1 - cf) + price(c0 + 1) * cf) * H * 0.15;
+      } else if (scene === 'spiral') {
+        // Sunflower packing: every point sits one golden angle past the previous one.
+        var ps = Math.min(W, H) * 0.44 * Math.sqrt((i + 0.5) / n), pa = i * 2.39996 + lpS * 3 + time * 0.0002;
+        p.tx = W * 0.5 + Math.cos(pa) * ps; p.ty = H * 0.54 + Math.sin(pa) * ps;
+      } else if (scene === 'histogram') {
+        // Stacks of points shaped like a bell curve whose center drifts.
+        var hc = i % 21, hl = Math.floor(i / 21), maxL = Math.ceil(n / 21), mu = 10 + Math.sin(lpS * 4 + time * 0.0003) * 3.2;
+        var cap = Math.max(0, Math.round(Math.exp(-Math.pow((hc - mu) / 4.2, 2)) * maxL) - 1);
+        p.tx = W * (0.14 + 0.72 * hc / 20); p.ty = H * 0.8 - Math.min(hl, cap) * Math.min(26, H * 0.58 / maxL); p.hot = Math.abs(hc - mu) < 0.6;
       } else if (scene === 'funnel') {
         // Inquiries stream into a classifier, then split: most to auto-reply, some to a person.
         var fu = ((i / n * 7.31 + time * 0.00005 + lpS * 0.7) % 1 + 1) % 1, spread = ((i * 37) % 19) / 19 - 0.5, down = i % 4 === 3;
@@ -1817,6 +1965,16 @@ var pointer = { x: -1, y: -1, active: false };
       ctx.strokeStyle = rgba(AMBER, 0.85 * a); ctx.lineWidth = 1.8; ctx.beginPath(); // moving average of the last 12 points
       for (i = 11; i < n; i++) { var sum = 0; for (var mk = i - 11; mk <= i; mk++) sum += nodes[mk].y; if (i === 11) ctx.moveTo(nodes[i].x, sum / 12); else ctx.lineTo(nodes[i].x, sum / 12); }
       ctx.stroke();
+    } else if (scene === 'spiral') {
+      ctx.strokeStyle = rgba(GLOW, 0.14 * a); ctx.lineWidth = 1; ctx.beginPath(); // the 13 spirals one way
+      for (i = 0; i + 13 < n; i++) line(i, i + 13);
+      ctx.stroke();
+      ctx.strokeStyle = rgba(AMBER, 0.3 * a); ctx.beginPath(); // and the 21 the other way: both Fibonacci numbers
+      for (i = 0; i + 21 < n; i++) line(i, i + 21);
+      ctx.stroke();
+    } else if (scene === 'histogram') {
+      ctx.strokeStyle = rgba(GLOW, 0.3 * a); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W * 0.1, H * 0.8 + 10); ctx.lineTo(W * 0.9, H * 0.8 + 10); ctx.stroke();
+      for (i = 0; i < 21; i++) if (nodes[i].hot) { ctx.strokeStyle = rgba(AMBER, 0.7 * a); ctx.beginPath(); ctx.moveTo(nodes[i].x, H * 0.18); ctx.lineTo(nodes[i].x, H * 0.8 + 10); ctx.stroke(); }
     } else if (scene === 'funnel') {
       ctx.strokeStyle = rgba(GLOW, 0.14 * a); ctx.lineWidth = 1; ctx.beginPath();
       ctx.moveTo(0, H * 0.54); ctx.lineTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.28); ctx.moveTo(W * 0.45, H * 0.54); ctx.lineTo(W, H * 0.8);
