@@ -3,6 +3,38 @@
 Branch: `nap-build` (built on top of `redesign/map-hero-test`). Nothing is pushed. `main` and the live site are untouched.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Newest pass: an animation for every project
+
+The opening is now turbine, then routing: the rotor spins up, bursts into the city, and A* immediately searches and draws the amber route.
+
+Every chapter and every project is now a stop with its own 3D shape, built from the same blocks. On desktop the model sits beside the card under the project's name and slides across as you move between projects. On phones it sits in a gap under each name.
+
+| Where | Shape | What moves |
+|---|---|---|
+| Hero | City | A* search, then the route |
+| About, Experience | Gas turbine rotor | Spins; turbine rows amber |
+| Projects, Route Engine | Flat road map | The route, lit |
+| Industrial AI Notebook | Telemetry bars in a baseline band | The signal marches; anomalies spike in amber |
+| Mini Maps | City as a distance map | A Dijkstra wavefront; blocks rise as they are settled |
+| TheAlgorithms/C++ | Five rings (Tarjan's components) | Each ring turns; found ones light amber in order |
+| Side builds, Agent City | Hub and six stilted huts | Still |
+| Surf Alert | Wave surface | Crests roll and lean |
+| Kia-bot | Ring of spokes | Rises and falls like speech |
+| Quant Backtest Lab | Six ridges, one per test window | Each draws left to right |
+| Lead Autoresponder | Funnel into three lanes | Blocks fall, narrow, and split; the amber lane goes to a person |
+| Market Debrief | Candlesticks and three tier lines | The chart draws; down candles amber |
+| Math 163 Study Game | 27 flashcards | A wave flips them from steel to amber |
+| Skills | Binary tree with branches | An amber search path walks down |
+| Contact | Wave surface | As above |
+
+How I judged them: I screenshotted every scene, and redid the ones that fell short. Redone once: telemetry (bars too thin), the voice ring (too small and dim), candlesticks (too small), the funnel (did not read as a funnel), Mini Maps (cut off the screen). Redone twice: the Skills tree (first version was scattered dots; it now has branches). I also added a front light, because the upright charts faced away from the main light and looked dark.
+
+Bug I caused and fixed: my project-title style used the same class name as the "Kia Pousti" link in the top bar, which knocked the name out of the bar. Renamed.
+
+Costs: the phone page is longer again (about 27,100px, was 24,750), because each project has a gap for its model. Desktop is unchanged at about 20,800px.
+
+Still weaker than the rest: the funnel and the backtest ridges are clear but not as striking as the rotor or the huts.
+
 ## Latest pass: research, then a polish hour
 
 Sources: a Wikimedia Commons photo of a gas turbine rotor (shape reference only, nothing copied into the site), and a 2026 write-up of the best three.js sites, which credits ORYZO's look to one object with real material response, weight and inertia, and instancing for speed.
