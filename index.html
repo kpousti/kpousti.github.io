@@ -2610,7 +2610,8 @@ import * as THREE from './vendor/three.module.min.js';
     var shape = new THREE.Shape(L.p.map(function (q) { return new THREE.Vector2(q[0], -q[1]); }));
     var g = new THREE.ExtrudeGeometry(shape, { depth: 1, bevelEnabled: false });
     g.rotateX(-Math.PI / 2); // extrude upward: unit height, scaled per building
-    L.mesh = new THREE.Mesh(g, wall); L.mesh.castShadow = true; L.mesh.receiveShadow = true; L.mesh.scale.y = 0.0001;
+    g.translate(-L.cx, 0, -L.cz); // centred on its own lot, so each block can fly, turn and rescale on its own
+    L.mesh = new THREE.Mesh(g, wall); L.mesh.castShadow = true; L.mesh.receiveShadow = true; L.mesh.rotation.order = 'YXZ'; L.mesh.userData.lot = true; L.key = rnd();
     city.add(L.mesh);
   });
 
@@ -2631,6 +2632,32 @@ import * as THREE from './vendor/three.module.min.js';
   var pinGeo = new THREE.SphereGeometry(0.024, 16, 12);
   var pinA = new THREE.Mesh(pinGeo, new THREE.MeshBasicMaterial({ color: 0xeef3fa, toneMapped: false })), pinB = new THREE.Mesh(pinGeo, amber);
   city.add(pinA, pinB);
+
+  // Streets, search, route and pins live in one group, shown only while the blocks form a city or a map.
+  var net = new THREE.Group();
+  city.children.slice().forEach(function (c) { if (c !== slab && !c.userData.lot) net.add(c); });
+  city.add(net);
+
+  // ----- Formations: the same blocks rebuild into a different shape for each chapter -----
+  // 0 city (About) · 1 turbine rotor (Experience) · 2 flat map (Projects) · 3 hub and huts (Side builds) · 4 sphere (Skills) · 5 swell (Contact)
+  var chapters = ['about', 'experience', 'projects', 'builds', 'skills', 'contact'].map(function (id) { return document.getElementById(id); });
+  var BLADES = 14, GOLDEN = 2.39996, pa = {}, pb = {};
+  function pose(f, L, i, t, rise, o) {
+    var N = lots.length, a, rad;
+    o.x = L.cx; o.y = 0; o.z = L.cz; o.rx = 0; o.ry = 0; o.sx = 1; o.sy = L.h * rise; o.sz = 1;
+    if (f === 1) { // blades of a rotor, pitched and turning
+      rad = 0.16 + 0.86 * Math.floor(i / BLADES) / Math.ceil(N / BLADES); a = (i % BLADES) / BLADES * Math.PI * 2 + t * 0.0005;
+      o.x = rad * Math.cos(a); o.z = rad * Math.sin(a); o.y = 0.2; o.ry = -a; o.rx = 0.55; o.sx = 1.25; o.sy = 0.025; o.sz = 0.8;
+    } else if (f === 2) { o.sy = 0.004; } // pressed flat: only the streets and the route stand out
+    else if (f === 3) { // one hub and six huts, each a small cone of blocks
+      var c = i % 7, hub = c === 0, ca = c / 6 * Math.PI * 2; rad = (hub ? 0.3 : 0.2) * Math.sqrt(L.key); a = i * GOLDEN;
+      o.x = (hub ? 0 : 0.72 * Math.cos(ca)) + rad * Math.cos(a); o.z = (hub ? 0 : 0.72 * Math.sin(ca)) + rad * Math.sin(a);
+      o.sx = o.sz = 0.55; o.sy = 0.03 + (hub ? 0.34 : 0.2) * (1 - Math.sqrt(L.key));
+    } else if (f === 4) { // evenly spread on a sphere that slowly turns
+      var yy = 1 - 2 * (i + 0.5) / N; rad = Math.sqrt(1 - yy * yy); a = i * GOLDEN + t * 0.0002;
+      o.x = 0.72 * rad * Math.cos(a); o.z = 0.72 * rad * Math.sin(a); o.y = 0.8 + 0.72 * yy; o.ry = -a; o.sx = o.sz = 0.5; o.sy = 0.035;
+    } else if (f === 5) { o.sy = 0.05 + 0.16 * (0.5 + 0.5 * Math.sin(L.cx * 3.2 + L.cz * 0.9 - t * 0.0016)); } // a swell rolling across the grid
+  }
 
   var builtFor = -1, RADIAL = 6, PER = 10; // tube cross-section and segments per street
   function buildRoute() { // new tubes and search lines each time A* plans a new trip
@@ -2671,11 +2698,15 @@ import * as THREE from './vendor/three.module.min.js';
   function frame(now) {
     if (!REDUCE) requestAnimationFrame(frame);
     var t = REDUCE ? 1e9 : now - t0, sc = window.scrollY, heroH = hero.offsetHeight || H, wide = W >= 1000;
-    var dockable = W >= 1280, heroBottom = hero.getBoundingClientRect().bottom, r = thru.getBoundingClientRect();
-    // Three poses, blended by scroll: beside the hero words, crossing the giant word in the pinned scene, then docked as a minimap (wide screens) or gone.
-    var en = smooth((H - r.top) / H), q = smooth(-r.top / Math.max(1, r.height - H)), out = clamp((H - r.bottom) / H, 0, 1), d = dockable ? smooth(out) : 0;
-    var alpha = dockable ? mix(1, 0.75, d) * clamp(projects.getBoundingClientRect().top / (H * 0.6), 0, 1) : clamp(1 - out * 1.6, 0, 1); // the minimap bows out before the project spreads, which need the full width
-    cv.style.zIndex = en > 0.5 && out < 0.15 ? 2 : 0; // in the pinned scene the model passes in front of the word
+    var heroBottom = hero.getBoundingClientRect().bottom, r = thru.getBoundingClientRect();
+    // Poses blended by scroll: beside the hero words, crossing the giant word in the pinned scene, then centred behind each chapter.
+    var en = smooth((H - r.top) / H), q = smooth(-r.top / Math.max(1, r.height - H)), out = clamp((H - r.bottom) / H, 0, 1), d = smooth(out);
+    // At each chapter boundary the camera dives in close, the blocks rebuild into the next chapter's shape, and it pulls back out.
+    var fA = 0, fB = 0, m = 0, bump = 0;
+    for (var ci = 0; ci < chapters.length; ci++) { var cb = clamp((H - chapters[ci].getBoundingClientRect().top) / H, 0, 1); if (cb > 0) { fA = ci ? ci - 1 : 0; fB = ci; m = smooth(cb); bump = REDUCE ? 0 : Math.pow(Math.sin(Math.PI * cb), 2); } } // squared: a short, sharp dive that is off the text quickly
+    var alpha = mix(1, mix(0.34, 1, bump), d);
+    var front = en > 0.5 && out < 0.5; // in the pinned scene the model passes in front of the word
+    cv.style.zIndex = en > 0.5 ? 2 : 0; cv.style.mixBlendMode = front || en <= 0.5 ? '' : 'screen'; // behind chapters it only adds light, so it never dims the text
     cv.style.opacity = alpha;
     if (alpha <= 0) return;
     if (!REDUCE && pointer.active) pick(now);
@@ -2683,12 +2714,12 @@ import * as THREE from './vendor/three.module.min.js';
     if (builtFor !== plannedAt) buildRoute();
 
     var gx = pointer.active && !REDUCE ? pointer.x / W - 0.5 : 0, gy = pointer.active && !REDUCE ? pointer.y / H - 0.5 : 0;
-    var heroS = wide ? Math.min(W * 0.2, H * 0.36) : W * 0.36, sceneS = wide ? Math.min(W * 0.13, H * 0.22) : W * 0.24, dockS = Math.min((W - 1080) / 2 * 0.36, 110);
-    var S = mix(mix(heroS, sceneS, en), dockS, d);
-    var CX = mix(mix(wide ? W * 0.73 : W / 2, mix(W * 0.74, W * 0.26, q), en), W - (W - 1080) / 4, d);
-    var CY = mix(wide ? H * 0.5 - sc * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.54 : H * 0.68, en) - (dockable ? 0 : Math.max(0, H - r.bottom)); // without a dock it leaves with the scene
+    var heroS = wide ? Math.min(W * 0.2, H * 0.36) : W * 0.36, sceneS = wide ? Math.min(W * 0.13, H * 0.22) : W * 0.24, chapS = Math.min(W * 0.34, H * 0.3);
+    var S = mix(mix(heroS, sceneS, en), chapS, d) * (1 + 2.4 * bump);
+    var CX = mix(mix(wide ? W * 0.73 : W / 2, mix(W * 0.74, W * 0.26, q), en), W / 2, d);
+    var CY = mix(mix(wide ? H * 0.5 - sc * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.54 : H * 0.68, en), H * 0.5, d);
     if (!REDUCE && en === 0) idle += 0.0006; // a slow turn while it sits in the hero
-    var yaw = 0.62 + idle + sc * 0.0009 + q * 4.2 + gx * 0.18 * (1 - en), elev = mix(mix(0.98, 0.6, en), 0.82, d) - gy * 0.08 * (1 - en);
+    var yaw = 0.62 + idle + sc * 0.0009 + q * 4.2 + gx * 0.18 * (1 - en), elev = mix(mix(0.98, 0.6, en), mix(0.78, 0.32, bump), d) - gy * 0.08 * (1 - en);
     rig.rotation.y = yaw - 0.62;
     var dist = 6, target = 0.05;
     camera.position.set(Math.sin(yaw) * Math.cos(elev) * dist, target + Math.sin(elev) * dist, Math.cos(yaw) * Math.cos(elev) * dist);
@@ -2699,7 +2730,15 @@ import * as THREE from './vendor/three.module.min.js';
 
     // Buildings rise from the slab on arrival; then A* replays its search and draws the route.
     var risen = true;
-    lots.forEach(function (L) { var e = ease((t - 200 - L.delay) / 900); if (e < 1) risen = false; L.mesh.scale.y = Math.max(0.0001, L.h * e); });
+    lots.forEach(function (L, i) {
+      var e = ease((t - 200 - L.delay) / 900); if (e < 1) risen = false;
+      var mi = smooth(m * 1.6 - 0.6 * L.key), M = L.mesh; // blocks set off at different moments
+      pose(fA, L, i, t, e, pa);
+      if (mi > 0 && fA !== fB) { pose(fB, L, i, t, e, pb); for (var kk in pa) pa[kk] = mix(pa[kk], pb[kk], mi); }
+      M.position.set(pa.x, pa.y, pa.z); M.rotation.set(pa.rx, pa.ry, 0); M.scale.set(pa.sx, Math.max(0.0001, pa.sy), pa.sz);
+    });
+    var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (dom === 1 || dom === 4 || dom === 5 || (m > 0 && m < 1));
+    net.visible = dom === 0 || dom === 2; slab.visible = dom !== 1 && dom !== 4; // the rotor and the sphere float free
     var step = 22, searchAt = Math.max(plannedAt, t0 + 1500);
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - searchAt) / step)));
     var draw = REDUCE ? 1 : clamp((now - searchAt - explored.length * step) / 600, 0, 1);
@@ -2711,7 +2750,7 @@ import * as THREE from './vendor/three.module.min.js';
     screenNodes.length = 0;
     for (var q = 0; q < n * n; q++) { tmpV.set(nx[q], 0, nz[q]).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H); }
     // Draw only when something on screen changed, so a still page costs nothing.
-    var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, risen, W, H].join();
+    var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, risen, W, H, fB, m.toFixed(3), moving ? now : 0].join();
     if (k !== lastKey) { lastKey = k; renderer.render(scene, camera); }
   }
   plan(goal, t0); plannedAt = t0;
