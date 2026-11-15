@@ -17,6 +17,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1220'/%3E%3Cpath d='M7 24 L12 15 L19 18 L25 8' fill='none' stroke='%23f2b56b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='24' r='2.6' fill='%23f2b56b'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='none' stroke='%23f2b56b' stroke-width='1.8'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/ibm-plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="modulepreload" href="vendor/three.module.min.js">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Kia Pousti","url":"https://kiapousti.com","jobTitle":"Software Developer","worksFor":{"@type":"Organization","name":"Solar Turbines"},"alumniOf":{"@type":"CollegeOrUniversity","name":"University of California, San Diego"},"sameAs":["https://github.com/kpousti","https://www.linkedin.com/in/kiapousti"]}</script>
 <style>
 /* Fonts are served from this site: no third-party request, and the two files the first screen needs are preloaded. */
@@ -2088,209 +2089,6 @@ var pointer = { x: -1, y: -1, active: false };
   });
 })();
 
-// ---------- Hero map: a city tile built like an architect's model; A* plans a real route across its streets ----------
-(function () {
-  var cv = document.getElementById('map'), ctx = cv && cv.getContext && cv.getContext('2d');
-  var hero = document.querySelector('.hero');
-  if (!ctx || !hero) return;
-  var W = 0, H = 0, DPR = 1, rnd = rng(7), n = 10, i, j;
-
-  // Street graph: a jittered grid, with some blocks merged so the streets are not a perfect lattice.
-  var nx = [], nz = [], adj = [], edges = [];
-  for (j = 0; j < n; j++) for (i = 0; i < n; i++) {
-    var edge = i === 0 || j === 0 || i === n - 1 || j === n - 1;
-    nx.push(-1 + 2 * i / (n - 1) + (edge ? 0 : (rnd() - 0.5) * 0.09));
-    nz.push(-1 + 2 * j / (n - 1) + (edge ? 0 : (rnd() - 0.5) * 0.09));
-    adj.push([]);
-  }
-  function link(a, b) { // traffic makes some streets slower, so the cheapest route is not just the straightest one
-    var len = Math.hypot(nx[a] - nx[b], nz[a] - nz[b]), e = { a: a, b: b, cost: len * (1 + rnd() * 0.8), lit: -1 };
-    edges.push(e); adj[a].push({ to: b, e: e }); adj[b].push({ to: a, e: e });
-  }
-  for (j = 0; j < n; j++) for (i = 0; i < n; i++) {
-    var k = j * n + i, inner = j > 0 && j < n - 1;
-    if (i < n - 1 && !(inner && rnd() < 0.1)) link(k, k + 1);
-    if (j < n - 1 && !(i > 0 && i < n - 1 && rnd() < 0.1)) link(k, k + n);
-  }
-
-  // Buildings: each block splits into lots; taller toward a downtown, a park or two left open.
-  var lots = [], road = 0.05;
-  function lerp(a, b, t) { return a + (b - a) * t; }
-  for (j = 0; j < n - 1; j++) for (i = 0; i < n - 1; i++) {
-    if (rnd() < 0.07) continue; // park
-    var c = [j * n + i, j * n + i + 1, (j + 1) * n + i + 1, (j + 1) * n + i];
-    var split = rnd() < 0.5 ? 1 : 2;
-    for (var a = 0; a < split; a++) for (var b = 0; b < split; b++) {
-      if (rnd() < 0.12) continue;
-      var u0 = road + (1 - 2 * road) * a / split + 0.012, u1 = road + (1 - 2 * road) * (a + 1) / split - 0.012;
-      var v0 = road + (1 - 2 * road) * b / split + 0.012, v1 = road + (1 - 2 * road) * (b + 1) / split - 0.012;
-      var corner = function (u, v) { // bilinear point inside the block
-        return [lerp(lerp(nx[c[0]], nx[c[1]], u), lerp(nx[c[3]], nx[c[2]], u), v), lerp(lerp(nz[c[0]], nz[c[1]], u), lerp(nz[c[3]], nz[c[2]], u), v)];
-      };
-      var p = [corner(u0, v0), corner(u1, v0), corner(u1, v1), corner(u0, v1)];
-      var cx = (p[0][0] + p[2][0]) / 2, cz = (p[0][1] + p[2][1]) / 2, down = Math.max(0, 1 - Math.hypot(cx - 0.25, cz + 0.15) / 1.1);
-      lots.push({ p: p, cx: cx, cz: cz, h: 0.025 + Math.pow(rnd(), 2.2) * 0.07 + down * down * rnd() * 0.3, delay: Math.hypot(cx, cz) * 420 + rnd() * 260 });
-    }
-  }
-
-  // A*: the real search, recorded so the page can replay the order it explored the streets in.
-  var start = (n - 2) * n + 1, goal = n + n - 2, route = [], explored = [], plannedAt = 0;
-  function astar(s, g) {
-    var gs = {}, from = {}, open = [s], closed = {}, order = [];
-    gs[s] = 0;
-    function h(q) { return Math.hypot(nx[q] - nx[g], nz[q] - nz[g]); } // straight-line distance never overestimates
-    while (open.length) {
-      var best = 0;
-      for (var q = 1; q < open.length; q++) if (gs[open[q]] + h(open[q]) < gs[open[best]] + h(open[best])) best = q;
-      var cur = open.splice(best, 1)[0];
-      if (closed[cur]) continue;
-      closed[cur] = true;
-      if (from[cur]) order.push(from[cur].e);
-      if (cur === g) break;
-      adj[cur].forEach(function (nb) {
-        var t = gs[cur] + nb.e.cost;
-        if (!closed[nb.to] && (gs[nb.to] === undefined || t < gs[nb.to])) { gs[nb.to] = t; from[nb.to] = { at: cur, e: nb.e }; open.push(nb.to); }
-      });
-    }
-    var path = [];
-    for (var x = g; x !== undefined; x = from[x] && from[x].at) { path.unshift(x); if (x === s) break; }
-    return { path: path[0] === s ? path : [], order: order };
-  }
-  function plan(g, now) {
-    if (g === goal && route.length) return;
-    goal = g; var r = astar(start, goal); route = r.path; explored = r.order; plannedAt = now;
-  }
-
-  // Camera: turn (yaw) and tilt (pitch), with a little perspective.
-  var yaw = 0, pitch = 0, S = 1, CX = 0, CY = 0, cy0 = 0, sy0 = 0, cp0 = 0;
-  function project(x, y, z, out) {
-    var x1 = x * cy0 - z * sy0, z1 = x * sy0 + z * cy0;
-    var y2 = y * Math.cos(pitch) + z1 * cp0, z2 = -y * Math.sin(pitch) + z1 * Math.cos(pitch);
-    var f = 3.2 / (3.2 + z2);
-    out[0] = CX + x1 * S * f; out[1] = CY - y2 * S * f; out[2] = z2;
-    return out;
-  }
-
-  function size() {
-    DPR = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight;
-    cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  }
-  size();
-  window.addEventListener('resize', size);
-
-  // Point at a corner of the map and the goal moves to the street corner nearest the cursor.
-  var screenNodes = [], tmp = [0, 0, 0], lastPick = 0, t0 = performance.now(), heroH = 1;
-  function pick(now) {
-    if (now - lastPick < 120 || !screenNodes.length) return;
-    lastPick = now;
-    var best = -1, bd = 70 * 70;
-    for (var q = 0; q < screenNodes.length; q += 2) { var dx = screenNodes[q] - pointer.x, dy = screenNodes[q + 1] - pointer.y, d = dx * dx + dy * dy; if (d < bd && q / 2 !== start) { bd = d; best = q / 2; } }
-    if (best >= 0) plan(best, now);
-  }
-
-  function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // canvas stand-in for the page's entrance curve
-  var routePts = [], quad = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
-  function poly(pts, fill, stroke) {
-    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
-    for (var q = 1; q < pts.length; q++) ctx.lineTo(pts[q][0], pts[q][1]);
-    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
-    if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
-  }
-  function shade(l) { // side walls lit from one fixed side of the tile, kept dark so text above stays readable
-    return 'rgb(' + Math.round(14 + 24 * l) + ',' + Math.round(24 + 32 * l) + ',' + Math.round(40 + 46 * l) + ')';
-  }
-
-  function frame(now) {
-    var t = REDUCE ? 1e9 : now - t0, sc = window.scrollY;
-    heroH = hero.offsetHeight || H;
-    var wide = W >= 1000, p = clamp(sc / heroH, 0, 1), alpha = wide ? clamp(1 - p * 1.25, 0, 1) : 1;
-    var heroBottom = hero.getBoundingClientRect().bottom;
-    if (!wide && heroBottom < -W * 0.3) alpha = 0; // scrolled well past it
-    if (alpha <= 0) { ctx.clearRect(0, 0, W, H); if (!REDUCE) requestAnimationFrame(frame); return; }
-    if (!REDUCE && pointer.active) pick(now);
-    if (!REDUCE && !pointer.active && now - plannedAt > 6500) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every few seconds
-
-    var phone = W < 700, gx = pointer.active && !REDUCE ? pointer.x / W - 0.5 : 0, gy = pointer.active && !REDUCE ? pointer.y / H - 0.5 : 0;
-    yaw = 0.62 + (REDUCE ? 0 : t * 0.000035) + p * 0.9 + gx * 0.18;
-    pitch = 0.98 - p * 0.3 + gy * 0.08;
-    cy0 = Math.cos(yaw); sy0 = Math.sin(yaw); cp0 = Math.sin(pitch);
-    S = wide ? Math.min(W * 0.2, H * 0.36) : W * 0.36;
-    CX = wide ? W * 0.73 : W / 2; CY = wide ? H * 0.5 - sc * 0.55 : heroBottom - W * 0.3 - 20; // phones: sits in the space under the words and scrolls with them
-
-    ctx.clearRect(0, 0, W, H);
-    ctx.globalAlpha = alpha; routePts = [];
-    ctx.lineJoin = 'round';
-
-    // The slab the model is built on.
-    var base = [[-1.08, -1.08], [1.08, -1.08], [1.08, 1.08], [-1.08, 1.08]], T = -0.07;
-    for (var s = 0; s < 4; s++) {
-      var a0 = base[s], a1 = base[(s + 1) % 4], nxw = a1[1] - a0[1], nzw = -(a1[0] - a0[0]);
-      if ((nxw * sy0 + nzw * cy0) * Math.cos(pitch) < 0) {
-        poly([project(a0[0], 0, a0[1], quad[0]), project(a1[0], 0, a1[1], quad[1]), project(a1[0], T, a1[1], quad[2]), project(a0[0], T, a0[1], quad[3])], shade(0.25), 'rgba(98,152,255,0.18)');
-      }
-    }
-    ctx.lineWidth = 1;
-    poly(base.map(function (b, q) { return project(b[0], 0, b[1], [0, 0, 0]); }), 'rgb(12,21,36)', 'rgba(98,152,255,0.28)');
-
-    // Streets, then the streets A* has looked at, then the route it chose.
-    screenNodes.length = 0;
-    for (var q = 0; q < n * n; q++) { project(nx[q], 0, nz[q], tmp); screenNodes.push(tmp[0], tmp[1]); }
-    ctx.lineWidth = phone ? 1 : 1.4; ctx.strokeStyle = 'rgba(147,161,184,0.22)'; ctx.beginPath();
-    edges.forEach(function (e) { ctx.moveTo(screenNodes[e.a * 2], screenNodes[e.a * 2 + 1]); ctx.lineTo(screenNodes[e.b * 2], screenNodes[e.b * 2 + 1]); });
-    ctx.stroke();
-    var step = 22, searchAt = Math.max(plannedAt, t0 + 1500); // the first search waits for the buildings to rise
-    if (REDUCE || now > searchAt) {
-      var shown = REDUCE ? explored.length : Math.min(explored.length, Math.floor((now - searchAt) / step));
-      ctx.strokeStyle = 'rgba(98,152,255,0.55)'; ctx.lineWidth = phone ? 1.2 : 1.8; ctx.beginPath();
-      for (q = 0; q < shown; q++) { var e = explored[q]; ctx.moveTo(screenNodes[e.a * 2], screenNodes[e.a * 2 + 1]); ctx.lineTo(screenNodes[e.b * 2], screenNodes[e.b * 2 + 1]); }
-      ctx.stroke();
-      var draw = REDUCE ? 1 : clamp((now - searchAt - explored.length * step) / 600, 0, 1);
-      if (route.length > 1 && draw > 0) {
-        var segs = (route.length - 1) * ease(draw);
-        routePts = [screenNodes[route[0] * 2], screenNodes[route[0] * 2 + 1]];
-        for (q = 1; q <= Math.ceil(segs); q++) {
-          var f = Math.min(1, segs - (q - 1)), ax = screenNodes[route[q - 1] * 2], ay = screenNodes[route[q - 1] * 2 + 1];
-          routePts.push(ax + (screenNodes[route[q] * 2] - ax) * f, ay + (screenNodes[route[q] * 2 + 1] - ay) * f);
-        }
-        trace(routePts);
-        ctx.strokeStyle = 'rgba(242,181,107,0.25)'; ctx.lineWidth = phone ? 6 : 9; ctx.stroke();
-        ctx.strokeStyle = '#f2b56b'; ctx.lineWidth = phone ? 2 : 2.6; ctx.stroke();
-      }
-    }
-    // Start and goal pins.
-    [start, goal].forEach(function (q, idx) {
-      var x = screenNodes[q * 2], y = screenNodes[q * 2 + 1];
-      ctx.fillStyle = idx ? '#f2b56b' : '#eef3fa'; ctx.beginPath(); ctx.arc(x, y, phone ? 3 : 4, 0, Math.PI * 2); ctx.fill();
-    });
-
-    // Buildings, far ones first. Each rises from the slab on the first visit.
-    lots.forEach(function (L) { L.d = project(L.cx, 0, L.cz, tmp)[2]; });
-    lots.sort(function (a, b) { return b.d - a.d; });
-    ctx.lineWidth = 0.8;
-    for (q = 0; q < lots.length; q++) {
-      var L = lots[q], h = L.h * ease((t - 200 - L.delay) / 900);
-      if (h <= 0.001) continue;
-      for (s = 0; s < 4; s++) {
-        var b0 = L.p[s], b1 = L.p[(s + 1) % 4], wx = b1[1] - b0[1], wz = -(b1[0] - b0[0]), len = Math.hypot(wx, wz) || 1;
-        if ((wx * sy0 + wz * cy0) * Math.cos(pitch) >= 0) continue; // wall faces away
-        var light = clamp(0.35 + 0.55 * ((wx * 0.6 - wz * 0.8) / len), 0, 1);
-        poly([project(b0[0], 0, b0[1], quad[0]), project(b1[0], 0, b1[1], quad[1]), project(b1[0], h, b1[1], quad[2]), project(b0[0], h, b0[1], quad[3])], shade(light), 'rgba(98,152,255,0.16)');
-      }
-      poly([project(L.p[0][0], h, L.p[0][1], quad[0]), project(L.p[1][0], h, L.p[1][1], quad[1]), project(L.p[2][0], h, L.p[2][1], quad[2]), project(L.p[3][0], h, L.p[3][1], quad[3])], 'rgb(30,45,70)', 'rgba(147,170,210,0.35)');
-    }
-    // The route shows faintly through the buildings, like a line on a tracing sheet.
-    if (routePts.length) { trace(routePts); ctx.strokeStyle = 'rgba(242,181,107,0.45)'; ctx.lineWidth = phone ? 1.2 : 1.6; ctx.setLineDash([4, 5]); ctx.stroke(); ctx.setLineDash([]); }
-    ctx.globalAlpha = 1;
-    if (!REDUCE) requestAnimationFrame(frame);
-  }
-  function trace(pts) { ctx.beginPath(); ctx.moveTo(pts[0], pts[1]); for (var q = 2; q < pts.length; q += 2) ctx.lineTo(pts[q], pts[q + 1]); }
-
-  plan(goal, t0);
-  plannedAt = t0;
-  requestAnimationFrame(frame);
-  if (REDUCE) { window.addEventListener('scroll', function () { frame(0); }, { passive: true }); window.addEventListener('resize', function () { frame(0); }); }
-})();
-
 // ---------- Construction lines on the name: baseline, cap height, and a handle at each letter ----------
 (function () {
   var h1 = document.querySelector('.hero h1'), hero = document.querySelector('.hero');
@@ -2638,6 +2436,205 @@ var pointer = { x: -1, y: -1, active: false };
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
   window.addEventListener('resize', function () { if (ready) { build(); if (REDUCE) frame(0); } });
   if (REDUCE) { window.addEventListener('scroll', function () { frame(0); }, { passive: true }); window.addEventListener('themechange', function () { frame(0); }); }
+})();
+</script>
+<script type="module">
+// ---------- Hero map in real 3D (three.js 0.160.0, served from this site): a city tile lit like a product shot; A* plans a real route across its streets ----------
+import * as THREE from './vendor/three.module.min.js';
+(function () {
+  var cv = document.getElementById('map'), hero = document.querySelector('.hero');
+  if (!cv || !hero) return;
+  var rnd = rng(7), n = 10, i, j;
+
+  // Street graph: a jittered grid, with some blocks merged so the streets are not a perfect lattice.
+  var nx = [], nz = [], adj = [], edges = [];
+  for (j = 0; j < n; j++) for (i = 0; i < n; i++) {
+    var edge = i === 0 || j === 0 || i === n - 1 || j === n - 1;
+    nx.push(-1 + 2 * i / (n - 1) + (edge ? 0 : (rnd() - 0.5) * 0.09));
+    nz.push(-1 + 2 * j / (n - 1) + (edge ? 0 : (rnd() - 0.5) * 0.09));
+    adj.push([]);
+  }
+  function link(a, b) { // traffic makes some streets slower, so the cheapest route is not just the straightest one
+    var len = Math.hypot(nx[a] - nx[b], nz[a] - nz[b]), e = { a: a, b: b, cost: len * (1 + rnd() * 0.8), lit: -1 };
+    edges.push(e); adj[a].push({ to: b, e: e }); adj[b].push({ to: a, e: e });
+  }
+  for (j = 0; j < n; j++) for (i = 0; i < n; i++) {
+    var k = j * n + i, inner = j > 0 && j < n - 1;
+    if (i < n - 1 && !(inner && rnd() < 0.1)) link(k, k + 1);
+    if (j < n - 1 && !(i > 0 && i < n - 1 && rnd() < 0.1)) link(k, k + n);
+  }
+
+  // Buildings: each block splits into lots; taller toward a downtown, a park or two left open.
+  var lots = [], road = 0.05;
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  for (j = 0; j < n - 1; j++) for (i = 0; i < n - 1; i++) {
+    if (rnd() < 0.07) continue; // park
+    var c = [j * n + i, j * n + i + 1, (j + 1) * n + i + 1, (j + 1) * n + i];
+    var split = rnd() < 0.5 ? 1 : 2;
+    for (var a = 0; a < split; a++) for (var b = 0; b < split; b++) {
+      if (rnd() < 0.12) continue;
+      var u0 = road + (1 - 2 * road) * a / split + 0.012, u1 = road + (1 - 2 * road) * (a + 1) / split - 0.012;
+      var v0 = road + (1 - 2 * road) * b / split + 0.012, v1 = road + (1 - 2 * road) * (b + 1) / split - 0.012;
+      var corner = function (u, v) { // bilinear point inside the block
+        return [lerp(lerp(nx[c[0]], nx[c[1]], u), lerp(nx[c[3]], nx[c[2]], u), v), lerp(lerp(nz[c[0]], nz[c[1]], u), lerp(nz[c[3]], nz[c[2]], u), v)];
+      };
+      var p = [corner(u0, v0), corner(u1, v0), corner(u1, v1), corner(u0, v1)];
+      var cx = (p[0][0] + p[2][0]) / 2, cz = (p[0][1] + p[2][1]) / 2, down = Math.max(0, 1 - Math.hypot(cx - 0.25, cz + 0.15) / 1.1);
+      lots.push({ p: p, cx: cx, cz: cz, h: 0.025 + Math.pow(rnd(), 2.2) * 0.07 + down * down * rnd() * 0.3, delay: Math.hypot(cx, cz) * 420 + rnd() * 260 });
+    }
+  }
+
+  // A*: the real search, recorded so the page can replay the order it explored the streets in.
+  var start = (n - 2) * n + 1, goal = n + n - 2, route = [], explored = [], plannedAt = 0;
+  function astar(s, g) {
+    var gs = {}, from = {}, open = [s], closed = {}, order = [];
+    gs[s] = 0;
+    function h(q) { return Math.hypot(nx[q] - nx[g], nz[q] - nz[g]); } // straight-line distance never overestimates
+    while (open.length) {
+      var best = 0;
+      for (var q = 1; q < open.length; q++) if (gs[open[q]] + h(open[q]) < gs[open[best]] + h(open[best])) best = q;
+      var cur = open.splice(best, 1)[0];
+      if (closed[cur]) continue;
+      closed[cur] = true;
+      if (from[cur]) order.push(from[cur].e);
+      if (cur === g) break;
+      adj[cur].forEach(function (nb) {
+        var t = gs[cur] + nb.e.cost;
+        if (!closed[nb.to] && (gs[nb.to] === undefined || t < gs[nb.to])) { gs[nb.to] = t; from[nb.to] = { at: cur, e: nb.e }; open.push(nb.to); }
+      });
+    }
+    var path = [];
+    for (var x = g; x !== undefined; x = from[x] && from[x].at) { path.unshift(x); if (x === s) break; }
+    return { path: path[0] === s ? path : [], order: order };
+  }
+  function plan(g, now) {
+    if (g === goal && route.length) return;
+    goal = g; var r = astar(start, goal); route = r.path; explored = r.order; plannedAt = now;
+  }
+
+  // ----- The model, lit like a product shot on a dark table: warm key light, cool fill, soft shadows -----
+  var renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { return; } // no WebGL: the page reads fine without the model
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2;
+  var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50), city = new THREE.Group();
+  scene.add(city);
+  scene.add(new THREE.HemisphereLight(0x9fb8e0, 0x0a1220, 0.3));
+  var key = new THREE.DirectionalLight(0xffc58a, 4.2);
+  key.position.set(-3.2, 1.5, 1.4); // low and warm, like late sun: long shadows across the streets key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.01;
+  Object.assign(key.shadow.camera, { left: -1.7, right: 1.7, top: 1.7, bottom: -1.7, near: 0.5, far: 8 });
+  scene.add(key);
+  var rim = new THREE.DirectionalLight(0x6298ff, 0.7); rim.position.set(2.2, 1.2, -2.6); scene.add(rim);
+
+  var slab = new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.08, 2.16), new THREE.MeshStandardMaterial({ color: 0x0e1828, roughness: 0.92 }));
+  slab.position.y = -0.04; slab.receiveShadow = true; city.add(slab);
+  var wall = new THREE.MeshStandardMaterial({ color: 0x34445f, roughness: 0.55, metalness: 0.05 });
+  lots.forEach(function (L) {
+    var shape = new THREE.Shape(L.p.map(function (q) { return new THREE.Vector2(q[0], -q[1]); }));
+    var g = new THREE.ExtrudeGeometry(shape, { depth: 1, bevelEnabled: false });
+    g.rotateX(-Math.PI / 2); // extrude upward: unit height, scaled per building
+    L.mesh = new THREE.Mesh(g, wall); L.mesh.castShadow = true; L.mesh.receiveShadow = true; L.mesh.scale.y = 0.0001;
+    city.add(L.mesh);
+  });
+
+  function segments(list, y) { // street edges as one line buffer, in the order given
+    var pos = new Float32Array(list.length * 6);
+    list.forEach(function (e, q) { pos.set([nx[e.a], y, nz[e.a], nx[e.b], y, nz[e.b]], q * 6); });
+    var g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); return g;
+  }
+  city.add(new THREE.LineSegments(segments(edges, 0.002), new THREE.LineBasicMaterial({ color: 0x93a1b8, transparent: true, opacity: 0.28 })));
+  var searched = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x6298ff, transparent: true, opacity: 0.9, toneMapped: false }));
+  city.add(searched);
+  var amber = new THREE.MeshBasicMaterial({ color: 0xf2b56b, toneMapped: false });
+  var glow = new THREE.MeshBasicMaterial({ color: 0xf2b56b, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  var ghost = new THREE.MeshBasicMaterial({ color: 0xf2b56b, transparent: true, opacity: 0.3, depthTest: false, toneMapped: false }); // the route seen through buildings
+  var routeMeshes = [new THREE.Mesh(undefined, amber), new THREE.Mesh(undefined, glow), new THREE.Mesh(undefined, ghost)];
+  routeMeshes[2].renderOrder = 10;
+  routeMeshes.forEach(function (m) { m.visible = false; city.add(m); });
+  var pinGeo = new THREE.SphereGeometry(0.024, 16, 12);
+  var pinA = new THREE.Mesh(pinGeo, new THREE.MeshBasicMaterial({ color: 0xeef3fa, toneMapped: false })), pinB = new THREE.Mesh(pinGeo, amber);
+  city.add(pinA, pinB);
+
+  var builtFor = -1, RADIAL = 6, PER = 10; // tube cross-section and segments per street
+  function buildRoute() { // new tubes and search lines each time A* plans a new trip
+    builtFor = plannedAt;
+    searched.geometry.dispose(); searched.geometry = segments(explored, 0.004);
+    routeMeshes.forEach(function (m) { if (m.geometry) m.geometry.dispose(); m.visible = route.length > 1; });
+    pinA.position.set(nx[start], 0.024, nz[start]); pinB.position.set(nx[goal], 0.024, nz[goal]);
+    if (route.length < 2) return;
+    var path = new THREE.CurvePath();
+    for (var q = 1; q < route.length; q++) path.add(new THREE.LineCurve3(new THREE.Vector3(nx[route[q - 1]], 0.008, nz[route[q - 1]]), new THREE.Vector3(nx[route[q]], 0.008, nz[route[q]])));
+    var segs = (route.length - 1) * PER;
+    routeMeshes[0].geometry = new THREE.TubeGeometry(path, segs, 0.01, RADIAL, false);
+    routeMeshes[1].geometry = new THREE.TubeGeometry(path, segs, 0.026, RADIAL, false);
+    routeMeshes[2].geometry = new THREE.TubeGeometry(path, segs, 0.006, RADIAL, false);
+  }
+
+  // ----- Camera and layout -----
+  var W = 0, H = 0, tmpV = new THREE.Vector3(), screenNodes = [], lastPick = 0, t0 = performance.now(), lastKey = '';
+  function size() {
+    W = window.innerWidth; H = window.innerHeight;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
+    camera.aspect = W / H; lastKey = '';
+  }
+  size();
+  window.addEventListener('resize', size);
+  function pick(now) { // point at the map and the goal moves to the street corner nearest the cursor
+    if (now - lastPick < 120 || !screenNodes.length) return;
+    lastPick = now;
+    var best = -1, bd = 70 * 70;
+    for (var q = 0; q < screenNodes.length; q += 2) { var dx = screenNodes[q] - pointer.x, dy = screenNodes[q + 1] - pointer.y, d = dx * dx + dy * dy; if (d < bd && q / 2 !== start) { bd = d; best = q / 2; } }
+    if (best >= 0) plan(best, now);
+  }
+  function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // stand-in for the page's entrance curve
+  function mix(a, b, t) { return a + (b - a) * t; }
+
+  function frame(now) {
+    if (!REDUCE) requestAnimationFrame(frame);
+    var t = REDUCE ? 1e9 : now - t0, sc = window.scrollY, heroH = hero.offsetHeight || H, wide = W >= 1000;
+    var p = clamp(sc / heroH, 0, 1), dockable = W >= 1280;
+    // Past the hero, wide screens keep the model as a small turning minimap at the right edge; elsewhere it scrolls away with the hero.
+    var d = dockable ? ease((p - 0.25) / 0.6) : 0, heroBottom = hero.getBoundingClientRect().bottom;
+    var alpha = dockable ? mix(1, 0.75, d) : wide ? clamp(1 - p * 1.25, 0, 1) : heroBottom < -W * 0.3 ? 0 : 1;
+    cv.style.opacity = alpha;
+    if (alpha <= 0) return;
+    if (!REDUCE && pointer.active) pick(now);
+    if (!REDUCE && !pointer.active && now - plannedAt > 6500) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every few seconds
+    if (builtFor !== plannedAt) buildRoute();
+
+    var gx = pointer.active && !REDUCE ? pointer.x / W - 0.5 : 0, gy = pointer.active && !REDUCE ? pointer.y / H - 0.5 : 0;
+    var heroS = wide ? Math.min(W * 0.2, H * 0.36) : W * 0.36, dockS = Math.min((W - 1080) / 2 * 0.36, 110);
+    var S = mix(heroS, dockS, d), CX = wide ? mix(W * 0.73, W - (W - 1080) / 4, d) : W / 2;
+    var CY = wide ? mix(H * 0.5 - sc * 0.55, H * 0.54, d) : heroBottom - W * 0.3 - 20;
+    var yaw = 0.62 + (REDUCE || d > 0 ? 0 : t * 0.000035) + sc * 0.0009 + gx * 0.18 * (1 - d), elev = mix(0.98, 0.82, d) - gy * 0.08 * (1 - d);
+    var dist = 6, target = 0.05;
+    camera.position.set(Math.sin(yaw) * Math.cos(elev) * dist, target + Math.sin(elev) * dist, Math.cos(yaw) * Math.cos(elev) * dist);
+    camera.lookAt(0, target, 0);
+    camera.zoom = (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / (H / S); // one model unit is S pixels
+    camera.setViewOffset(W, H, W / 2 - CX, H / 2 - CY, W, H); // put the model's centre at (CX, CY)
+    camera.updateProjectionMatrix();
+
+    // Buildings rise from the slab on arrival; then A* replays its search and draws the route.
+    var risen = true;
+    lots.forEach(function (L) { var e = ease((t - 200 - L.delay) / 900); if (e < 1) risen = false; L.mesh.scale.y = Math.max(0.0001, L.h * e); });
+    var step = 22, searchAt = Math.max(plannedAt, t0 + 1500);
+    var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - searchAt) / step)));
+    var draw = REDUCE ? 1 : clamp((now - searchAt - explored.length * step) / 600, 0, 1);
+    searched.geometry.setDrawRange(0, shown * 2);
+    var tubeSegs = Math.round((route.length - 1) * PER * ease(draw));
+    routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
+    pinB.visible = draw >= 1;
+
+    screenNodes.length = 0;
+    for (var q = 0; q < n * n; q++) { tmpV.set(nx[q], 0, nz[q]).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H); }
+    // Draw only when something on screen changed, so a still page costs nothing.
+    var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, risen, W, H].join();
+    if (k !== lastKey) { lastKey = k; renderer.render(scene, camera); }
+  }
+  plan(goal, t0); plannedAt = t0;
+  requestAnimationFrame(frame);
+  if (REDUCE) { window.addEventListener('scroll', function () { frame(0); }, { passive: true }); window.addEventListener('resize', function () { frame(0); }); }
 })();
 </script>
 </body>
