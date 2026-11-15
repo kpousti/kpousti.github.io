@@ -336,7 +336,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 .head.pre.in .eyebrow, .head.pre.in .sub { opacity: 1; transform: none; transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
 .head.pre.in .sub { transition-delay: 0.28s; }
 /* Chapter curtains: a title card over the top of each chapter, cut into strips that slide off at different speeds as you scroll. JS moves them; without JS or with reduced motion they are never added. */
-.chapter { position: relative; }
+.chapter { position: relative; overflow-x: clip; } /* clip: the glitch copies jump a few px sideways */
 .curtain { position: absolute; left: 0; right: 0; top: 0; height: 100vh; z-index: 3; overflow: hidden; pointer-events: none; display: flex; }
 .curtain > div { position: relative; flex: 1; overflow: hidden; background: var(--ink); border-right: 1px solid var(--line); will-change: transform; }
 .curtain > div::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--accent); opacity: 0.7; }
@@ -346,9 +346,10 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 .curtain b { font-family: var(--font-display); font-weight: 700; font-stretch: 86%; font-size: clamp(3.2rem, 11vw, 9rem); line-height: 1; letter-spacing: -0.03em; color: var(--bright); white-space: nowrap; }
 /* Glitch swap: as a headline lands, two tinted copies jump off it for a moment, then it snaps clean. */
 .head h2 { position: relative; }
-.head h2.glitch::before, .head h2.glitch::after { content: attr(aria-label); position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; animation: glitch 420ms steps(1, end) both; }
-.head h2.glitch::before { color: rgb(var(--accent-rgb)); }
-.head h2.glitch::after { color: rgb(98, 152, 255); animation-delay: 40ms; animation-direction: reverse; }
+.glitch { position: relative; }
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; animation: glitch 420ms steps(1, end) both; }
+.glitch::before { color: rgb(var(--accent-rgb)); }
+.glitch::after { color: rgb(98, 152, 255); animation-delay: 40ms; animation-direction: reverse; }
 @keyframes glitch {
   0% { opacity: 0.9; transform: translate(-6px, 1px); } 20% { opacity: 0.8; transform: translate(5px, -2px); }
   40% { opacity: 0.7; transform: translate(-3px, 0); } 60% { opacity: 0.6; transform: translate(8px, 1px); }
@@ -438,14 +439,22 @@ h1.meshed { color: transparent; }
   .chapter > .wrap > .head:first-child { min-height: 52vh; display: flex; flex-direction: column; justify-content: center; }
 }
 
-/* One project per screen: a card on one side, and that project's shape in the dots behind it. */
-.scene { display: flex; align-items: center; min-height: 100vh; min-height: 100svh; padding: 40px 0; }
+/* One project per screen: the card on one side, its name set large on the other, like a magazine spread. */
+.scene { position: relative; display: flex; align-items: center; min-height: 100vh; min-height: 100svh; padding: 40px 0; }
 .scene > article { width: min(480px, 100%); }
 .scene[data-side="right"] { justify-content: flex-end; }
 .scene .screen canvas, .scene .build.wide .screen canvas { height: 250px; }
+.mark { position: absolute; top: 50%; width: calc(100% - 540px); margin-top: -1em; pointer-events: none; will-change: transform, opacity; }
+.scene[data-side="left"] .mark { right: 0; text-align: right; }
+.scene[data-side="right"] .mark { left: 0; }
+.mark small { display: block; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
+.mark b { display: block; font-family: var(--font-display); font-weight: 700; font-stretch: 86%; font-size: clamp(3rem, 6.4vw, 6.2rem); line-height: 0.95; letter-spacing: -0.03em; color: var(--bright); text-wrap: balance; }
+.mark span { display: block; margin-top: 20px; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.06em; color: var(--text-dim); }
 @media (max-width: 900px) {
-  .scene { display: block; min-height: 0; padding: 46vh 0 24px; } /* the gap above each card is where its shape shows */
+  .scene { display: block; min-height: 0; padding: 16vh 0 24px; }
   .scene > article { width: 100%; }
+  .mark { position: static; width: auto; margin: 0 0 22px; text-align: left !important; }
+  .mark b { font-size: clamp(2.5rem, 11vw, 4rem); }
 }
 
 /* Theme picker (previews only). */
@@ -1964,7 +1973,7 @@ var pointer = { x: -1, y: -1, active: false };
   // Wrap each headline word in a mask so it can slide up from behind its own line.
   document.querySelectorAll('.head h2').forEach(function (h2) {
     var words = h2.textContent.trim().split(/\s+/);
-    h2.setAttribute('aria-label', h2.textContent.trim());
+    h2.setAttribute('aria-label', h2.textContent.trim()); h2.setAttribute('data-text', h2.textContent.trim());
     h2.textContent = '';
     words.forEach(function (word, i) {
       var mask = document.createElement('span'), inner = document.createElement('span');
@@ -2014,6 +2023,43 @@ var pointer = { x: -1, y: -1, active: false };
     }
     el.classList.add('pre'); (el.classList.contains('head') ? headIo : io).observe(el);
   });
+})();
+
+// ---------- Scene titles: each project's name set large beside its card, drifting with the scroll and glitching in at centre ----------
+(function () {
+  var marks = [];
+  ['projects', 'builds'].forEach(function (id) {
+    var scenes = document.querySelectorAll('#' + id + ' .scene'), label = id === 'projects' ? 'Project' : 'Build';
+    scenes.forEach(function (sc, k) {
+      var h3 = sc.querySelector('h3'), chips = sc.querySelectorAll('.chips li'), m = document.createElement('div');
+      if (!h3) return;
+      var name = h3.textContent.split(',')[0].replace(/^Open source: /, '').trim(); // the short name, without its subtitle
+      m.className = 'mark'; m.setAttribute('aria-hidden', 'true');
+      m.innerHTML = '<small>' + label + ' ' + ('0' + (k + 1)).slice(-2) + ' / ' + ('0' + scenes.length).slice(-2) + '</small><b></b><span></span>';
+      m.querySelector('b').textContent = name; m.querySelector('b').setAttribute('data-text', name);
+      m.querySelector('span').textContent = Array.prototype.slice.call(chips, 0, 4).map(function (c) { return c.textContent; }).join('  ·  ');
+      sc.insertBefore(m, sc.firstChild);
+      marks.push({ sc: sc, m: m, b: m.querySelector('b'), shown: false });
+    });
+  });
+  if (REDUCE || !marks.length) return;
+  var queued = false;
+  function update() {
+    queued = false;
+    var H = window.innerHeight, wide = window.innerWidth > 900;
+    marks.forEach(function (o) {
+      var r = o.sc.getBoundingClientRect();
+      if (r.bottom < -100 || r.top > H + 100) return;
+      var off = (r.top + r.height / 2 - H / 2) / H; // 0 when the scene is centred, about ±1 a screen away
+      o.m.style.transform = 'translate3d(0,' + (wide ? off * -90 : off * -30) + 'px,0)';
+      o.m.style.opacity = wide ? clamp(1.25 - Math.abs(off) * 1.6, 0, 1) : 1;
+      if (!o.shown && Math.abs(off) < 0.2) { o.shown = true; o.b.classList.add('glitch'); setTimeout(function () { o.b.classList.remove('glitch'); }, 600); }
+    });
+  }
+  function queue() { if (!queued) { queued = true; requestAnimationFrame(update); } }
+  window.addEventListener('scroll', queue, { passive: true });
+  window.addEventListener('resize', queue);
+  update();
 })();
 
 // ---------- Chapter curtains: a title card cut into strips; scrolling slides each strip off at its own speed ----------
@@ -2442,8 +2488,8 @@ var pointer = { x: -1, y: -1, active: false };
 // ---------- Hero map in real 3D (three.js 0.160.0, served from this site): a city tile lit like a product shot; A* plans a real route across its streets ----------
 import * as THREE from './vendor/three.module.min.js';
 (function () {
-  var cv = document.getElementById('map'), hero = document.querySelector('.hero');
-  if (!cv || !hero) return;
+  var cv = document.getElementById('map'), hero = document.querySelector('.hero'), projects = document.getElementById('projects');
+  if (!cv || !hero || !projects) return;
   var rnd = rng(7), n = 10, i, j;
 
   // Street graph: a jittered grid, with some blocks merged so the streets are not a perfect lattice.
@@ -2597,6 +2643,7 @@ import * as THREE from './vendor/three.module.min.js';
     // Past the hero, wide screens keep the model as a small turning minimap at the right edge; elsewhere it scrolls away with the hero.
     var d = dockable ? ease((p - 0.25) / 0.6) : 0, heroBottom = hero.getBoundingClientRect().bottom;
     var alpha = dockable ? mix(1, 0.75, d) : wide ? clamp(1 - p * 1.25, 0, 1) : heroBottom < -W * 0.3 ? 0 : 1;
+    if (dockable) alpha *= clamp(projects.getBoundingClientRect().top / (H * 0.6), 0, 1); // the minimap bows out before the project spreads, which need the full width
     cv.style.opacity = alpha;
     if (alpha <= 0) return;
     if (!REDUCE && pointer.active) pick(now);
