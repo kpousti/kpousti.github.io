@@ -73,20 +73,11 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-
 ::selection { background: var(--accent); color: var(--on-accent); }
 
 /* ---------- Fixed layers: scene canvas, cursor light, scene label ---------- */
-#bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .glow {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background: radial-gradient(560px circle at var(--mx, 50%) var(--my, 30%),
     rgba(var(--glow), 0.15), rgba(var(--glow), 0.05) 45%, transparent 70%);
 }
-.scene-note {
-  position: fixed; right: 20px; bottom: 18px; z-index: 5;
-  max-width: min(360px, calc(100vw - 40px));
-  padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px;
-  background: rgba(var(--ink-rgb), 0.85);
-  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim); pointer-events: none;
-}
-.scene-note b { color: var(--accent); font-weight: 500; }
 
 /* ---------- Tab bar: a floating glass capsule, with a bubble that slides to the active tab ---------- */
 .bar {
@@ -399,17 +390,13 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
   .build .screen canvas { height: 200px; }
   .build.wide .screen canvas { height: 190px; }
   .prose, .xp article { padding: 22px; }
-  .scene-note { right: 12px; bottom: 12px; }
   .head { margin-bottom: 40px; }
 }
 @media (max-width: 420px) {
   .stats, .skill-grid, .wins { grid-template-columns: minmax(0, 1fr); }
 }
-/* The name is drawn in dots by the point cloud; the real heading stays in the page for screen readers. */
-#cloud { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 /* While the opening plays, the words under the name wait for it. */
 html.intro .hero > :not(h1) { animation-delay: 1.1s; }
-h1.meshed { color: transparent; }
 /* The hero model: a small city tile, built in canvas, with A* planning a route across it. */
 #map { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 /* Construction lines on the name, like a type drawing. They draw in once, then sit quietly. */
@@ -480,7 +467,6 @@ h1.meshed { color: transparent; }
 .themes button[aria-pressed="true"] { background: rgba(var(--edge), 0.12); color: var(--bright); }
 .themes i { position: relative; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid; }
 .themes u { position: absolute; inset: 3.5px; border-radius: 50%; }
-@media (max-width: 700px) { .themes { bottom: 58px; } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; animation: none !important; }
@@ -502,11 +488,9 @@ h1.meshed { color: transparent; }
 </script>
 </head>
 <body>
-<canvas id="cloud" aria-hidden="true" hidden></canvas>
 <canvas id="map" aria-hidden="true"></canvas>
 <div class="grain" id="grain" aria-hidden="true"></div>
 <div class="glow" aria-hidden="true"></div>
-<div class="scene-note" id="sceneNote" aria-hidden="true" hidden><b>Point cloud</b> the dots flow around your cursor</div>
 <div class="themes" id="themes" role="group" aria-label="Color theme" hidden></div>
 
 <a class="skip" href="#about">Skip to content</a>
@@ -2196,324 +2180,6 @@ var pointer = { x: -1, y: -1, active: false };
   ready.then(function () { if (REDUCE || !getComputedStyle(h1).animationName || getComputedStyle(h1).animationName === 'none') show(); else h1.addEventListener('animationend', show, { once: true }); });
   window.addEventListener('resize', draw);
 })();
-
-// ---------- Point cloud: one set of dots that is the name, then a turbine, a road network, Agent City and a wave ----------
-(function () {
-  var cv = document.getElementById('cloud'), ctx = cv && cv.getContext && cv.getContext('2d');
-  if (!ctx || cv.hidden) return; // retired in the map-hero test; the map below replaces it
-  var hero = document.querySelector('.hero'), h1 = hero.querySelector('h1'), note = document.getElementById('sceneNote');
-  var W = 0, H = 0, M = 0, N = 0, rnd = rng(21), ready = false, frameNo = 0, noteNow = '', fade = 1, fadeSet = 1;
-  var px, py, vx, vy, key, rdx, rdy, bucket, size;                 // per-dot state
-  var nmX, nmY, nmZ, nameHalf = 100, nameDocX = 0, nameDocY = 0;    // name
-  var tR, tTh, tT, tZ, tHot;                                        // turbine
-  var rX, rZ, rS;                                                   // roads
-  var cX, cY, cZ, cKind;                                            // city
-  var wX, wZ, wR;                                                   // wave
-  var gA, gB, gC, gK;                                               // three numbers and a tag per dot, reused by every other shape
-  var spin = 0, tiltX = 0, tiltY = 0, scrollTurn = 0, pulseAt = -9999, pulseX = 0, pulseY = 0;
-  var oa = { x: 0, y: 0, z: 0, hot: 0 }, ob = { x: 0, y: 0, z: 0, hot: 0 };
-  var introOn = !!window.KP_INTRO && !REDUCE, introT0 = 0;
-
-  function rotY(o, a) { var c = Math.cos(a), s = Math.sin(a), x = o.x * c + o.z * s; o.z = -o.x * s + o.z * c; o.x = x; }
-  function rotX(o, a) { var c = Math.cos(a), s = Math.sin(a), y = o.y * c - o.z * s; o.z = o.y * s + o.z * c; o.y = y; }
-
-  // Each shape answers one question: where is dot i at time t? Coordinates are in "units"; the layout scales them to pixels.
-  var shapes = {
-    name: function (i, t, o) { o.x = nmX[i]; o.y = nmY[i]; o.z = nmZ[i]; o.hot = 0; },
-    turbine: function (i, t, o) {
-      var th = tTh[i] + spin, c = Math.cos(th), s = Math.sin(th);
-      o.x = tR[i] * c - tT[i] * s; o.y = tR[i] * s + tT[i] * c; o.z = tZ[i]; o.hot = tHot[i];
-      rotY(o, 0.55); rotX(o, -0.28);
-    },
-    roads: function (i, t, o) {
-      o.x = rX[i]; o.y = 0; o.z = rZ[i];
-      o.hot = rS[i] >= 0 && rS[i] < (t * 0.00022) % 1.35 ? 1 : 0; // the shortest route lights up from its start, again and again
-      rotY(o, t * 0.00006 + scrollTurn * 0.6); rotX(o, 1.02);
-    },
-    city: function (i, t, o) {
-      o.x = cX[i]; o.y = cY[i]; o.z = cZ[i]; o.hot = cKind[i] === 2 ? 1 : 0;
-      if (cKind[i] === 1) o.y += Math.sin(o.x * 6 + o.z * 4 + t * 0.0016) * 0.014; // the water moves a little
-      rotY(o, 0.6 + t * 0.00008 + scrollTurn * 0.6); rotX(o, 0.5);
-    },
-    wave: function (i, t, o) {
-      var x = wX[i], xc = (t * 0.00028) % 1 * 5.4 - 2.7, d = (x - xc) / 0.42, e = Math.exp(d), sech = 2 / (e + 1 / e);
-      var crest = 0.6 * sech * sech, swell = 0.07 * Math.sin(2.4 * x - t * 0.0016 + wZ[i] * 1.3);
-      o.x = x + crest * 0.32; o.y = 0.3 - swell - crest; o.z = wZ[i]; o.hot = crest > 0.36 && wR[i] < 0.5 ? 1 : 0; // foam on the crest
-      rotY(o, -0.32); rotX(o, 0.36);
-    },
-    signal: function (i, t, o) { // sensor lines streaming past; the spikes are the anomalies
-      var row = gB.signal[i], x = gA.signal[i], u = x * 2.6 + t * 0.0012 + row * 0.7;
-      var sp = Math.pow(Math.max(0, Math.sin(u * 0.31 + row * 2.1)), 60) * 0.75;
-      o.x = x; o.y = 0.15 - (0.1 * Math.sin(u) + 0.05 * Math.sin(2.3 * u + 1) + sp); o.z = (row - 4.5) * 0.16; o.hot = sp > 0.1 ? 1 : 0;
-      rotY(o, -0.45); rotX(o, 0.32);
-    },
-    wavefront: function (i, t, o) { // Dijkstra: distance spreading out from one corner of a grid
-      var x = gA.wavefront[i], z = gB.wavefront[i], d = Math.sqrt((x + 1.5) * (x + 1.5) + (z + 0.9) * (z + 0.9)), r = (t * 0.00035) % 1 * 3.6, g = Math.exp(-Math.pow((d - r) / 0.16, 2));
-      o.x = x; o.y = -0.3 * g; o.z = z; o.hot = g > 0.6 ? 1 : 0;
-      rotY(o, 0.5 + t * 0.00005); rotX(o, 0.95);
-    },
-    scc: function (i, t, o) { // Tarjan: each ring is one strongly connected component, lit one at a time
-      var c = gC.scc[i];
-      if (gK.scc[i]) { var pr = SCC_PAIRS[c], p0 = SCC[pr[0]], p1 = SCC[pr[1]], f = gA.scc[i]; o.x = p0[0] + (p1[0] - p0[0]) * f; o.y = p0[1] + (p1[1] - p0[1]) * f; o.z = p0[2] + (p1[2] - p0[2]) * f; o.hot = 0; }
-      else { var an = gA.scc[i] + t * 0.0006 * (c % 2 ? 1 : -1), rr = gB.scc[i], tl = c * 1.1, ce = SCC[c]; o.x = ce[0] + Math.cos(an) * rr; o.y = ce[1] + Math.sin(an) * rr * Math.cos(tl); o.z = ce[2] + Math.sin(an) * rr * Math.sin(tl); o.hot = c === Math.floor(t / 1400) % 5 ? 1 : 0; }
-      rotY(o, t * 0.0001); rotX(o, 0.2);
-    },
-    voice: function (i, t, o) { // Kia-bot: a ring of sound bars around a breathing core
-      var a = gA.voice[i], h = gB.voice[i];
-      if (gK.voice[i]) { var R = 0.3 * (1 + 0.12 * Math.sin(t * 0.004)), rad = Math.sqrt(1 - h * h); o.x = Math.cos(a + t * 0.0005) * rad * R; o.y = h * R; o.z = Math.sin(a + t * 0.0005) * rad * R; o.hot = 0; }
-      else { var amp = 0.1 + 0.5 * Math.abs(Math.sin(a * 5 + t * 0.0035)) * (0.5 + 0.5 * Math.sin(t * 0.0021 + a * 2)), r = 0.62 + h * amp; o.x = Math.cos(a) * r; o.y = Math.sin(a) * r; o.z = (h - 0.5) * 0.05; o.hot = h > 0.86 ? 1 : 0; }
-      rotY(o, 0.35); rotX(o, -0.15);
-    },
-    histogram: function (i, t, o) { // backtest returns: a distribution whose center drifts as the sample changes
-      var b = gA.histogram[i], mean = 10 + 2.5 * Math.sin(t * 0.0005), h = Math.exp(-Math.pow((b - mean) / 4, 2));
-      o.x = (b - 10) * 0.15 + gC.histogram[i]; o.y = 0.55 - gB.histogram[i] * h * 1.1; o.z = gC.histogram[i] * 3; o.hot = b === Math.round(mean) ? 1 : 0;
-      rotY(o, -0.4); rotX(o, 0.15);
-    },
-    funnel: function (i, t, o) { // leads spiral down a funnel; the highlighted ones go to a person
-      var s = (gA.funnel[i] + t * 0.00012) % 1, a = gB.funnel[i] + s * 4, r = Math.pow(1 - s, 1.6) + 0.06;
-      o.x = Math.cos(a) * r; o.z = Math.sin(a) * r; o.y = -0.7 + s * 1.4; o.hot = gK.funnel[i];
-      rotX(o, 0.38);
-    },
-    candles: function (i, t, o) { // price candles with their moving average
-      var k = gA.candles[i], u = gB.candles[i];
-      if (gK.candles[i]) { var xx = k + u, m2 = (price(xx) + price(xx - 1) + price(xx - 2) + price(xx - 3)) / 4; o.x = (xx - 13) * 0.13; o.y = 0.2 - m2 * 1.1; o.z = 0.1; o.hot = 1; }
-      else { var op = price(k), cl = price(k + 1), wick = u < 0 || u > 1; o.x = (k - 12.5) * 0.13 + (wick ? 0 : gC.candles[i]); o.y = 0.2 - (op + (cl - op) * u) * 1.1; o.z = wick ? 0 : gC.candles[i]; o.hot = 0; }
-      rotY(o, -0.35 + Math.sin(t * 0.0003) * 0.12); rotX(o, 0.1);
-    },
-    spiral: function (i, t, o) { // the golden angle: every dot turned 137.5 degrees from the last
-      var r = Math.sqrt(i / N), a = i * 2.39996 + t * 0.0002;
-      o.x = Math.cos(a) * r; o.z = Math.sin(a) * r; o.y = 0.2 - (1 - r * r) * 0.5; o.hot = i % 21 === 0 ? 1 : 0;
-      rotX(o, 0.8);
-    },
-    sphere: function (i, t, o) { // points spread evenly over a sphere
-      var y = 1 - 2 * (i + 0.5) / N, rad = Math.sqrt(1 - y * y), a = i * 2.39996 + t * 0.00025 + scrollTurn;
-      o.x = Math.cos(a) * rad * 0.9; o.y = y * 0.9; o.z = Math.sin(a) * rad * 0.9; o.hot = i % 34 === 0 ? 1 : 0;
-      rotX(o, 0.3);
-    }
-  };
-  var SCC = [[-1, -0.3, 0], [-0.2, 0.45, 0.3], [0.2, -0.5, -0.3], [1, 0.2, 0.2], [0.6, 0.75, -0.4]], SCC_PAIRS = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 3]];
-  function price(k) { return 0.3 * Math.sin(k * 0.33) + 0.16 * Math.sin(k * 1.9) + 0.2 * Math.sin(k * 0.11 + 1) + k * 0.02 - 0.2; }
-  function buildRest() { // scatter the dots over the simpler shapes
-    gA = {}; gB = {}; gC = {}; gK = {};
-    ['signal', 'wavefront', 'scc', 'voice', 'histogram', 'funnel', 'candles'].forEach(function (n) { gA[n] = new Float32Array(N); gB[n] = new Float32Array(N); gC[n] = new Float32Array(N); gK[n] = new Uint8Array(N); });
-    for (var i = 0; i < N; i++) {
-      gA.signal[i] = (rnd() - 0.5) * 3.6; gB.signal[i] = Math.floor(rnd() * 10);
-      gA.wavefront[i] = Math.round((rnd() - 0.5) * 3.2 / 0.1) * 0.1 + (rnd() - 0.5) * 0.015; gB.wavefront[i] = Math.round((rnd() - 0.5) * 2 / 0.1) * 0.1 + (rnd() - 0.5) * 0.015;
-      if (rnd() < 0.2) { gK.scc[i] = 1; gC.scc[i] = Math.floor(rnd() * 5); gA.scc[i] = rnd(); } else { gC.scc[i] = Math.floor(rnd() * 5); gA.scc[i] = rnd() * Math.PI * 2; gB.scc[i] = 0.24 + (rnd() < 0.3 ? rnd() * 0.12 : 0.1); }
-      if (rnd() < 0.3) { gK.voice[i] = 1; gA.voice[i] = rnd() * Math.PI * 2; gB.voice[i] = rnd() * 2 - 1; } else { gA.voice[i] = Math.floor(rnd() * 72) / 72 * Math.PI * 2; gB.voice[i] = rnd(); }
-      gA.histogram[i] = Math.floor(rnd() * 21); gB.histogram[i] = rnd(); gC.histogram[i] = (rnd() - 0.5) * 0.09;
-      gA.funnel[i] = rnd(); gB.funnel[i] = rnd() * Math.PI * 2; gK.funnel[i] = rnd() < 0.12 ? 1 : 0;
-      gA.candles[i] = Math.floor(rnd() * 26); gC.candles[i] = (rnd() - 0.5) * 0.07;
-      if (rnd() < 0.2) { gK.candles[i] = 1; gB.candles[i] = rnd(); } else gB.candles[i] = rnd() < 0.2 ? rnd() * 1.8 - 0.4 : rnd();
-    }
-  }
-  var NOTE = {
-    signal: '<b>Sensor telemetry</b> the spikes are flagged anomalies',
-    wavefront: '<b>Dijkstra frontier</b> distance spreading from the source',
-    scc: '<b>Tarjan SCC</b> each ring is one component',
-    voice: '<b>Voiceprint</b> Kia-bot listening',
-    histogram: '<b>Return distribution</b> shifting as the sample changes',
-    funnel: '<b>Lead routing</b> highlighted leads go to a person',
-    candles: '<b>Price path</b> with its moving average',
-    spiral: '<b>Golden angle</b> each dot turned 137.5 degrees from the last',
-    sphere: '<b>Fibonacci sphere</b> evenly spread points',
-    name: '<b>' + 'Point cloud</b> the dots flow around your cursor',
-    turbine: '<b>Turbine rotor</b> the same dots, re-formed as you scroll',
-    roads: '<b>Road network</b> Dijkstra lighting the shortest route',
-    city: '<b>Agent City</b> huts over the water',
-    wave: '<b>Set wave</b> rolling through'
-  };
-  // What the dots are at each point of the page: every block tagged data-shape, in page order. A card on the left pushes its shape right, and the reverse.
-  var chapters = [{ el: hero, shape: 'name' }];
-  document.querySelectorAll('[data-shape]').forEach(function (el) { chapters.push({ el: el, shape: el.getAttribute('data-shape'), side: el.getAttribute('data-side'), size: parseFloat(el.getAttribute('data-size')) || 0.5 }); });
-  function measure() {
-    for (var i = 0; i < chapters.length; i++) chapters[i].top = chapters[i].el.getBoundingClientRect().top + window.scrollY;
-    var r = h1.getBoundingClientRect(); nameDocX = r.left + r.width / 2; nameDocY = r.top + r.height / 2 + window.scrollY;
-  }
-  function layout(ch, out) {
-    if (ch.shape === 'name') { out.x = nameDocX; out.y = nameDocY - window.scrollY; out.s = nameHalf; }
-    else if (W < 900) { out.x = W / 2; out.y = H * (ch.side ? 0.36 : 0.52); out.s = ch.size * M * (ch.side ? 0.8 : 1); } // phones: the shape sits in the gap above the card
-    else { out.x = W * (ch.side === 'left' ? 0.68 : ch.side === 'right' ? 0.32 : 0.5); out.y = H * 0.54; out.s = ch.size * M; }
-  }
-
-  // ----- Building the shapes -----
-  function buildName() {
-    var r = h1.getBoundingClientRect(), cs = getComputedStyle(h1), fs = parseFloat(cs.fontSize), label = h1.textContent.trim();
-    var off = document.createElement('canvas'), o = off.getContext('2d'), i;
-    off.width = Math.ceil(r.width) + 60; off.height = Math.ceil(fs * 1.3);
-    if ('fontStretch' in o) o.fontStretch = 'semi-condensed'; // the heading is set narrow; other browsers fall back to the width fit below
-    if ('letterSpacing' in o) o.letterSpacing = (-0.03 * fs) + 'px';
-    o.font = '700 ' + fs + 'px ' + cs.fontFamily;
-    var fit = Math.min(1, (r.width * 0.98) / o.measureText(label).width);
-    o.font = '700 ' + (fs * fit) + 'px ' + cs.fontFamily; o.textAlign = 'center'; o.textBaseline = 'middle'; o.fillStyle = '#000';
-    o.fillText(label, off.width / 2, off.height / 2);
-    var img = o.getImageData(0, 0, off.width, off.height).data, ink = [];
-    for (var y = 0; y < off.height; y += 2) for (var x = 0; x < off.width; x += 2) if (img[(y * off.width + x) * 4 + 3] > 120) ink.push(x, y);
-    nameHalf = Math.max(40, r.width / 2);
-    for (i = 0; i < N; i++) { // drop every dot on a random inked pixel of the name
-      var k = ink.length ? Math.floor(rnd() * (ink.length / 2)) * 2 : 0;
-      nmX[i] = ink.length ? (ink[k] + rnd() * 2 - off.width / 2) / nameHalf : 0;
-      nmY[i] = ink.length ? (ink[k + 1] + rnd() * 2 - off.height / 2 - fs * 0.03) / nameHalf : 0;
-      nmZ[i] = -0.22 - rnd() * 0.04; // a little toward the viewer, so the name is the brightest thing on screen
-      var nf = 1 + nmZ[i] * 0.3; nmX[i] *= nf; nmY[i] *= nf; // cancel the perspective that closeness adds, so the dots still match the heading's size
-    }
-    h1.classList.add('meshed');
-  }
-  function buildTurbine() {
-    var blades = 16, i;
-    for (i = 0; i < N; i++) {
-      var u = rnd(); tHot[i] = 0;
-      if (u < 0.6) { // twisted blades
-        var b = Math.floor(rnd() * blades), r = 0.26 + Math.pow(rnd(), 0.8) * 0.7, c = (rnd() - 0.5) * 0.2 * (1.25 - 0.45 * r), tw = 1.0 - 0.55 * r;
-        tR[i] = r; tTh[i] = b / blades * Math.PI * 2; tT[i] = c * Math.cos(tw); tZ[i] = c * Math.sin(tw) * 1.4; tHot[i] = r > 0.9 && rnd() < 0.5 ? 1 : 0;
-      } else if (u < 0.72) { // nose cone
-        var rr = Math.sqrt(rnd()) * 0.26; tR[i] = rr; tTh[i] = rnd() * Math.PI * 2; tT[i] = 0; tZ[i] = -0.34 * (1 - rr * rr / 0.0676);
-      } else { // casing rings
-        var outer = rnd() < 0.35; tR[i] = outer ? 1.1 : 1.01; tTh[i] = rnd() * Math.PI * 2; tT[i] = 0; tZ[i] = outer ? 0.2 + rnd() * 0.05 : -0.14 + rnd() * 0.4;
-      }
-    }
-  }
-  function buildRoads() {
-    var cols = 10, rows = 7, nodes = [], adj = [], edges = [], i, r = rng(5);
-    for (i = 0; i < cols * rows; i++) { nodes.push([(i % cols / (cols - 1) - 0.5) * 3.4 + (r() - 0.5) * 0.2, (Math.floor(i / cols) / (rows - 1) - 0.5) * 2.2 + (r() - 0.5) * 0.18]); adj.push([]); }
-    function link(a, b) { var d = Math.sqrt(Math.pow(nodes[a][0] - nodes[b][0], 2) + Math.pow(nodes[a][1] - nodes[b][1], 2)); edges.push([a, b, d]); adj[a].push([b, d]); adj[b].push([a, d]); }
-    for (i = 0; i < cols * rows; i++) {
-      var c = i % cols, rw = Math.floor(i / cols);
-      if (c < cols - 1 && (rw === 0 || r() > 0.14)) link(i, i + 1);
-      if (rw < rows - 1 && (c === 0 || r() > 0.22)) link(i, i + cols);
-      if (c < cols - 1 && rw < rows - 1 && r() < 0.16) link(i, i + cols + 1);
-    }
-    // Dijkstra from one corner to the opposite corner: that route is what lights up.
-    var dist = nodes.map(function () { return Infinity; }), prev = nodes.map(function () { return -1; }), done = [], src = (rows - 1) * cols, dst = cols - 1;
-    dist[src] = 0;
-    for (;;) {
-      var cur = -1; for (i = 0; i < nodes.length; i++) if (!done[i] && (cur < 0 || dist[i] < dist[cur])) cur = i;
-      if (cur < 0 || dist[cur] === Infinity) break;
-      done[cur] = true;
-      adj[cur].forEach(function (e) { if (dist[cur] + e[1] < dist[e[0]]) { dist[e[0]] = dist[cur] + e[1]; prev[e[0]] = cur; } });
-    }
-    var onRoute = {}, total = dist[dst];
-    for (var v = dst; prev[v] >= 0; v = prev[v]) onRoute[Math.min(v, prev[v]) + '-' + Math.max(v, prev[v])] = [prev[v], dist[prev[v]], dist[v]];
-    var len = 0; edges.forEach(function (e) { len += e[2]; });
-    for (i = 0; i < N; i++) { // spread the dots along the roads, by length
-      var pick = rnd() * len, e = 0; while (e < edges.length - 1 && pick > edges[e][2]) { pick -= edges[e][2]; e++; }
-      var a = nodes[edges[e][0]], b = nodes[edges[e][1]], f = rnd(), hit = onRoute[Math.min(edges[e][0], edges[e][1]) + '-' + Math.max(edges[e][0], edges[e][1])];
-      rX[i] = a[0] + (b[0] - a[0]) * f + (rnd() - 0.5) * 0.012; rZ[i] = a[1] + (b[1] - a[1]) * f + (rnd() - 0.5) * 0.012;
-      rS[i] = hit && isFinite(total) ? (hit[1] + (hit[0] === edges[e][0] ? f : 1 - f) * (hit[2] - hit[1])) / total : -1; // how far along the route this dot is
-    }
-  }
-  function buildCity() {
-    var huts = [[0, 0, 1.5]], i, n = 8;
-    for (i = 0; i < n; i++) { var a = i / n * Math.PI * 2 + 0.3; huts.push([Math.cos(a) * (0.95 + (i % 2) * 0.3), Math.sin(a) * (0.75 + (i % 2) * 0.22), 1]); }
-    for (i = 0; i < N; i++) {
-      var u = rnd(); cKind[i] = 0;
-      if (u < 0.28) { cX[i] = (rnd() - 0.5) * 3.6; cZ[i] = (rnd() - 0.5) * 2.6; cY[i] = 0.16; cKind[i] = 1; } // water
-      else if (u < 0.42) { // walkways from each hut to the hub
-        var h = huts[1 + Math.floor(rnd() * n)], f = rnd(); cX[i] = h[0] * f; cZ[i] = h[1] * f + (rnd() - 0.5) * 0.02; cY[i] = 0.02;
-      } else {
-        var hut = huts[Math.floor(rnd() * huts.length)], s = hut[2], w = 0.13 * s, ht = 0.15 * s, part = rnd();
-        if (part < 0.42) { // walls: pick a side, then a spot on it
-          var side = Math.floor(rnd() * 4), q = (rnd() - 0.5) * 2 * w;
-          cX[i] = hut[0] + (side === 0 ? -w : side === 1 ? w : q); cZ[i] = hut[1] + (side === 2 ? -w : side === 3 ? w : q); cY[i] = -rnd() * ht;
-        } else if (part < 0.85) { // thatched roof: a pyramid that overhangs the walls
-          var up = Math.pow(rnd(), 1.4), rw2 = w * 1.35 * (1 - up), sd = Math.floor(rnd() * 4), qq = (rnd() - 0.5) * 2 * rw2;
-          cX[i] = hut[0] + (sd === 0 ? -rw2 : sd === 1 ? rw2 : qq); cZ[i] = hut[1] + (sd === 2 ? -rw2 : sd === 3 ? rw2 : qq); cY[i] = -ht - up * 0.2 * s;
-          if (up > 0.93) cKind[i] = 2; // a light at the peak
-        } else { cX[i] = hut[0] + (rnd() < 0.5 ? -w : w) * 0.85; cZ[i] = hut[1] + (rnd() < 0.5 ? -w : w) * 0.85; cY[i] = rnd() * 0.16; } // stilts
-      }
-    }
-  }
-  function buildWave() { for (var i = 0; i < N; i++) { wX[i] = (rnd() - 0.5) * 4.4; wZ[i] = (rnd() - 0.5) * 2.2; wR[i] = rnd(); } }
-
-  function build() {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2), first = !ready, i;
-    W = window.innerWidth; H = window.innerHeight; M = Math.min(W, H);
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (first) {
-      N = W < 700 ? 1300 : 2800; rnd = rng(21);
-      var F = function () { return new Float32Array(N); };
-      px = F(); py = F(); vx = F(); vy = F(); key = F(); rdx = F(); rdy = F(); size = F(); bucket = new Uint8Array(N);
-      nmX = F(); nmY = F(); nmZ = F(); tR = F(); tTh = F(); tT = F(); tZ = F(); tHot = new Uint8Array(N);
-      rX = F(); rZ = F(); rS = F(); cX = F(); cY = F(); cZ = F(); cKind = new Uint8Array(N); wX = F(); wZ = F(); wR = F();
-      for (i = 0; i < N; i++) { var a = rnd() * Math.PI * 2; key[i] = rnd(); rdx[i] = Math.cos(a) * (0.3 + rnd()); rdy[i] = Math.sin(a) * (0.3 + rnd()); px[i] = W / 2 + rdx[i] * W; py[i] = H / 2 + rdy[i] * H; }
-      buildTurbine(); buildRoads(); buildCity(); buildWave(); buildRest();
-    }
-    buildName(); measure();
-    ready = true;
-  }
-
-  // ----- One frame -----
-  var la = { x: 0, y: 0, s: 1 }, lb = { x: 0, y: 0, s: 1 };
-  function place(o, L, out, j) { // tilt toward the mouse, add perspective, land on the screen
-    rotY(o, tiltY); rotX(o, tiltX);
-    var f = 1 / (1 + o.z * 0.3);
-    out[j] = L.x + o.x * L.s * f; out[j + 1] = L.y + o.y * L.s * f; out[j + 2] = o.z;
-  }
-  var pa = [0, 0, 0], pb = [0, 0, 0];
-  function frame(now) {
-    if (!ready) { requestAnimationFrame(frame); return; }
-    if (++frameNo % 45 === 0) measure(); // the page settles as fonts and cards load
-    var i, A = 0, B = 0, m = 0, burst = 0.16, probe = window.scrollY + H * 0.52, span = H * 0.3, t = REDUCE ? 0 : now;
-    for (i = 1; i < chapters.length; i++) { var mk = clamp((probe - (chapters[i].top - span)) / (2 * span), 0, 1); if (mk > 0) { A = i - 1; B = i; m = mk; } }
-    var chA = chapters[A], chB = chapters[B], sa = chA.shape, sb = chB.shape;
-    layout(chA, la); layout(chB, lb);
-    spin = t * 0.0005 + window.scrollY * 0.0022; scrollTurn = window.scrollY * 0.0006;
-    if (introOn) { // the opening: a turbine spins up in the middle of the screen, then bursts into the name
-      var it = now - introT0;
-      if (it > 2700 || window.scrollY > 40) { introOn = false; document.documentElement.classList.remove('intro'); }
-      else { sa = 'turbine'; sb = 'name'; la.x = W / 2; la.y = H * 0.46; la.s = M * 0.3; layout(chapters[0], lb); m = clamp((it - 1250) / 1100, 0, 1); spin = it * it * 0.0000052; burst = 0.55; }
-    }
-    var fa = shapes[sa], fb = shapes[sb], same = sa === sb, sweep = sa === 'city' && sb === 'wave', st = 0.7;
-    // The shape leans toward the mouse.
-    var gx = pointer.active ? (pointer.x / W - 0.5) : 0, gy = pointer.active ? (pointer.y / H - 0.5) : 0;
-    tiltY += (gx * 0.5 - tiltY) * 0.06; tiltX += (-gy * 0.35 - tiltX) * 0.06;
-    if (REDUCE) { tiltX = 0; tiltY = 0; }
-    // A bright ring spreads from wherever the cursor is.
-    if (!REDUCE && now - pulseAt > 2600) { pulseAt = now; pulseX = pointer.active ? pointer.x : la.x; pulseY = pointer.active ? pointer.y : la.y; }
-    var ringR = (now - pulseAt) * 0.42, mx = pointer.active ? pointer.x : -9999, my = pointer.y, R = 150;
-    var appear = introOn ? clamp((now - introT0) / 500, 0, 1) : 1;
-
-    for (i = 0; i < N; i++) {
-      var mi = m <= 0 ? 0 : m >= 1 ? 1 : clamp(m * (1 + st) - st * (sweep ? (cX[i] + 1.8) / 3.6 : key[i]), 0, 1); // dots leave at different moments; a wave front sweeps across the city
-      mi = mi * mi * (3 - 2 * mi);
-      var tx, ty, tz, hot;
-      if (mi < 1) { fa(i, t, oa); place(oa, la, pa, 0); }
-      if (mi > 0) { fb(i, t, ob); place(ob, lb, pb, 0); }
-      if (mi <= 0) { tx = pa[0]; ty = pa[1]; tz = pa[2]; hot = oa.hot; }
-      else if (mi >= 1) { tx = pb[0]; ty = pb[1]; tz = pb[2]; hot = ob.hot; }
-      else {
-        var sw = same ? 0 : Math.sin(mi * Math.PI) * (sweep ? 0.03 : burst) * M; // mid-change, the dots swing wide
-        tx = pa[0] + (pb[0] - pa[0]) * mi + rdx[i] * sw; ty = pa[1] + (pb[1] - pa[1]) * mi + rdy[i] * sw; tz = pa[2] + (pb[2] - pa[2]) * mi; hot = mi < 0.5 ? oa.hot : ob.hot;
-      }
-      if (REDUCE) { px[i] = tx; py[i] = ty; }
-      else {
-        var dx = px[i] - mx, dy = py[i] - my, d2 = dx * dx + dy * dy;
-        if (d2 < R * R) { var d = Math.sqrt(d2) || 1, f = (1 - d / R); f = f * f * 3.2; vx[i] += (-dy / d) * f + (dx / d) * f * 0.55; vy[i] += (dx / d) * f + (dy / d) * f * 0.55; } // flow around the cursor like water round a rock
-        vx[i] = (vx[i] + (tx - px[i]) * 0.085) * 0.8; vy[i] = (vy[i] + (ty - py[i]) * 0.085) * 0.8;
-        px[i] += vx[i]; py[i] += vy[i];
-        var pd = Math.sqrt((px[i] - pulseX) * (px[i] - pulseX) + (py[i] - pulseY) * (py[i] - pulseY));
-        if (Math.abs(pd - ringR) < 16 && ringR < 900) hot = 1;
-      }
-      bucket[i] = hot ? 3 : tz > 0.25 ? 0 : tz > -0.2 ? 1 : 2;
-      size[i] = clamp(1.7 - tz * 0.9, 0.9, 2.8) * (hot ? 1.5 : 1) * (W < 700 ? 0.6 : 1); // finer dots on phones, where the name is small
-    }
-
-    ctx.clearRect(0, 0, W, H);
-    var styles = [rgba(PAGE.glow, 0.55 * appear), rgba(PAGE.white, 0.62 * appear), rgba(PAGE.white, 0.95 * appear), rgba(PAGE.accent, appear)];
-    for (var bk = 0; bk < 4; bk++) {
-      ctx.fillStyle = styles[bk];
-      for (i = 0; i < N; i++) if (bucket[i] === bk) { var s = size[i]; ctx.fillRect(px[i] - s / 2, py[i] - s / 2, s, s); }
-    }
-    var want = NOTE[m < 0.5 ? sa : sb] || '';
-    if (want !== noteNow) { noteNow = want; note.innerHTML = want; }
-    if (!REDUCE) requestAnimationFrame(frame);
-  }
-
-  function start() { build(); introT0 = performance.now(); requestAnimationFrame(frame); }
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
-  window.addEventListener('resize', function () { if (ready) { build(); if (REDUCE) frame(0); } });
-  if (REDUCE) { window.addEventListener('scroll', function () { frame(0); }, { passive: true }); window.addEventListener('themechange', function () { frame(0); }); }
-})();
 </script>
 <script type="module">
 // ---------- Hero map in real 3D (three.js 0.160.0, served from this site): a city tile lit like a product shot; A* plans a real route across its streets ----------
@@ -2547,7 +2213,7 @@ import * as THREE from './vendor/three.module.min.js';
   for (j = 0; j < n - 1; j++) for (i = 0; i < n - 1; i++) {
     if (rnd() < 0.07) continue; // park
     var c = [j * n + i, j * n + i + 1, (j + 1) * n + i + 1, (j + 1) * n + i];
-    var split = rnd() < 0.5 ? 1 : 2;
+    var sr = rnd(), split = sr < 0.3 ? 1 : sr < 0.8 ? 2 : 3;
     for (var a = 0; a < split; a++) for (var b = 0; b < split; b++) {
       if (rnd() < 0.12) continue;
       var u0 = road + (1 - 2 * road) * a / split + 0.012, u1 = road + (1 - 2 * road) * (a + 1) / split - 0.012;
@@ -2557,7 +2223,7 @@ import * as THREE from './vendor/three.module.min.js';
       };
       var p = [corner(u0, v0), corner(u1, v0), corner(u1, v1), corner(u0, v1)];
       var cx = (p[0][0] + p[2][0]) / 2, cz = (p[0][1] + p[2][1]) / 2, down = Math.max(0, 1 - Math.hypot(cx - 0.25, cz + 0.15) / 1.1);
-      lots.push({ p: p, cx: cx, cz: cz, h: 0.025 + Math.pow(rnd(), 2.2) * 0.07 + down * down * rnd() * 0.3, delay: Math.hypot(cx, cz) * 420 + rnd() * 260 });
+      lots.push({ cx: cx, cz: cz, w: Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]), d: Math.hypot(p[3][0] - p[0][0], p[3][1] - p[0][1]), ang: Math.atan2(-(p[1][1] - p[0][1]), p[1][0] - p[0][0]), key: rnd(), h: 0.025 + Math.pow(rnd(), 2.2) * 0.07 + down * down * rnd() * 0.3, delay: Math.hypot(cx, cz) * 420 + rnd() * 260 });
     }
   }
 
@@ -2598,64 +2264,92 @@ import * as THREE from './vendor/three.module.min.js';
   scene.add(city);
   scene.add(new THREE.HemisphereLight(0x9fb8e0, 0x0a1220, 0.55));
   var key = new THREE.DirectionalLight(0xffc58a, 4.2);
-  key.position.set(-3.2, 1.5, 1.4); // low and warm, like late sun: long shadows across the streets key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.01;
+  key.position.set(-3.2, 1.5, 1.4); key.castShadow = true; // low and warm, like late sun: long shadows across the streets
+  key.shadow.mapSize.set(window.innerWidth < 700 ? 1024 : 2048, window.innerWidth < 700 ? 1024 : 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.01;
   Object.assign(key.shadow.camera, { left: -1.7, right: 1.7, top: 1.7, bottom: -1.7, near: 0.5, far: 8 });
   var rig = new THREE.Group(); rig.add(key); scene.add(rig); // the lights turn with the camera, so the lit side always faces the viewer
   var rim = new THREE.DirectionalLight(0x6298ff, 0.7); rim.position.set(2.2, 1.2, -2.6); rig.add(rim);
 
-  var slab = new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.08, 2.16), new THREE.MeshStandardMaterial({ color: 0x0e1828, roughness: 0.92 }));
+  // A small photo studio the metal reflects: one warm softbox, one cool one, a dim ceiling. Never drawn, only mirrored.
+  (function () {
+    var studio = new THREE.Scene(), pm = new THREE.PMREMGenerator(renderer);
+    studio.background = new THREE.Color(0x04070d);
+    [[0xffc58a, 7, -4, 3, 2, 4, 3], [0x6298ff, 3, 4, 1.5, -3, 5, 3], [0xdfe8f5, 1.2, 0, 6, 0, 7, 7]].forEach(function (b) {
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(b[5], b[6]), new THREE.MeshBasicMaterial({ color: new THREE.Color(b[0]).multiplyScalar(b[1]), side: THREE.DoubleSide, toneMapped: false }));
+      m.position.set(b[2], b[3], b[4]); m.lookAt(0, 0, 0); studio.add(m);
+    });
+    scene.environment = pm.fromScene(studio, 0.04).texture; pm.dispose();
+  })();
+
+  var slab = new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.08, 2.16), new THREE.MeshStandardMaterial({ color: 0x0e1828, roughness: 0.7, metalness: 0.3 }));
   slab.position.y = -0.04; slab.receiveShadow = true; city.add(slab);
-  var wall = new THREE.MeshStandardMaterial({ color: 0x4a5d80, roughness: 0.55, metalness: 0.05 });
-  lots.forEach(function (L) {
-    var shape = new THREE.Shape(L.p.map(function (q) { return new THREE.Vector2(q[0], -q[1]); }));
-    var g = new THREE.ExtrudeGeometry(shape, { depth: 1, bevelEnabled: false });
-    g.rotateX(-Math.PI / 2); // extrude upward: unit height, scaled per building
-    g.translate(-L.cx, 0, -L.cz); // centred on its own lot, so each block can fly, turn and rescale on its own
-    L.mesh = new THREE.Mesh(g, wall); L.mesh.castShadow = true; L.mesh.receiveShadow = true; L.mesh.rotation.order = 'YXZ'; L.mesh.userData.lot = true; L.key = rnd();
-    city.add(L.mesh);
-  });
+  // Every block is one instance of a unit box, so the whole model is a single draw call.
+  var N = lots.length, blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: 0x5d7096, roughness: 0.38, metalness: 0.65 }), N);
+  blocks.castShadow = true; blocks.receiveShadow = true; blocks.frustumCulled = false; city.add(blocks);
+  // The rotor's shaft and drum, turned on a lathe from one profile: stub shaft, bearing journal, compressor drum, combustor waist, turbine disks, exhaust end.
+  var hub = new THREE.Mesh(new THREE.LatheGeometry([[0, -1], [0.05, -1], [0.05, -0.84], [0.09, -0.84], [0.09, -0.74], [0.17, -0.69], [0.29, 0.11], [0.29, 0.15], [0.2, 0.2], [0.2, 0.34], [0.24, 0.37], [0.24, 0.74], [0.12, 0.8], [0.09, 0.8], [0.09, 0.9], [0.05, 0.9], [0.05, 1.02], [0, 1.02]].map(function (q) { return new THREE.Vector2(q[0], q[1]); }), 48).rotateZ(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: 0x39476a, roughness: 0.3, metalness: 0.9 }));
+  hub.castShadow = true; hub.position.y = 0.34; hub.visible = false; city.add(hub);
+  var net = new THREE.Group(); city.add(net); // streets, search, route and pins: shown only while the blocks form a city or a map
 
   function segments(list, y) { // street edges as one line buffer, in the order given
     var pos = new Float32Array(list.length * 6);
     list.forEach(function (e, q) { pos.set([nx[e.a], y, nz[e.a], nx[e.b], y, nz[e.b]], q * 6); });
     var g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); return g;
   }
-  city.add(new THREE.LineSegments(segments(edges, 0.002), new THREE.LineBasicMaterial({ color: 0x93a1b8, transparent: true, opacity: 0.28 })));
+  net.add(new THREE.LineSegments(segments(edges, 0.002), new THREE.LineBasicMaterial({ color: 0x93a1b8, transparent: true, opacity: 0.28 })));
   var searched = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x6298ff, transparent: true, opacity: 0.9, toneMapped: false }));
-  city.add(searched);
+  net.add(searched);
   var amber = new THREE.MeshBasicMaterial({ color: 0xf2b56b, toneMapped: false });
   var glow = new THREE.MeshBasicMaterial({ color: 0xf2b56b, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
   var ghost = new THREE.MeshBasicMaterial({ color: 0xf2b56b, transparent: true, opacity: 0.3, depthTest: false, toneMapped: false }); // the route seen through buildings
   var routeMeshes = [new THREE.Mesh(undefined, amber), new THREE.Mesh(undefined, glow), new THREE.Mesh(undefined, ghost)];
   routeMeshes[2].renderOrder = 10;
-  routeMeshes.forEach(function (m) { m.visible = false; city.add(m); });
+  routeMeshes.forEach(function (m) { m.visible = false; net.add(m); });
   var pinGeo = new THREE.SphereGeometry(0.024, 16, 12);
   var pinA = new THREE.Mesh(pinGeo, new THREE.MeshBasicMaterial({ color: 0xeef3fa, toneMapped: false })), pinB = new THREE.Mesh(pinGeo, amber);
-  city.add(pinA, pinB);
-
-  // Streets, search, route and pins live in one group, shown only while the blocks form a city or a map.
-  var net = new THREE.Group();
-  city.children.slice().forEach(function (c) { if (c !== slab && !c.userData.lot) net.add(c); });
-  city.add(net);
+  net.add(pinA, pinB);
 
   // ----- Formations: the same blocks rebuild into a different shape for each chapter -----
   // 0 city (hero) · 1 turbine rotor (About, Experience) · 2 road map with the route (Projects) · 3 hub and huts (Side builds) · 5 wave (Skills, Contact)
   var FORMS = [1, 1, 2, 3, 5, 5];
   var chapters = ['about', 'experience', 'projects', 'builds', 'skills', 'contact'].map(function (id) { return document.getElementById(id); });
-  var BLADES = 14, GOLDEN = 2.39996, pa = {}, pb = {};
+  var UP = new THREE.Vector3(0, 1, 0), FWD = new THREE.Vector3(0, 0, 1), STAGES = 10, COMP = 7, AXIS = 0.34, COLS = 23, ROWS = Math.ceil(N / 23), HUT = Math.ceil(N / 7);
+  function Pose() { this.p = new THREE.Vector3(); this.q = new THREE.Quaternion(); this.s = new THREE.Vector3(); }
+  var pa = new Pose(), pb = new Pose(), vR = new THREE.Vector3(), vT = new THREE.Vector3(), vZ = new THREE.Vector3(), vX = new THREE.Vector3(), m4 = new THREE.Matrix4();
+  var qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qWave = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
   function pose(f, L, i, t, rise, o) {
-    var N = lots.length, a, rad;
-    o.x = L.cx; o.y = 0; o.z = L.cz; o.rx = 0; o.ry = 0; o.sx = 1; o.sy = L.h * rise; o.sz = 1;
-    if (f === 1) { // blades of a rotor, pitched and turning
-      rad = 0.16 + 0.86 * Math.floor(i / BLADES) / Math.ceil(N / BLADES); a = (i % BLADES) / BLADES * Math.PI * 2 + t * 0.0005;
-      o.x = rad * Math.cos(a); o.z = rad * Math.sin(a); o.y = 0.2; o.ry = -a; o.rx = 0.55; o.sx = 1.25; o.sy = 0.025; o.sz = 0.8;
-    } else if (f === 2) { o.sy = 0.004; } // pressed flat: only the streets and the route stand out
-    else if (f === 3) { // one hub and six huts, each a small cone of blocks
-      var c = i % 7, hub = c === 0, ca = c / 6 * Math.PI * 2; rad = (hub ? 0.3 : 0.2) * Math.sqrt(L.key); a = i * GOLDEN;
-      o.x = (hub ? 0 : 0.72 * Math.cos(ca)) + rad * Math.cos(a); o.z = (hub ? 0 : 0.72 * Math.sin(ca)) + rad * Math.sin(a);
-      o.sx = o.sz = 0.55; o.sy = 0.03 + (hub ? 0.34 : 0.2) * (1 - Math.sqrt(L.key));
-    } else if (f === 5) { o.sy = 0.04 + 0.26 * Math.pow(0.5 + 0.5 * Math.sin(L.cx * 3.4 + L.cz * 0.7 - t * 0.0016), 3); } // wave fronts: steep crests with long flat troughs between them
+    var a, rad;
+    o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d);
+    if (f === 1) { // a gas turbine rotor: compressor rows that shorten along the shaft, then three turbine rows; every block is one blade
+      var per = N / STAGES, st = Math.min(STAGES - 1, Math.floor(i / per)), k = i - Math.floor(st * per), cnt = Math.floor((st + 1) * per) - Math.floor(st * per);
+      var comp = st < COMP, u = comp ? st / (COMP - 1) : (st - COMP) / 2, hubR = comp ? 0.17 + 0.12 * u : 0.24, tip = comp ? 0.5 - 0.13 * u : 0.4 + 0.07 * u;
+      a = k / cnt * Math.PI * 2 + st * 0.21 + t * 0.0007; rad = comp ? 0.6 : -0.75; // blade pitch; the turbine rows lean the other way
+      vR.set(0, Math.cos(a), Math.sin(a)); vT.set(0, -Math.sin(a), Math.cos(a));
+      vZ.set(Math.cos(rad), 0, 0).addScaledVector(vT, Math.sin(rad)); vX.crossVectors(vR, vZ);
+      o.q.setFromRotationMatrix(m4.makeBasis(vX, vR, vZ)).premultiply(qTurn);
+      o.p.set(comp ? -0.62 + st * 0.116 : 0.43 + (st - COMP) * 0.13, 0, 0).addScaledVector(vR, hubR * 0.97).applyQuaternion(qTurn); o.p.y += AXIS;
+      o.s.set(0.01, tip - hubR, comp ? 0.055 : 0.085);
+    } else if (f === 2) { o.s.y = 0.004; } // pressed flat: only the streets and the route stand out
+    else if (f === 3) { // a hub and six huts on stilts, joined by boardwalks: each block is a stilt, a deck, a wall, a roof tier or a plank
+      var c = i % 7, j = Math.floor(i / 7), isHub = c === 0, ca = (c - 1) / 6 * Math.PI * 2, g = isHub ? 1.5 : 1, hx = isHub ? 0 : 0.78 * Math.cos(ca), hz = isHub ? 0 : 0.78 * Math.sin(ca);
+      o.q.setFromAxisAngle(UP, -ca); o.p.set(hx, 0, hz);
+      if (j < 4) { o.p.x += (j % 2 ? 0.09 : -0.09) * g; o.p.z += (j < 2 ? 0.09 : -0.09) * g; o.s.set(0.014, 0.1, 0.014); o.q.identity(); }
+      else if (j === 4) { o.p.y = 0.1; o.s.set(0.26 * g, 0.012, 0.26 * g); }
+      else if (j === 5) { o.p.y = 0.112; o.s.set(0.16 * g, 0.07, 0.16 * g); }
+      else if (j < 12) { var tier = j - 6; o.p.y = 0.182 + tier * 0.02 * g; o.s.set(0.25 * g * (1 - tier / 6.2), 0.02 * g, 0.25 * g * (1 - tier / 6.2)); }
+      else { // planks
+        var f2 = (j - 12 + 0.5) / (HUT - 12);
+        if (isHub) { a = f2 * Math.PI * 2; o.p.set(0.34 * Math.cos(a), 0.1, 0.34 * Math.sin(a)); o.q.setFromAxisAngle(UP, -a); o.s.set(0.06, 0.008, 0.05); } // a ring walk around the hub
+        else { rad = 0.37 + f2 * 0.26; o.p.set(rad * Math.cos(ca), 0.1, rad * Math.sin(ca)); o.s.set(0.02, 0.008, 0.07); }
+      }
+    } else if (f === 5) { // a tiled surface carrying a swell: the crests lean forward the way a wave does before it breaks
+      var gx = i % COLS, gz = Math.floor(i / COLS), x = -1 + 2 * gx / (COLS - 1), z = -0.62 + 1.24 * gz / (ROWS - 1), ph = x * 2.3 + z * 0.3 - t * 0.0012;
+      var crest = 0.5 + 0.5 * Math.sin(ph), lift = Math.pow(crest, 2.2);
+      o.p.set(x + 0.13 * Math.pow(crest, 4), 0.3 * lift, z).applyQuaternion(qWave);
+      o.q.setFromAxisAngle(FWD, Math.atan(0.3 * 2.2 * Math.pow(crest, 1.2) * 0.5 * Math.cos(ph) * 2.3)).premultiply(qWave);
+      o.s.set(2 / COLS * 0.92, 0.014, 1.24 / ROWS * 0.9);
+    }
   }
 
   var builtFor = -1, RADIAL = 6, PER = 10; // tube cross-section and segments per street
@@ -2677,7 +2371,7 @@ import * as THREE from './vendor/three.module.min.js';
   var W = 0, H = 0, tmpV = new THREE.Vector3(), screenNodes = [], lastPick = 0, t0 = performance.now(), lastKey = '';
   function size() {
     W = window.innerWidth; H = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, W < 700 ? 1.5 : 2)); renderer.setSize(W, H, false); // phones: fewer pixels to shade
     camera.aspect = W / H; lastKey = '';
   }
   size();
@@ -2692,23 +2386,27 @@ import * as THREE from './vendor/three.module.min.js';
   function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // stand-in for the page's entrance curve
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-  var idle = 0, INTRO = !!window.KP_INTRO && !REDUCE;
+  var idle = 0, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
 
   function frame(now) {
     if (!REDUCE) requestAnimationFrame(frame);
-    var t = REDUCE ? 1e9 : now - t0, sc = window.scrollY, heroH = hero.offsetHeight || H, wide = W >= 1000;
-    var heroBottom = hero.getBoundingClientRect().bottom, r = thru.getBoundingClientRect();
+    var t = REDUCE ? 1e9 : now - t0, sc = window.scrollY, wide = W >= 1000, dt = Math.min(64, now - lastNow); lastNow = now;
+    // The model follows the scroll with weight: it lags a little, then settles. Everything below reads the page as if scrolled to sS.
+    sS = REDUCE || sS < 0 ? sc : sS + (sc - sS) * (1 - Math.exp(-dt / (wide ? 110 : 50)));
+    if (Math.abs(sc - sS) < 0.2) sS = sc;
+    var lag = sc - sS, heroBottom = hero.getBoundingClientRect().bottom, rr = thru.getBoundingClientRect(), r = { top: rr.top + lag, bottom: rr.bottom + lag, height: rr.height };
     // Poses blended by scroll: beside the hero words, crossing the giant word in the pinned scene, then centred behind each chapter.
     var en = smooth((H - r.top) / H), q = smooth(-r.top / Math.max(1, r.height - H)), out = clamp((H - r.bottom) / H, 0, 1), d = smooth(out);
     // At each chapter boundary the camera dives in close, the blocks rebuild into the next chapter's shape, and it pulls back out.
     var fA = 0, fB = 0, m = 0, bump = 0, curTop = H;
-    for (var ci = 0; ci < chapters.length; ci++) { var cb = clamp((H - chapters[ci].getBoundingClientRect().top) / H, 0, 1); if (cb > 0) { curTop = chapters[ci].getBoundingClientRect().top; fA = ci ? FORMS[ci - 1] : 0; fB = FORMS[ci]; m = smooth(cb); bump = REDUCE ? 0 : Math.pow(Math.sin(Math.PI * cb), 2); } } // squared: a short, sharp dive that is off the text quickly
+    for (var ci = 0; ci < chapters.length; ci++) { var ct = chapters[ci].getBoundingClientRect().top + lag, cb = clamp((H - ct) / H, 0, 1); if (cb > 0) { curTop = ct; fA = ci ? FORMS[ci - 1] : 0; fB = FORMS[ci]; m = smooth(cb); bump = REDUCE ? 0 : Math.pow(Math.sin(Math.PI * cb), 2); } } // squared: a short, sharp dive that is off the text quickly
     var introM = INTRO && sc < 40 ? smooth((t - 1300) / 1100) : 1; // the opening: a rotor spins up, then bursts into the city
     if (introM < 1) { fA = 1; fB = 0; m = introM; }
-    var rest = mix(0.4, 0.1, clamp((H * 0.1 - curTop) / (H * 0.5), 0, 1)); // clear behind the headline, then it steps back so cards and demos read cleanly
+    var rest = mix(0.8, 0.16, clamp((H * 0.1 - curTop) / (H * 0.5), 0, 1)); // clear behind the headline, then it steps back so cards and demos read cleanly
     var alpha = mix(1, mix(rest, 0.9, bump), d);
     var front = en > 0.5 && out < 0.5; // in the pinned scene the model passes in front of the word
-    cv.style.zIndex = en > 0.5 ? 2 : 0; cv.style.mixBlendMode = front || en <= 0.5 ? '' : 'screen'; // behind chapters it only adds light, so it never dims the text
+    var diving = d > 0 && bump > 0.03; // only while diving does it come in front of the page, and then it only adds light
+    cv.style.zIndex = front || diving ? 2 : 0; cv.style.mixBlendMode = diving && !front ? 'screen' : '';
     cv.style.opacity = alpha;
     if (alpha <= 0) return;
     if (!REDUCE && pointer.active) pick(now);
@@ -2719,9 +2417,12 @@ import * as THREE from './vendor/three.module.min.js';
     var heroS = wide ? Math.min(W * 0.2, H * 0.36) : W * 0.36, sceneS = wide ? Math.min(W * 0.13, H * 0.22) : W * 0.24, chapS = Math.min(W * 0.34, H * 0.3);
     var S = mix(mix(heroS, sceneS, en), chapS, d) * (1 + 2.4 * bump);
     var CX = mix(mix(wide ? W * 0.73 : W / 2, mix(W * 0.74, W * 0.26, q), en), W / 2, d);
-    var CY = mix(mix(wide ? H * 0.5 - sc * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.54 : H * 0.68, en), H * 0.5, d);
+    var CY = mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.54 : H * 0.68, en), H * 0.5, d);
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
-    var yaw = 0.62 + idle + sc * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(0.98, 0.6, en), mix(0.78, 0.32, bump), d) - gy * 0.08 * Math.max(1 - en, d);
+    var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(0.98, 0.6, en), mix(0.78, 0.32, bump), d) - gy * 0.08 * Math.max(1 - en, d);
+    var w1 = fA === 1 ? (fB === 1 ? 1 : 1 - m) : fB === 1 ? m : 0, w5 = fA === 5 ? (fB === 5 ? 1 : 1 - m) : fB === 5 ? m : 0; // how much of a rotor, and of a wave, it is right now
+    elev = mix(elev, Math.min(elev, 0.45), Math.max(w1, w5) * d); // both are seen from the side, not from above
+    qTurn.setFromAxisAngle(UP, yaw + 0.5); qWave.setFromAxisAngle(UP, yaw - 0.35);
     rig.rotation.y = yaw - 0.62;
     var dist = 6, target = 0.05;
     camera.position.set(Math.sin(yaw) * Math.cos(elev) * dist, target + Math.sin(elev) * dist, Math.cos(yaw) * Math.cos(elev) * dist);
@@ -2732,16 +2433,20 @@ import * as THREE from './vendor/three.module.min.js';
 
     // Buildings rise from the slab on arrival; then A* replays its search and draws the route.
     var risen = true;
-    lots.forEach(function (L, i) {
-      var e = INTRO ? 1 : ease((t - 200 - L.delay) / 900); if (e < 1) risen = false;
+    for (var bi = 0; bi < N; bi++) {
+      var L = lots[bi], e = INTRO ? 1 : ease((t - 200 - L.delay) / 900); if (e < 1) risen = false;
       var key = fA === 3 && fB === 5 ? (L.cx + 1.1) / 2.2 : L.key; // huts to wave: the change sweeps across as one front
-      var mi = smooth(m * 1.6 - 0.6 * key), M = L.mesh; // otherwise blocks set off at different moments
-      pose(fA, L, i, t, e, pa);
-      if (mi > 0 && fA !== fB) { pose(fB, L, i, t, e, pb); for (var kk in pa) pa[kk] = mix(pa[kk], pb[kk], mi); }
-      M.position.set(pa.x, pa.y, pa.z); M.rotation.set(pa.rx, pa.ry, 0); M.scale.set(pa.sx, Math.max(0.0001, pa.sy), pa.sz);
-    });
+      var mi = smooth(m * 1.6 - 0.6 * key); // otherwise blocks set off at different moments
+      pose(fA, L, bi, t, e, pa);
+      if (mi > 0 && fA !== fB) { pose(fB, L, bi, t, e, pb); pa.p.lerp(pb.p, mi); pa.q.slerp(pb.q, mi); pa.s.lerp(pb.s, mi); }
+      pa.s.y = Math.max(0.0001, pa.s.y);
+      blocks.setMatrixAt(bi, mat.compose(pa.p, pa.q, pa.s));
+    }
+    blocks.instanceMatrix.needsUpdate = true;
+    hub.visible = w1 > 0.02; hub.scale.setScalar(Math.max(0.001, smooth(w1 * 1.4 - 0.4))); // the shaft grows in and out with the blades
+    hub.quaternion.copy(qTurn).multiply(qSpin.setFromAxisAngle(vX.set(1, 0, 0), t * 0.0007));
     var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (dom === 1 || dom === 5 || (m > 0 && m < 1));
-    net.visible = dom === 0 || dom === 2; slab.visible = dom !== 1; // the rotor floats free
+    net.visible = slab.visible = dom === 0 || dom === 2; // the rotor, the huts and the wave stand free
     var step = 22, searchAt = Math.max(plannedAt, t0 + (INTRO ? 2500 : 1500));
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - searchAt) / step)));
     var draw = REDUCE ? 1 : clamp((now - searchAt - explored.length * step) / 600, 0, 1);
@@ -2753,7 +2458,7 @@ import * as THREE from './vendor/three.module.min.js';
     screenNodes.length = 0;
     for (var q = 0; q < n * n; q++) { tmpV.set(nx[q], 0, nz[q]).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H); }
     // Draw only when something on screen changed, so a still page costs nothing.
-    var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, risen, W, H, fB, m.toFixed(3), moving ? now : 0].join();
+    var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, risen, W, H, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1)].join();
     if (k !== lastKey) { lastKey = k; renderer.render(scene, camera); }
   }
   plan(goal, t0); plannedAt = t0;
