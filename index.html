@@ -134,7 +134,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-
 
 /* ---------- Chapters ---------- */
 main { position: relative; z-index: 1; }
-.chapter { padding: 128px 24px; scroll-margin-top: var(--bar-h); }
+.chapter { padding: 96px 24px; scroll-margin-top: var(--bar-h); }
 .wrap { max-width: 1080px; margin: 0 auto; }
 .head { max-width: 760px; margin: 0 auto 56px; text-align: center; }
 .eyebrow {
@@ -336,7 +336,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 .head.pre.in .eyebrow, .head.pre.in .sub { opacity: 1; transform: none; transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
 .head.pre.in .sub { transition-delay: 0.28s; }
 /* Pinned scene after the hero: the page holds still while one giant word fills the screen and the city model crosses in front of it. */
-.thru { position: relative; height: 260vh; }
+.thru { position: relative; height: 210vh; }
 .thru-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
 .thru-line { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vh; text-align: center; padding: 0 24px; opacity: 0; transition: opacity var(--t-fast) var(--ease-out); }
 .thru-line.on { opacity: 1; }
@@ -444,12 +444,12 @@ h1.meshed { color: transparent; }
     box-shadow: inset 0 1px 0 rgba(var(--edge), 0.08);
   }
   .stage span { position: absolute; left: 20px; top: 16px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
-  /* Chapter headlines get room, so the scene behind them is seen before the cards arrive. */
-  .chapter > .wrap > .head:first-child { min-height: 52vh; display: flex; flex-direction: column; justify-content: center; }
 }
+/* Chapter headlines get room on every screen, so the shape behind them has a clear moment before the cards arrive. */
+.chapter > .wrap > .head:first-child { min-height: 52vh; display: flex; flex-direction: column; justify-content: center; }
 
 /* One project per screen: the card on one side, its name set large on the other, like a magazine spread. */
-.scene { position: relative; display: flex; align-items: center; min-height: 100vh; min-height: 100svh; padding: 40px 0; }
+.scene { position: relative; display: flex; align-items: center; min-height: 82vh; padding: 40px 0; }
 .scene > article { width: min(480px, 100%); }
 .scene[data-side="right"] { justify-content: flex-end; }
 .scene .screen canvas, .scene .build.wide .screen canvas { height: 250px; }
@@ -460,7 +460,7 @@ h1.meshed { color: transparent; }
 .mark b { display: block; font-family: var(--font-display); font-weight: 700; font-stretch: 86%; font-size: clamp(3rem, 6.4vw, 6.2rem); line-height: 0.95; letter-spacing: -0.03em; color: var(--bright); text-wrap: balance; }
 .mark span { display: block; margin-top: 20px; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.06em; color: var(--text-dim); }
 @media (max-width: 900px) {
-  .scene { display: block; min-height: 0; padding: 16vh 0 24px; }
+  .scene { display: block; min-height: 0; padding: 8vh 0 24px; }
   .scene > article { width: 100%; }
   .mark { position: static; width: auto; margin: 0 0 22px; text-align: left !important; }
   .mark b { font-size: clamp(2.5rem, 11vw, 4rem); }
@@ -2104,7 +2104,7 @@ var pointer = { x: -1, y: -1, active: false };
       html += '<div><p style="width:' + strips * 100 + '%;left:-' + i * 100 + '%"><small>' + ('0' + (k + 1)).slice(-2) + ' / ' + name + '</small><b>' + name + '</b></p></div>';
     c.innerHTML = html;
     ch.insertBefore(c, ch.firstChild);
-    curtains.push({ ch: ch, strips: c.children });
+    curtains.push({ ch: ch, strips: c.children, k: k });
   });
   var queued = false;
   function update() {
@@ -2116,7 +2116,8 @@ var pointer = { x: -1, y: -1, active: false };
       var u = clamp((H - top) / (H * 0.62), 0, 1); // 0 as the chapter enters at the bottom, 1 once its top is a third of the way down
       for (var i = 0; i < c.strips.length; i++) {
         var odd = i % 2 ? 0.12 : 0, v = clamp((u - 0.18 - odd - i * 0.03) / 0.5, 0, 1); // strips leave in a staggered, uneven order
-        c.strips[i].style.transform = 'translate3d(0,' + (-v * v * 100) + '%,0)';
+        var way = c.k % 3; // up, down, then alternating: no two chapters open the same way
+        c.strips[i].style.transform = 'translate3d(0,' + ((way === 0 || (way === 2 && i % 2) ? -1 : 1) * v * v * 100) + '%,0)';
       }
     });
   }
@@ -2639,7 +2640,8 @@ import * as THREE from './vendor/three.module.min.js';
   city.add(net);
 
   // ----- Formations: the same blocks rebuild into a different shape for each chapter -----
-  // 0 city (About) · 1 turbine rotor (Experience) · 2 flat map (Projects) · 3 hub and huts (Side builds) · 4 sphere (Skills) · 5 swell (Contact)
+  // 0 city (hero) · 1 turbine rotor (About, Experience) · 2 road map with the route (Projects) · 3 hub and huts (Side builds) · 5 wave (Skills, Contact)
+  var FORMS = [1, 1, 2, 3, 5, 5];
   var chapters = ['about', 'experience', 'projects', 'builds', 'skills', 'contact'].map(function (id) { return document.getElementById(id); });
   var BLADES = 14, GOLDEN = 2.39996, pa = {}, pb = {};
   function pose(f, L, i, t, rise, o) {
@@ -2653,10 +2655,7 @@ import * as THREE from './vendor/three.module.min.js';
       var c = i % 7, hub = c === 0, ca = c / 6 * Math.PI * 2; rad = (hub ? 0.3 : 0.2) * Math.sqrt(L.key); a = i * GOLDEN;
       o.x = (hub ? 0 : 0.72 * Math.cos(ca)) + rad * Math.cos(a); o.z = (hub ? 0 : 0.72 * Math.sin(ca)) + rad * Math.sin(a);
       o.sx = o.sz = 0.55; o.sy = 0.03 + (hub ? 0.34 : 0.2) * (1 - Math.sqrt(L.key));
-    } else if (f === 4) { // evenly spread on a sphere that slowly turns
-      var yy = 1 - 2 * (i + 0.5) / N; rad = Math.sqrt(1 - yy * yy); a = i * GOLDEN + t * 0.0002;
-      o.x = 0.72 * rad * Math.cos(a); o.z = 0.72 * rad * Math.sin(a); o.y = 0.8 + 0.72 * yy; o.ry = -a; o.sx = o.sz = 0.5; o.sy = 0.035;
-    } else if (f === 5) { o.sy = 0.05 + 0.16 * (0.5 + 0.5 * Math.sin(L.cx * 3.2 + L.cz * 0.9 - t * 0.0016)); } // a swell rolling across the grid
+    } else if (f === 5) { o.sy = 0.04 + 0.26 * Math.pow(0.5 + 0.5 * Math.sin(L.cx * 3.4 + L.cz * 0.7 - t * 0.0016), 3); } // wave fronts: steep crests with long flat troughs between them
   }
 
   var builtFor = -1, RADIAL = 6, PER = 10; // tube cross-section and segments per street
@@ -2693,7 +2692,7 @@ import * as THREE from './vendor/three.module.min.js';
   function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // stand-in for the page's entrance curve
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-  var idle = 0;
+  var idle = 0, INTRO = !!window.KP_INTRO && !REDUCE;
 
   function frame(now) {
     if (!REDUCE) requestAnimationFrame(frame);
@@ -2702,9 +2701,12 @@ import * as THREE from './vendor/three.module.min.js';
     // Poses blended by scroll: beside the hero words, crossing the giant word in the pinned scene, then centred behind each chapter.
     var en = smooth((H - r.top) / H), q = smooth(-r.top / Math.max(1, r.height - H)), out = clamp((H - r.bottom) / H, 0, 1), d = smooth(out);
     // At each chapter boundary the camera dives in close, the blocks rebuild into the next chapter's shape, and it pulls back out.
-    var fA = 0, fB = 0, m = 0, bump = 0;
-    for (var ci = 0; ci < chapters.length; ci++) { var cb = clamp((H - chapters[ci].getBoundingClientRect().top) / H, 0, 1); if (cb > 0) { fA = ci ? ci - 1 : 0; fB = ci; m = smooth(cb); bump = REDUCE ? 0 : Math.pow(Math.sin(Math.PI * cb), 2); } } // squared: a short, sharp dive that is off the text quickly
-    var alpha = mix(1, mix(0.34, 1, bump), d);
+    var fA = 0, fB = 0, m = 0, bump = 0, curTop = H;
+    for (var ci = 0; ci < chapters.length; ci++) { var cb = clamp((H - chapters[ci].getBoundingClientRect().top) / H, 0, 1); if (cb > 0) { curTop = chapters[ci].getBoundingClientRect().top; fA = ci ? FORMS[ci - 1] : 0; fB = FORMS[ci]; m = smooth(cb); bump = REDUCE ? 0 : Math.pow(Math.sin(Math.PI * cb), 2); } } // squared: a short, sharp dive that is off the text quickly
+    var introM = INTRO && sc < 40 ? smooth((t - 1300) / 1100) : 1; // the opening: a rotor spins up, then bursts into the city
+    if (introM < 1) { fA = 1; fB = 0; m = introM; }
+    var rest = mix(0.4, 0.1, clamp((H * 0.1 - curTop) / (H * 0.5), 0, 1)); // clear behind the headline, then it steps back so cards and demos read cleanly
+    var alpha = mix(1, mix(rest, 0.9, bump), d);
     var front = en > 0.5 && out < 0.5; // in the pinned scene the model passes in front of the word
     cv.style.zIndex = en > 0.5 ? 2 : 0; cv.style.mixBlendMode = front || en <= 0.5 ? '' : 'screen'; // behind chapters it only adds light, so it never dims the text
     cv.style.opacity = alpha;
@@ -2718,8 +2720,8 @@ import * as THREE from './vendor/three.module.min.js';
     var S = mix(mix(heroS, sceneS, en), chapS, d) * (1 + 2.4 * bump);
     var CX = mix(mix(wide ? W * 0.73 : W / 2, mix(W * 0.74, W * 0.26, q), en), W / 2, d);
     var CY = mix(mix(wide ? H * 0.5 - sc * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.54 : H * 0.68, en), H * 0.5, d);
-    if (!REDUCE && en === 0) idle += 0.0006; // a slow turn while it sits in the hero
-    var yaw = 0.62 + idle + sc * 0.0009 + q * 4.2 + gx * 0.18 * (1 - en), elev = mix(mix(0.98, 0.6, en), mix(0.78, 0.32, bump), d) - gy * 0.08 * (1 - en);
+    if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
+    var yaw = 0.62 + idle + sc * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(0.98, 0.6, en), mix(0.78, 0.32, bump), d) - gy * 0.08 * Math.max(1 - en, d);
     rig.rotation.y = yaw - 0.62;
     var dist = 6, target = 0.05;
     camera.position.set(Math.sin(yaw) * Math.cos(elev) * dist, target + Math.sin(elev) * dist, Math.cos(yaw) * Math.cos(elev) * dist);
@@ -2731,15 +2733,16 @@ import * as THREE from './vendor/three.module.min.js';
     // Buildings rise from the slab on arrival; then A* replays its search and draws the route.
     var risen = true;
     lots.forEach(function (L, i) {
-      var e = ease((t - 200 - L.delay) / 900); if (e < 1) risen = false;
-      var mi = smooth(m * 1.6 - 0.6 * L.key), M = L.mesh; // blocks set off at different moments
+      var e = INTRO ? 1 : ease((t - 200 - L.delay) / 900); if (e < 1) risen = false;
+      var key = fA === 3 && fB === 5 ? (L.cx + 1.1) / 2.2 : L.key; // huts to wave: the change sweeps across as one front
+      var mi = smooth(m * 1.6 - 0.6 * key), M = L.mesh; // otherwise blocks set off at different moments
       pose(fA, L, i, t, e, pa);
       if (mi > 0 && fA !== fB) { pose(fB, L, i, t, e, pb); for (var kk in pa) pa[kk] = mix(pa[kk], pb[kk], mi); }
       M.position.set(pa.x, pa.y, pa.z); M.rotation.set(pa.rx, pa.ry, 0); M.scale.set(pa.sx, Math.max(0.0001, pa.sy), pa.sz);
     });
-    var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (dom === 1 || dom === 4 || dom === 5 || (m > 0 && m < 1));
-    net.visible = dom === 0 || dom === 2; slab.visible = dom !== 1 && dom !== 4; // the rotor and the sphere float free
-    var step = 22, searchAt = Math.max(plannedAt, t0 + 1500);
+    var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (dom === 1 || dom === 5 || (m > 0 && m < 1));
+    net.visible = dom === 0 || dom === 2; slab.visible = dom !== 1; // the rotor floats free
+    var step = 22, searchAt = Math.max(plannedAt, t0 + (INTRO ? 2500 : 1500));
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - searchAt) / step)));
     var draw = REDUCE ? 1 : clamp((now - searchAt - explored.length * step) / 600, 0, 1);
     searched.geometry.setDrawRange(0, shown * 2);
