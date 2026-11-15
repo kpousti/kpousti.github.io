@@ -334,6 +334,25 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
 .head.pre.in .w > span { transform: none; transition: transform 0.95s var(--ease-out); transition-delay: calc(var(--i) * 55ms); }
 .head.pre.in .eyebrow, .head.pre.in .sub { opacity: 1; transform: none; transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
 .head.pre.in .sub { transition-delay: 0.28s; }
+/* Chapter curtains: a title card over the top of each chapter, cut into strips that slide off at different speeds as you scroll. JS moves them; without JS or with reduced motion they are never added. */
+.chapter { position: relative; }
+.curtain { position: absolute; left: 0; right: 0; top: 0; height: 100vh; z-index: 3; overflow: hidden; pointer-events: none; display: flex; }
+.curtain > div { position: relative; flex: 1; overflow: hidden; background: var(--ink); border-right: 1px solid var(--line); will-change: transform; }
+.curtain > div::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--accent); opacity: 0.7; }
+.curtain > div:last-child { border-right: 0; }
+.curtain p { position: absolute; top: 0; height: 100vh; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+.curtain small { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.curtain b { font-family: var(--font-display); font-weight: 700; font-stretch: 86%; font-size: clamp(3.2rem, 11vw, 9rem); line-height: 1; letter-spacing: -0.03em; color: var(--bright); white-space: nowrap; }
+/* Glitch swap: as a headline lands, two tinted copies jump off it for a moment, then it snaps clean. */
+.head h2 { position: relative; }
+.head h2.glitch::before, .head h2.glitch::after { content: attr(aria-label); position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; animation: glitch 420ms steps(1, end) both; }
+.head h2.glitch::before { color: rgb(var(--accent-rgb)); }
+.head h2.glitch::after { color: rgb(98, 152, 255); animation-delay: 40ms; animation-direction: reverse; }
+@keyframes glitch {
+  0% { opacity: 0.9; transform: translate(-6px, 1px); } 20% { opacity: 0.8; transform: translate(5px, -2px); }
+  40% { opacity: 0.7; transform: translate(-3px, 0); } 60% { opacity: 0.6; transform: translate(8px, 1px); }
+  80% { opacity: 0.4; transform: translate(-2px, 0); } 100% { opacity: 0; transform: none; }
+}
 .top-link { display: block; width: max-content; margin: 0 auto 18px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 .colophon { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
 
@@ -576,7 +595,7 @@ h1.meshed { color: transparent; }
       <header class="head" data-reveal>
         <p class="eyebrow">Projects</p>
         <h2>Four projects, all running live.</h2>
-        <p class="sub">One project per screen. Scroll, and the dots behind rebuild into each one.</p>
+        <p class="sub">One project per screen, each running a live demo.</p>
       </header>
     </div>
 
@@ -1974,6 +1993,16 @@ var pointer = { x: -1, y: -1, active: false };
       setTimeout(function () { el.classList.remove('pre', 'in'); el.style.transitionDelay = ''; }, 2200);
     });
   }, { rootMargin: '0px 0px -8% 0px' });
+  // Headlines wait until the curtain over their chapter has lifted, then glitch as their words land.
+  var headIo = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var el = entry.target, h2 = el.querySelector('h2');
+      el.classList.add('in'); headIo.unobserve(el);
+      if (h2) { setTimeout(function () { h2.classList.add('glitch'); }, 380); setTimeout(function () { h2.classList.remove('glitch'); }, 900); }
+      setTimeout(function () { el.classList.remove('pre', 'in'); }, 2200);
+    });
+  }, { rootMargin: '0px 0px -45% 0px' });
   document.querySelectorAll('[data-reveal]').forEach(function (el) {
     // Only hide blocks that start below the fold, so the first screen is complete on load.
     if (el.getBoundingClientRect().top < window.innerHeight * 0.92) return;
@@ -1982,8 +2011,42 @@ var pointer = { x: -1, y: -1, active: false };
       var sibs = Array.prototype.slice.call(el.parentNode.children);
       el.style.transitionDelay = ((sibs.indexOf(el) % 4) * 80) + 'ms';
     }
-    el.classList.add('pre'); io.observe(el);
+    el.classList.add('pre'); (el.classList.contains('head') ? headIo : io).observe(el);
   });
+})();
+
+// ---------- Chapter curtains: a title card cut into strips; scrolling slides each strip off at its own speed ----------
+(function () {
+  if (REDUCE) return;
+  var curtains = [];
+  document.querySelectorAll('main > .chapter').forEach(function (ch, k) {
+    var eb = ch.querySelector('.head .eyebrow'), name = eb ? eb.textContent.trim() : '';
+    var c = document.createElement('div'), strips = window.innerWidth < 700 ? 4 : 6, html = '';
+    c.className = 'curtain'; c.setAttribute('aria-hidden', 'true');
+    for (var i = 0; i < strips; i++) // every strip holds the whole card, shifted so the strips line up into one picture
+      html += '<div><p style="width:' + strips * 100 + '%;left:-' + i * 100 + '%"><small>' + ('0' + (k + 1)).slice(-2) + ' / ' + name + '</small><b>' + name + '</b></p></div>';
+    c.innerHTML = html;
+    ch.insertBefore(c, ch.firstChild);
+    curtains.push({ ch: ch, strips: c.children });
+  });
+  var queued = false;
+  function update() {
+    queued = false;
+    var H = window.innerHeight;
+    curtains.forEach(function (c) {
+      var top = c.ch.getBoundingClientRect().top;
+      if (top > H + 50 || top < -H) return; // only chapters near the screen
+      var u = clamp((H - top) / (H * 0.62), 0, 1); // 0 as the chapter enters at the bottom, 1 once its top is a third of the way down
+      for (var i = 0; i < c.strips.length; i++) {
+        var odd = i % 2 ? 0.12 : 0, v = clamp((u - 0.18 - odd - i * 0.03) / 0.5, 0, 1); // strips leave in a staggered, uneven order
+        c.strips[i].style.transform = 'translate3d(0,' + (-v * v * 100) + '%,0)';
+      }
+    });
+  }
+  function queue() { if (!queued) { queued = true; requestAnimationFrame(update); } }
+  window.addEventListener('scroll', queue, { passive: true });
+  window.addEventListener('resize', queue);
+  update();
 })();
 
 // ---------- Hero: a line under the name that changes every week ----------
