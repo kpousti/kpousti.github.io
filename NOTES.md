@@ -20,8 +20,8 @@ Every chapter and every project is now a stop with its own 3D shape, built from 
 | Side builds, Agent City | Hub and six stilted huts | Still |
 | Surf Alert | Wave surface | Crests roll and lean |
 | Kia-bot | Ring of spokes | Rises and falls like speech |
-| Quant Backtest Lab | Six ridges, one per test window | Each draws left to right |
-| Lead Autoresponder | Funnel into three lanes | Blocks fall, narrow, and split; the amber lane goes to a person |
+| Quant Backtest Lab | Six ridges, one per test window | Each draws left to right; amber test stretches step forward |
+| Lead Autoresponder | A 3D funnel into three streams | Rings swirl and drain; the amber stream goes to a person |
 | Market Debrief | Candlesticks and three tier lines | The chart draws; down candles amber |
 | Math 163 Study Game | 27 flashcards | A wave flips them from steel to amber |
 | Skills | Binary tree with branches | An amber search path walks down |
@@ -33,7 +33,9 @@ Bug I caused and fixed: my project-title style used the same class name as the "
 
 Costs: the phone page is longer again (about 27,100px, was 24,750), because each project has a gap for its model. Desktop is unchanged at about 20,800px.
 
-Still weaker than the rest: the funnel and the backtest ridges are clear but not as striking as the rotor or the huts.
+Last round: I rated the funnel and the backtest ridges weakest, so I redid both. The funnel is now eight swirling rings draining to a neck and splitting into three streams. The backtest now shows each window's amber test stretch one step later than the last, which is what walk-forward means.
+
+Still the least striking: Mini Maps (the Dijkstra front is clear but plain) and the telemetry bars.
 
 ## Latest pass: research, then a polish hour
 

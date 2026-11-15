@@ -2315,7 +2315,7 @@ import * as THREE from './vendor/three.module.min.js';
   // 0 city (hero) · 1 turbine rotor (About, Experience) · 2 road map with the route (Projects) · 3 hub and huts (Side builds) · 5 wave (Skills, Contact)
   var CHAPTER_FORM = { about: 1, experience: 1, projects: 2, builds: 3, skills: 14, contact: 5 }, SCENE_FORM = [2, 6, 7, 8, 3, 5, 9, 10, 11, 12, 13];
   // Per shape: the camera height that shows it best, and which shapes stand still (the rest keep moving, so they keep drawing).
-  var ELEV = [0.78, 0.45, 0.85, 0.7, 0, 0.45, 0.3, 0.8, 0.95, 0.22, 0.5, 0.22, 0.25, 0.26, 0.26], STILL = [0, 2, 3], UPRIGHT = [6, 9, 10, 11, 12, 13, 14], FIT = [1, 1, 0.8, 0.95, 1, 1, 1, 0.8, 0.92, 1, 1, 1, 1, 1, 1]; // FIT: flat, wide shapes are drawn a little smaller so they stay on screen
+  var ELEV = [0.78, 0.45, 0.85, 0.7, 0, 0.45, 0.3, 0.8, 0.95, 0.22, 0.5, 0.42, 0.25, 0.26, 0.26], STILL = [0, 2, 3], UPRIGHT = [6, 9, 10, 11, 12, 13, 14], FIT = [1, 1, 0.8, 0.95, 1, 1, 1, 0.8, 0.92, 1, 1, 0.88, 1, 1, 1]; // FIT: flat, wide shapes are drawn a little smaller so they stay on screen
   var stops = [], sceneNo = 0, pl0 = {}, pl1 = {}, lagNow = 0;
   document.querySelectorAll('main > .chapter, main .scene').forEach(function (el) { // in page order
     if (el.classList.contains('chapter')) stops.push({ el: el, chapter: true, f: CHAPTER_FORM[el.id] || 0, top: 0 });
@@ -2385,16 +2385,18 @@ import * as THREE from './vendor/three.module.min.js';
       vR.set(Math.cos(a), Math.sin(a), 0); if (inner) vR.negate(); vX.set(vR.y, -vR.x, 0);
       o.q.setFromRotationMatrix(m4.makeBasis(vX, vR, FWD)); o.p.set(Math.cos(a), Math.sin(a), 0).multiplyScalar(inner ? 0.4 : 0.42); o.p.y += 0.05;
       o.s.set(Math.PI * 2 * 0.42 / sn * 0.6, inner ? amp * 0.5 : amp, 0.03); o.c = smooth((amp - 0.11) / 0.14) * 0.95; face(o);
-    } else if (f === 10) { // walk-forward: six test windows, each its own equity ridge with its drawdowns; the last stretch of each is out of sample
+    } else if (f === 10) { // walk-forward: six windows, each its own equity ridge with its drawdowns; the amber stretch of each is its out-of-sample test
       var cw = Math.floor(N / 6), r10 = Math.min(5, Math.floor(i / cw)), c10 = i - r10 * cw, u10 = c10 / (cw - 1);
       var eq = 0.06 + u10 * (0.3 + 0.05 * r10) + 0.07 * Math.sin(c10 * 0.42 + r10 * 1.7) + 0.04 * Math.sin(c10 * 1.1 + r10), sweep = (t * 0.0002 + r10 * 0.07) % 1.5;
-      o.p.set(-1 + 2 * u10, -0.3, -0.5 + r10 * 0.2); o.q.identity(); o.s.set(2 / cw * 0.7, u10 < sweep ? Math.max(0.02, eq) : 0.004, 0.045); o.c = u10 > 0.75 && u10 < sweep ? 0.9 : 0; face(o);
-    } else if (f === 11) { // inquiries fall in from everywhere, pass one neck, and leave in three lanes; the amber lane goes to a person
-      var u11 = (t * 0.00008 + L.key) % 1, lane = i % 3, lx = (lane - 1) * 0.62 + (Math.floor(i / 3) % 3 - 1) * 0.085, e11;
-      if (u11 < 0.35) { e11 = u11 / 0.35; o.p.set(hashNoise(i) * 1.9 * (1 - e11) * (1 - e11 * 0.3), 0.56 - 0.34 * e11, 0); } // a steady fall that narrows: together the blocks draw the funnel
-      else if (u11 < 0.5) { e11 = smooth((u11 - 0.35) / 0.15); o.p.set(lx * e11, 0.22 - 0.1 * e11, 0); }
-      else o.p.set(lx, 0.12 - (u11 - 0.5) / 0.5 * 0.62, 0);
-      e11 = smooth(Math.min(u11 * 14, (1 - u11) * 14)); o.q.identity(); o.s.set(0.06 * e11, 0.036 * e11, 0.06); o.c = lane === 2 && u11 > 0.42 ? 0.95 : 0; face(o);
+      o.p.set(-1 + 2 * u10, -0.3, -0.5 + r10 * 0.2); o.q.identity(); o.s.set(2 / cw * 0.7, u10 < sweep ? Math.max(0.02, eq) : 0.004, 0.045); o.c = u10 < sweep && u10 > (r10 + 1) / 7.5 && u10 < (r10 + 1.9) / 7.5 ? 0.9 : 0; face(o); // each window's test stretch sits one step later than the last: the walk forward
+    } else if (f === 11) { // a funnel: eight rings of blocks swirl down to a neck, then the stream splits into three lanes; the amber lane goes to a person
+      if (i < 168) {
+        var rn = Math.floor(i / 21); rad = 0.8 - rn * 0.095; a = (i % 21) / 21 * Math.PI * 2 + t * 0.00035 * (1 + rn * 0.3); // the inner rings turn faster, like water draining
+        o.p.set(rad * Math.cos(a), 0.44 - rn * 0.055, rad * Math.sin(a)); o.q.setFromAxisAngle(UP, -a - Math.PI / 2); o.s.set(Math.PI * 2 * rad / 21 * 0.78, 0.022, 0.06);
+      } else {
+        var jl = i - 168, lane = jl % 3, u11 = (t * 0.00016 + Math.floor(jl / 3) / Math.ceil((N - 168) / 3)) % 1, e11 = smooth(Math.min(u11 * 10, (1 - u11) * 10));
+        o.p.set((lane - 1) * 0.6 * u11, 0.04 - 0.5 * u11, 0).applyQuaternion(qFace); o.q.copy(qFace); o.s.set(0.034 * e11, 0.034 * e11, 0.034); o.c = lane === 2 ? 0.95 : 0;
+      }
     } else if (f === 12) { // candlesticks: a climb to the high, then a pullback down through three tiers
       if (i < 60) {
         var cn = i >> 1, kq = cn * 43 / 29, o12 = price(kq - 1.5), c12 = price(kq), lo12 = Math.min(o12, c12), hi12 = Math.max(o12, c12), show = cn / 30 < (t * 0.00022) % 1.5 ? 1 : 0.0001;
