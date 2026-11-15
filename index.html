@@ -254,7 +254,7 @@ h1 {
 @keyframes blink { 50% { opacity: 0.25; } }
 .feature-body { position: relative; padding: 20px 22px 22px; }
 .feature-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
-.feature-head a { font-family: var(--font-mono); font-size: 12px; color: var(--accent); border-bottom: 1px solid transparent; transition: border-color 0.2s; white-space: nowrap; }
+.feature-head a { padding: 8px 0; margin: -8px 0; font-family: var(--font-mono); font-size: 12px; color: var(--accent); border-bottom: 1px solid transparent; transition: border-color 0.2s; white-space: nowrap; }
 .feature-head a:hover { border-color: var(--accent); }
 .feature-body p { margin: 8px 0 0; font-size: 0.94rem; }
 .build .feature-body { padding: 20px 22px 22px; }
@@ -355,7 +355,7 @@ footer { padding: 0 24px 96px; text-align: center; font-size: 13px; color: var(-
   40% { opacity: 0.7; transform: translate(-3px, 0); } 60% { opacity: 0.6; transform: translate(8px, 1px); }
   80% { opacity: 0.4; transform: translate(-2px, 0); } 100% { opacity: 0; transform: none; }
 }
-.top-link { display: block; width: max-content; margin: 0 auto 18px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.top-link { display: block; width: max-content; margin: 0 auto 10px; padding: 8px 12px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 .colophon { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
 
 /* ---------- Smaller screens ---------- */
@@ -432,8 +432,8 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
   }
   .stage span { position: absolute; left: 20px; top: 16px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
 }
-/* Chapter headlines get room on every screen, so the shape behind them has a clear moment before the cards arrive. */
-.chapter > .wrap > .head:first-child { min-height: 52vh; display: flex; flex-direction: column; justify-content: center; }
+/* Each chapter headline is followed by open space, where that chapter's shape has a clear moment before the cards arrive. */
+.chapter > .wrap > .head:first-child { min-height: 68vh; }
 
 /* One project per screen: the card on one side, its name set large on the other, like a magazine spread. */
 .scene { position: relative; display: flex; align-items: center; min-height: 82vh; padding: 40px 0; }
@@ -2284,7 +2284,7 @@ import * as THREE from './vendor/three.module.min.js';
   var slab = new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.08, 2.16), new THREE.MeshStandardMaterial({ color: 0x0e1828, roughness: 0.7, metalness: 0.3 }));
   slab.position.y = -0.04; slab.receiveShadow = true; city.add(slab);
   // Every block is one instance of a unit box, so the whole model is a single draw call.
-  var N = lots.length, blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ color: 0x5d7096, roughness: 0.38, metalness: 0.65 }), N);
+  var N = lots.length, blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ roughness: 0.38, metalness: 0.65 }), N); // tinted per block below
   blocks.castShadow = true; blocks.receiveShadow = true; blocks.frustumCulled = false; city.add(blocks);
   // The rotor's shaft and drum, turned on a lathe from one profile: stub shaft, bearing journal, compressor drum, combustor waist, turbine disks, exhaust end.
   var hub = new THREE.Mesh(new THREE.LatheGeometry([[0, -1], [0.05, -1], [0.05, -0.84], [0.09, -0.84], [0.09, -0.74], [0.17, -0.69], [0.29, 0.11], [0.29, 0.15], [0.2, 0.2], [0.2, 0.34], [0.24, 0.37], [0.24, 0.74], [0.12, 0.8], [0.09, 0.8], [0.09, 0.9], [0.05, 0.9], [0.05, 1.02], [0, 1.02]].map(function (q) { return new THREE.Vector2(q[0], q[1]); }), 48).rotateZ(-Math.PI / 2),
@@ -2315,12 +2315,13 @@ import * as THREE from './vendor/three.module.min.js';
   var FORMS = [1, 1, 2, 3, 5, 5];
   var chapters = ['about', 'experience', 'projects', 'builds', 'skills', 'contact'].map(function (id) { return document.getElementById(id); });
   var UP = new THREE.Vector3(0, 1, 0), FWD = new THREE.Vector3(0, 0, 1), STAGES = 10, COMP = 7, AXIS = 0.34, COLS = 23, ROWS = Math.ceil(N / 23), HUT = Math.ceil(N / 7);
-  function Pose() { this.p = new THREE.Vector3(); this.q = new THREE.Quaternion(); this.s = new THREE.Vector3(); }
+  function Pose() { this.p = new THREE.Vector3(); this.q = new THREE.Quaternion(); this.s = new THREE.Vector3(); this.c = 0; } // c: how amber the block is, 0 to 1
+  var STEEL = new THREE.Color(0x5d7096), AMBER = new THREE.Color(0xf2b56b), tint = new THREE.Color();
   var pa = new Pose(), pb = new Pose(), vR = new THREE.Vector3(), vT = new THREE.Vector3(), vZ = new THREE.Vector3(), vX = new THREE.Vector3(), m4 = new THREE.Matrix4();
   var qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qWave = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
   function pose(f, L, i, t, rise, o) {
     var a, rad;
-    o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d);
+    o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d); o.c = 0;
     if (f === 1) { // a gas turbine rotor: compressor rows that shorten along the shaft, then three turbine rows; every block is one blade
       var per = N / STAGES, st = Math.min(STAGES - 1, Math.floor(i / per)), k = i - Math.floor(st * per), cnt = Math.floor((st + 1) * per) - Math.floor(st * per);
       var comp = st < COMP, u = comp ? st / (COMP - 1) : (st - COMP) / 2, hubR = comp ? 0.17 + 0.12 * u : 0.24, tip = comp ? 0.5 - 0.13 * u : 0.4 + 0.07 * u;
@@ -2329,7 +2330,7 @@ import * as THREE from './vendor/three.module.min.js';
       vZ.set(Math.cos(rad), 0, 0).addScaledVector(vT, Math.sin(rad)); vX.crossVectors(vR, vZ);
       o.q.setFromRotationMatrix(m4.makeBasis(vX, vR, vZ)).premultiply(qTurn);
       o.p.set(comp ? -0.62 + st * 0.116 : 0.43 + (st - COMP) * 0.13, 0, 0).addScaledVector(vR, hubR * 0.97).applyQuaternion(qTurn); o.p.y += AXIS;
-      o.s.set(0.01, tip - hubR, comp ? 0.055 : 0.085);
+      o.s.set(0.01, tip - hubR, comp ? 0.055 : 0.085); o.c = comp ? 0 : 0.85; // the turbine rows run hot
     } else if (f === 2) { o.s.y = 0.004; } // pressed flat: only the streets and the route stand out
     else if (f === 3) { // a hub and six huts on stilts, joined by boardwalks: each block is a stilt, a deck, a wall, a roof tier or a plank
       var c = i % 7, j = Math.floor(i / 7), isHub = c === 0, ca = (c - 1) / 6 * Math.PI * 2, g = isHub ? 1.5 : 1, hx = isHub ? 0 : 0.78 * Math.cos(ca), hz = isHub ? 0 : 0.78 * Math.sin(ca);
@@ -2337,7 +2338,7 @@ import * as THREE from './vendor/three.module.min.js';
       if (j < 4) { o.p.x += (j % 2 ? 0.09 : -0.09) * g; o.p.z += (j < 2 ? 0.09 : -0.09) * g; o.s.set(0.014, 0.1, 0.014); o.q.identity(); }
       else if (j === 4) { o.p.y = 0.1; o.s.set(0.26 * g, 0.012, 0.26 * g); }
       else if (j === 5) { o.p.y = 0.112; o.s.set(0.16 * g, 0.07, 0.16 * g); }
-      else if (j < 12) { var tier = j - 6; o.p.y = 0.182 + tier * 0.02 * g; o.s.set(0.25 * g * (1 - tier / 6.2), 0.02 * g, 0.25 * g * (1 - tier / 6.2)); }
+      else if (j < 12) { var tier = j - 6; o.p.y = 0.182 + tier * 0.02 * g; o.s.set(0.25 * g * (1 - tier / 6.2), 0.02 * g, 0.25 * g * (1 - tier / 6.2)); o.c = 0.9; } // roofs
       else { // planks
         var f2 = (j - 12 + 0.5) / (HUT - 12);
         if (isHub) { a = f2 * Math.PI * 2; o.p.set(0.34 * Math.cos(a), 0.1, 0.34 * Math.sin(a)); o.q.setFromAxisAngle(UP, -a); o.s.set(0.06, 0.008, 0.05); } // a ring walk around the hub
@@ -2348,7 +2349,7 @@ import * as THREE from './vendor/three.module.min.js';
       var crest = 0.5 + 0.5 * Math.sin(ph), lift = Math.pow(crest, 2.2);
       o.p.set(x + 0.13 * Math.pow(crest, 4), 0.3 * lift, z).applyQuaternion(qWave);
       o.q.setFromAxisAngle(FWD, Math.atan(0.3 * 2.2 * Math.pow(crest, 1.2) * 0.5 * Math.cos(ph) * 2.3)).premultiply(qWave);
-      o.s.set(2 / COLS * 0.92, 0.014, 1.24 / ROWS * 0.9);
+      o.s.set(2 / COLS * 0.92, 0.014, 1.24 / ROWS * 0.9); o.c = 0.75 * Math.pow(crest, 5); // late sun on the crests
     }
   }
 
@@ -2414,10 +2415,10 @@ import * as THREE from './vendor/three.module.min.js';
     if (builtFor !== plannedAt) buildRoute();
 
     var gx = pointer.active && !REDUCE ? pointer.x / W - 0.5 : 0, gy = pointer.active && !REDUCE ? pointer.y / H - 0.5 : 0;
-    var heroS = wide ? Math.min(W * 0.2, H * 0.36) : W * 0.36, sceneS = wide ? Math.min(W * 0.13, H * 0.22) : W * 0.24, chapS = Math.min(W * 0.34, H * 0.3);
+    var heroS = wide ? Math.min(W * 0.2, H * 0.36) : W * 0.36, sceneS = wide ? Math.min(W * 0.13, H * 0.22) : W * 0.24, chapS = Math.min(W * 0.3, H * 0.25);
     var S = mix(mix(heroS, sceneS, en), chapS, d) * (1 + 2.4 * bump);
     var CX = mix(mix(wide ? W * 0.73 : W / 2, mix(W * 0.74, W * 0.26, q), en), W / 2, d);
-    var CY = mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.54 : H * 0.68, en), H * 0.5, d);
+    var CY = mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.54 : H * 0.68, en), H * 0.66, d); // in chapters it sits under the headline, in the space left for it
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
     var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(0.98, 0.6, en), mix(0.78, 0.32, bump), d) - gy * 0.08 * Math.max(1 - en, d);
     var w1 = fA === 1 ? (fB === 1 ? 1 : 1 - m) : fB === 1 ? m : 0, w5 = fA === 5 ? (fB === 5 ? 1 : 1 - m) : fB === 5 ? m : 0; // how much of a rotor, and of a wave, it is right now
@@ -2438,11 +2439,11 @@ import * as THREE from './vendor/three.module.min.js';
       var key = fA === 3 && fB === 5 ? (L.cx + 1.1) / 2.2 : L.key; // huts to wave: the change sweeps across as one front
       var mi = smooth(m * 1.6 - 0.6 * key); // otherwise blocks set off at different moments
       pose(fA, L, bi, t, e, pa);
-      if (mi > 0 && fA !== fB) { pose(fB, L, bi, t, e, pb); pa.p.lerp(pb.p, mi); pa.q.slerp(pb.q, mi); pa.s.lerp(pb.s, mi); }
+      if (mi > 0 && fA !== fB) { pose(fB, L, bi, t, e, pb); pa.p.lerp(pb.p, mi); pa.q.slerp(pb.q, mi); pa.s.lerp(pb.s, mi); pa.c = mix(pa.c, pb.c, mi); }
       pa.s.y = Math.max(0.0001, pa.s.y);
-      blocks.setMatrixAt(bi, mat.compose(pa.p, pa.q, pa.s));
+      blocks.setMatrixAt(bi, mat.compose(pa.p, pa.q, pa.s)); blocks.setColorAt(bi, tint.copy(STEEL).lerp(AMBER, pa.c));
     }
-    blocks.instanceMatrix.needsUpdate = true;
+    blocks.instanceMatrix.needsUpdate = true; blocks.instanceColor.needsUpdate = true;
     hub.visible = w1 > 0.02; hub.scale.setScalar(Math.max(0.001, smooth(w1 * 1.4 - 0.4))); // the shaft grows in and out with the blades
     hub.quaternion.copy(qTurn).multiply(qSpin.setFromAxisAngle(vX.set(1, 0, 0), t * 0.0007));
     var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (dom === 1 || dom === 5 || (m > 0 && m < 1));

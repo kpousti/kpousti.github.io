@@ -3,6 +3,31 @@
 Branch: `nap-build` (built on top of `redesign/map-hero-test`). Nothing is pushed. `main` and the live site are untouched.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Latest pass: research, then a polish hour
+
+Sources: a Wikimedia Commons photo of a gas turbine rotor (shape reference only, nothing copied into the site), and a 2026 write-up of the best three.js sites, which credits ORYZO's look to one object with real material response, weight and inertia, and instancing for speed.
+
+Tasks I set, and the verdict on each:
+
+| Task | Verdict |
+|---|---|
+| Real turbine rotor: 7 compressor rows that shorten along the shaft, 3 turbine rows, a shaft turned on a lathe | Built |
+| Reflective metal lit by a small studio environment (warm softbox, cool softbox) | Built |
+| Inertia: the model lags the scroll slightly, then settles | Built |
+| All blocks drawn in one call (instancing); fewer pixels and a smaller shadow map on phones | Built |
+| Shadows were silently off (a comment had swallowed the line). Restored | Fixed |
+| Huts rebuilt: stilts, deck, walls, stepped roof, boardwalks, ring walk round the hub | Built |
+| Wave rebuilt: a tiled surface with crests that lean forward | Built |
+| Amber on the hot turbine rows, hut roofs and wave crests | Built |
+| Model sits behind the text at rest, in open space under each headline; in front only during a dive | Built |
+| Old dot-cloud code deleted (about 25KB) | Done |
+| Bigger tap targets on "View code" and "Back to top" | Done |
+| Smooth-scroll library that takes over scrolling | Rejected: breaks your "no scroll hijack" rule |
+| Custom cursor | Rejected: the cursor light already does this job |
+| Spline runtime | Rejected: over 0.5MB before any scene |
+| Stock photos | Rejected: generic, and none tie to your work |
+| Font subsetting (would save about 90KB) | Not done: needs a tool installed outside this folder |
+
 ## Gap list (what the references do that the site didn't)
 
 References used: the 19 ORYZO screenshots sent in chat. There is no `refs/` folder in the repo.
@@ -17,15 +42,15 @@ References used: the 19 ORYZO screenshots sent in chat. There is no `refs/` fold
 
 ## What changed
 
-- **3D model** (three.js): about 250 lit blocks with soft shadows replace the dot cloud.
+- **3D model** (three.js): about 270 metal blocks with soft shadows and studio reflections replace the dot cloud.
 - **Intro**: a rotor spins up beside the name, then bursts into the city. About 2.4 seconds.
 - **Hero**: name and text left, city right. A* plans a real route to the street corner nearest the cursor. Guide lines on the name.
 - **Giant-word scene** after the hero: the page locks, "graphs" then "routes" fill the screen, and the city crosses in front.
-- **Scroll story**: city (hero) > turbine rotor (About, Experience) > flat road map with the route (Projects) > hub and six huts (Side builds) > wave (Skills, Contact).
+- **Scroll story**: city (hero) > gas turbine rotor (About, Experience) > flat road map with the route (Projects) > hub and six stilted huts with boardwalks (Side builds) > wave surface (Skills, Contact).
 - **Transitions**: at each chapter the camera dives into the blocks while they rebuild into the next shape, then pulls back. Huts to wave sweeps across as one front; wave crests are steep with flat troughs.
 - **Chapter curtains**: a sliced title card opens each chapter. Strips go up, down, or alternate, so no two neighbours open the same way.
 - **Project and build spreads**: each name set large beside its card, with a counter.
-- **Room for shapes**: every chapter headline gets about half a screen with the shape clear behind it; the shape then fades to 10% behind cards.
+- **Room for shapes**: every chapter headline is followed by open space where the shape sits on its own; it then fades to 16% behind cards.
 - **Tighter**: chapter padding 128 > 96px, project screens 100 > 82vh. Desktop page is about 2,100px shorter than it would be otherwise.
 
 ## Decisions I made for you
@@ -38,18 +63,17 @@ References used: the 19 ORYZO screenshots sent in chat. There is no `refs/` fold
 - **Text I changed** (the brief said not to; these lines described the dots): the hero pitch's second sentence, and the Projects sub-line. **Text I added**: the giant-word scene ("How I think / graphs", "What I build / routes", two captions). The 1.2 million figure is from your About section.
 - **three.js 0.160.0** is stored at `vendor/three.module.min.js`. Cost: 671KB on disk, about 167KB compressed for visitors. No GSAP, no CDN.
 - **Fix 4 (a glimpse per project)**: left as it was. Every project and build card already has its own live demo.
-- **The model draws over the page with a "screen" blend** in chapters, so it only adds light and never darkens text.
+- **The model is behind the text at rest.** Only during a dive does it come in front, with a "screen" blend so it adds light and never darkens text.
 - Kept from the earlier audit, not acted on: the Family and Markets tiles and the side-build status labels.
 
 ## Where it falls short of the references
 
 - No photography or textures. Drop photos into `photos-inbox/` and say so.
-- Blocks are plain boxes. ORYZO's objects are sculpted, textured models.
+- The shapes are built from boxes. ORYZO's objects are sculpted, textured models.
 - During a dive the blocks cover the text for a moment.
 - Only two scenes truly lock the page.
-- Phone page got longer (about 24,000px, was 22,600) because of the new scene and headline room.
+- The page got longer because each shape now has its own space: desktop about 20,800px (was 20,300), phone about 24,750px (was 22,600).
 - The five colour themes in the preview picker were not rechecked. Gallery Light will hide the model behind chapters.
-- The rotor reads as a fan, not a detailed turbine.
 
 ## Tested
 
@@ -61,7 +85,7 @@ Not tested: Safari, a real phone, JavaScript turned off, older or low-power devi
 
 1. The 3D city appears and is lit, on Mac and iPhone.
 2. The giant-word scene locks and the city passes in front of the word, not behind.
-3. Behind chapters, the model looks like a faint glow, not a grey box (this is the "screen" blend).
+3. During a dive the blocks glow over the page and never show as a grey box (this is the "screen" blend).
 4. The sliced curtains slide without flicker, and nothing stays covered.
 5. Headline glitch shows amber and blue copies for a moment, then clears.
 6. The name is condensed (narrow letters) with guide lines lined up under it.
