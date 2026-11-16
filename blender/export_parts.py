@@ -26,7 +26,7 @@ for o in objs:
     mesh_id[me.name] = len(meshes)
     # Blades and vanes keep their root as origin. Every other mesh is re-centred on the middle of its box, so each part turns, scales and rounds into a ball about its own middle.
     strip = o.name.startswith(("blade", "vane")); c = (0.0, 0.0, 0.0)
-    if not strip and not o.name.startswith("kit."):  # kit pieces keep the origin they were drawn around
+    if not strip and not o.name.startswith("kit.") and not o.get("keep"):  # kit pieces and scene parts keep the origin they were drawn around (it is their pivot)
         c = tuple((min(v.co[a] for v in me.vertices) + max(v.co[a] for v in me.vertices)) / 2 for a in range(3))
     centre[me.name] = c
     m = me.materials[0]
@@ -64,7 +64,7 @@ def pad(b): return b + b"\0" * (-len(b) % 4)
 blobs = [pad(q.tobytes()), pad(nor.tobytes()), pad(idx.tobytes()), parts.tobytes(), pad(ring.tobytes())] + ([pad(vcol.tobytes())] if multi else [])
 offs, at = [], 0
 for b in blobs: offs.append(at); at += len(b)
-head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr}, separators=(",", ":")).encode()
+head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr, "pname": [o.name for o in objs]}, separators=(",", ":")).encode()
 head += b" " * (-len(head) % 4)  # spaces, so the header still parses as JSON
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "wb") as f:

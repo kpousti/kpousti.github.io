@@ -143,6 +143,15 @@ h1 {
 .cue { margin-top: 56px; display: inline-flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--text-dim); }
 .cue::after { content: ""; width: 1px; height: 32px; background: var(--line); }
 
+/* The turbine's switch: a small panel control, like the one on a machine. It starts and stops the rotor. */
+.switch { display: inline-flex; align-items: center; gap: 12px; margin-top: 32px; padding: 8px 14px 8px 8px; border: 1px solid var(--line); border-radius: 8px; background: none; color: var(--text-dim); font: 12.5px var(--font-mono); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.switch:hover { border-color: var(--accent); color: var(--bright); }
+.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.switch i { position: relative; width: 36px; height: 20px; border-radius: 10px; border: 1px solid var(--line); background: rgb(var(--panel)); }
+.switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text-dim); transition: transform var(--t-fast) var(--ease-out), background var(--t-fast); }
+.switch[aria-pressed="true"] i::after { transform: translateX(16px); background: var(--accent); }
+.switch b { font-weight: 500; color: var(--bright); }
+@media (min-width: 1000px) { .hero .switch { position: absolute; left: 72vw; bottom: 11vh; margin: 0; transform: translateX(-50%); } }
 /* Ruled cells: content sits on the sheet between hairlines, like the rows of a parts list. No boxes, and the model is never behind them. */
 .glass { border-top: 1px solid var(--line); }
 /* Part numbers: every row of a list is numbered, the way a parts list is. */
@@ -253,7 +262,7 @@ h1 {
 .beyond .wide { grid-column: span 2; }
 .beyond li { padding: 0 0 8px; border-top: 0; }
 
-.mini { display: block; width: 100%; height: 124px; margin: 0 0 16px; background: var(--screen); border: 1px solid var(--line); border-radius: 4px; } }
+.mini { display: block; width: 100%; height: 124px; margin: 0 0 16px; background: var(--screen); border: 1px solid var(--line); border-radius: 4px; object-fit: cover; } }
 .beyond li { font-size: 0.94rem; text-align: left; }
 .beyond i { color: var(--bright); }
 .beyond b { display: block; text-align: left; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
@@ -764,7 +773,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
       </header>
       <ul class="beyond">
         <li class="glass wide" data-reveal>
-          <canvas role="img" class="mini" data-demo="m_eboard" aria-label="An electric skateboard with current flowing from battery to speed controller to motor"></canvas>
+          <img class="mini" src="renders/eskate.jpg" width="1680" height="400" loading="lazy" decoding="async" alt="The underside of an electric skateboard, modelled in Blender: a ribbed battery case, the finned speed controller with its wires, and a belt-driven motor on the rear truck">
           <b>Mechanically inclined</b>Helped design and integrate an ESC, the speed controller, for an electric skateboard to raise its top speed and efficiency. I also sourced and mounted a replacement motor in my car myself, a job that runs thousands at a shop.
         </li>
         <li class="glass" data-reveal>
@@ -2335,6 +2344,91 @@ import * as THREE from './vendor/three.module.min.js';
     }
     kit.hub.instanceMatrix.needsUpdate = kit.hub.instanceColor.needsUpdate = kit.ferrule.instanceMatrix.needsUpdate = kit.ring.instanceMatrix.needsUpdate = true;
   }
+  // ----- Scene models (blender/build_scenes.py -> scenes.blend -> models/scenes.bin): each scene has its own object, built from real parts. The parts fly together as the scene arrives and apart as it leaves, and each model has its own motion. -----
+  function pulse(c, a, b) { return smooth((c - a) / 0.04) * (1 - smooth((c - b) / 0.04)); }
+  var qL = new THREE.Quaternion(), LY = new THREE.Vector3(0, 1, 0), LZ = new THREE.Vector3(0, 0, 1), INKC = new THREE.Color(0.35, 0.5, 0.9);
+  function tickLine(t, A) { // by hand on the left: one job crawls between two hand stamps. Automated on the right: jobs ride the conveyor and each stamp fires as one passes under it
+    var c = (t * 0.00011) % 1, st = A.by.stamp, hd = A.by.head, cards = A.by.card, i, j;
+    st[0].cp.y += 0.09 * (1 - pulse(c, 0.06, 0.2)); st[1].cp.y += 0.09 * (1 - pulse(c, 0.66, 0.8));
+    cards[0].cp.x += 0.42 * smooth((c - 0.26) / 0.34); cards[0].cs = smooth(c / 0.04) * (1 - smooth((c - 0.92) / 0.06));
+    var down = [0, 0];
+    for (i = 1; i < cards.length; i++) {
+      var u = (t * 0.00032 + i / (cards.length - 1)) % 1, x = 0.06 + 0.88 * u; cards[i].cp.x = x; cards[i].cs = smooth(u / 0.05) * smooth((1 - u) / 0.05);
+      for (j = 0; j < hd.length; j++) down[j] = Math.max(down[j], 1 - smooth(Math.abs(x - hd[j].p.x) / 0.045));
+    }
+    for (j = 0; j < hd.length; j++) hd[j].cp.y += 0.07 * (1 - down[j]);
+  }
+  function sig(k) { var a = Math.floor(k), f = k - a; return mix(signalValue(a), signalValue(a + 1), f); } // the same synthetic sensor signal the project's own demo plots
+  function tickRec(t, A) { // the pen follows the live signal; the trace it has drawn scrolls down the paper, and anomalies are marked in amber
+    var k0 = t * 0.004, dots = A.by.dot, i;
+    A.by.pen[0].cp.x += clamp(sig(k0), -0.5, 1.1) * 0.2 - 0.06;
+    for (i = 0; i < dots.length; i++) { var j = +dots[i].n[2], v = sig(k0 - (j + 1) * 1.6); dots[i].cp.x += clamp(v, -0.5, 1.1) * 0.2 - 0.06; dots[i].tint = v > 0.6 ? HOT : INKC; dots[i].cs = v > 0.6 ? 1.8 : 1; }
+    var nd = A.by.needle[0]; nd.cq.multiply(qL.setFromAxisAngle(LY, -0.9 + 1.8 * clamp(0.3 + sig(k0) * 0.6, 0, 1)));
+  }
+  function tickGears(t, A) { // Tarjan finds one strongly connected component at a time: when a train is found it lights up and starts to turn, every gear in it meshing with its neighbours
+    var g = A.by.gear, T = 12000, cyc = Math.floor(t / T), ph = (t % T) / T, i;
+    for (i = 0; i < g.length; i++) {
+      var P = g[i], comp = +P.n[2], teeth = +P.n[3], dir = +P.n[4], at = 0.12 + comp * 0.17, found = ph > at;
+      var turned = cyc * (1 - at) * T + Math.max(0, ph - at) * T; // how long this train has been turning in all: it never jumps back
+      P.cq.multiply(qL.setFromAxisAngle(LY, dir * turned * 0.0011 * 12 / teeth)); P.tint = found ? HOT : PLAIN;
+    }
+  }
+  function swell(x, z, t) { return 0.045 * Math.sin(x * 3.1 - t * 0.0012) + 0.028 * Math.sin(z * 4.2 + x * 1.3 - t * 0.0017); }
+  function afloat(P, t, o) { // where a floating thing sits and how it tilts on the swell
+    var x = P.p.x, z = P.p.z, e = 0.05, hx = (swell(x + e, z, t) - swell(x - e, z, t)) / (2 * e), hz = (swell(x, z + e, t) - swell(x, z - e, t)) / (2 * e);
+    o.setFromUnitVectors(LY, vT.set(-hx, 1, -hz).normalize()); return swell(x, z, t);
+  }
+  function tickSurf(t, A) { // a swell rolls through; the buoy and the board ride it, and the buoy's anemometer spins
+    var w = A.by.w, i, q2 = pb.q;
+    for (i = 0; i < w.length; i++) { w[i].cp.y += afloat(w[i], t, q2); w[i].cq.premultiply(q2); }
+    var b = A.by.buoy[0], cups = A.by.cups[0], h = afloat(b, t, q2);
+    b.cp.y += h + 0.03; b.cq.premultiply(q2);
+    cups.cp.sub(b.p).applyQuaternion(q2).add(b.p); cups.cp.y += h + 0.03; cups.cq.premultiply(q2).multiply(qL.setFromAxisAngle(LY, t * 0.006));
+    var bd = A.by.board[0]; h = afloat(bd, t, q2); bd.cp.y += h + 0.012; bd.cq.premultiply(q2);
+  }
+  var ASM = [ // the model's name in the file; the stop it belongs to (a chapter's id, or a project's number in page order); camera height; size; its motion
+    { name: 'line', at: 'experience', elev: 0.36, fit: 1.2, tick: tickLine },
+    { name: 'rec', at: 1, elev: 0.5, fit: 0.95, tick: tickRec, lit: true },
+    { name: 'gears', at: 3, elev: 0.2, fit: 1.05, tick: tickGears, lit: true },
+    { name: 'surf', at: 5, elev: 0.42, fit: 1.1, tick: tickSurf }
+  ];
+  fetch('./models/scenes.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+    var h = readModel(buf), T = h.T;
+    ASM.forEach(function (A) {
+      var idxs = [], count = {}, used = {}, ims = {};
+      h.pname.forEach(function (nm, k) { if (nm.split('.')[0] === A.name) { idxs.push(k); count[h.mesh[k]] = (count[h.mesh[k]] || 0) + 1; } });
+      var st = typeof A.at === 'string' ? stops.filter(function (q) { return q.chapter && q.el.id === A.at; })[0] : stops.filter(function (q) { return !q.chapter; })[A.at];
+      if (!idxs.length || !st) return;
+      A.g = new THREE.Group(); A.g.visible = false; city.add(A.g); A.parts = []; A.by = {}; A.ims = [];
+      idxs.forEach(function (k) {
+        var mi = h.mesh[k], o = k * 10, im = ims[mi];
+        if (!im) { im = ims[mi] = many(h.geo[mi], h.mat3[h.meshes[mi].mat], count[mi], A.g); A.ims.push(im); used[mi] = 0; }
+        var P = { im: im, idx: used[mi]++, n: h.pname[k].split('.'), p: new THREE.Vector3(T[o], T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), cp: new THREE.Vector3(), cq: new THREE.Quaternion(), cs: 1, tint: null, sp: new THREE.Vector3(), sq: new THREE.Quaternion(), key: 0 };
+        // Where a part comes from: thrown outward and upward from its place, tumbled, and arriving in a sweep from left to right
+        var r1 = hashNoise(k * 3.7) + 0.5, r2 = hashNoise(k * 7.1 + 2), r3 = hashNoise(k * 1.9 + 5);
+        P.sp.copy(P.p).sub(vT.set(0, 0.25, 0)).normalize().multiplyScalar(0.7 + 0.7 * r1).add(P.p); P.sp.y += 0.35 + 0.3 * r1;
+        P.sq.setFromEuler(eA.set(r2 * 5, r3 * 5, r1 * 4)); P.key = clamp((P.p.x + 1) / 2, 0, 1) * 0.6 + 0.4 * r1;
+        im.setColorAt(P.idx, PLAIN); A.parts.push(P); (A.by[P.n[1]] = A.by[P.n[1]] || []).push(P);
+      });
+      st.asm = A; st.f = ELEV.length; ELEV.push(A.elev); FIT.push(A.fit); if (A.lit) UPRIGHT.push(st.f); // faces the camera, so it gets the front light // its own shape number: the plain blocks stand down there
+    });
+    lastKey = ''; if (REDUCE) frame(0);
+  }).catch(function () {}); // no file: those scenes keep their plain blocks
+  function showAsm(A, a, t, yaw) {
+    A.g.visible = a > 0.001;
+    if (!A.g.visible) return;
+    A.g.rotation.y = yaw + 0.5; // it keeps a three-quarter front to the camera, however the camera has orbited
+    var i, P;
+    for (i = 0; i < A.parts.length; i++) { P = A.parts[i]; P.cp.copy(P.p); P.cq.copy(P.q); P.cs = 1; }
+    A.tick(t, A);
+    for (i = 0; i < A.parts.length; i++) {
+      P = A.parts[i]; var u = smooth(a * 1.5 - 0.5 * P.key);
+      P.im.setMatrixAt(P.idx, mat.compose(pa.p.copy(P.sp).lerp(P.cp, u), pa.q.copy(P.sq).slerp(P.cq, u), pa.s.setScalar(Math.max(0.0001, u * P.cs))));
+      if (P.tint) P.im.setColorAt(P.idx, P.tint);
+    }
+    for (i = 0; i < A.ims.length; i++) { A.ims[i].instanceMatrix.needsUpdate = true; if (A.ims[i].instanceColor) A.ims[i].instanceColor.needsUpdate = true; }
+  }
+
   var net = new THREE.Group(), trip = new THREE.Group(); city.add(net); net.add(trip); // streets, plus the trip (search, route, pins): shown only while the blocks form a city or a map
 
   function segments(list, y) { // street edges as one line buffer, in the order given
@@ -2386,7 +2480,7 @@ import * as THREE from './vendor/three.module.min.js';
     var a, rad;
     o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d); o.c = 0;
     if (f === 0 && kit) o.s.set(0, 0, 0); // the city is the Blender kit; the plain blocks stand down
-    if (f === 1) { o.s.set(0, 0, 0);  // under the Blender turbine the blocks wait, shrunk to nothing, where their map tile will be
+    if (f === 1 || f > 15) { o.s.set(0, 0, 0);  // under a Blender model the blocks wait, shrunk to nothing, where their map tile will be
     } else if (f === 2) { o.s.y = 0.004; } // pressed flat: only the streets and the route stand out
     else if (f === 3) { // a hub and six huts on stilts, joined by boardwalks: each block is a stilt, a deck, a wall, a roof tier or a plank
       var c = i % 7, j = Math.floor(i / 7), isHub = c === 0, ca = (c - 1) / 6 * Math.PI * 2, g = isHub ? 1.5 : 1, hx = isHub ? 0 : 0.78 * Math.cos(ca), hz = isHub ? 0 : 0.78 * Math.sin(ca);
@@ -2506,6 +2600,14 @@ import * as THREE from './vendor/three.module.min.js';
   function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // stand-in for the page's entrance curve
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
+  // The switch beside the turbine really starts and stops it. It is built here, so without JavaScript there is no dead control.
+  var running = true, spinV = 0, kick = 0;
+  if (!REDUCE) {
+    var sw = document.createElement('button'); sw.type = 'button'; sw.className = 'switch'; sw.setAttribute('aria-pressed', 'true');
+    sw.innerHTML = '<i aria-hidden="true"></i><span>Turbine <b>running</b></span>';
+    sw.addEventListener('click', function () { running = !running; kick = performance.now(); sw.setAttribute('aria-pressed', running); sw.querySelector('b').textContent = running ? 'running' : 'stopped'; });
+    hero.appendChild(sw);
+  }
   var idle = 0, spin = 0, riding = false, rideT = -1, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
 
   // Add ?fps to the address to see how many frames a second this device draws (for chasing lag on a real phone).
@@ -2534,7 +2636,9 @@ import * as THREE from './vendor/three.module.min.js';
       nudge = st.chapter ? 0 : sw;
     }
     lagNow = lag; place(prev || cur, pl0); place(cur, pl1);
-    spin = t * 0.0007 + (INTRO ? 7 * (1 - Math.exp(-t / 1100)) : 0); // the opening: the rotor spins up fast, then settles to a slow turn
+    // The rotor has weight. Switched on (or on arrival) it spins up hard, then settles to a slow turn; switched off it coasts down to a stop.
+    spinV += ((running ? 1 : 0) - spinV) * (1 - Math.exp(-dt / (running ? 500 : 1600)));
+    spin += dt * spinV * (0.0007 + (running && (kick || INTRO) ? 0.009 * Math.exp(-(now - (kick || t0)) / 1000) : 0));
     // Into or out of a chapter's title block the model does not travel across the text: it fades out where it was and fades in at its new place, already rebuilding. Between two projects it slides across as before.
     var far = !!cur && (cur.chapter || !!(prev && prev.chapter)), mp = far ? (m < 0.5 ? 0 : 1) : m;
     var alpha = mix(1, mix(pl0.a, pl1.a, m) * (far ? Math.abs(2 * m - 1) : 1), d);
@@ -2594,6 +2698,7 @@ import * as THREE from './vendor/three.module.min.js';
       for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
     fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? wc : 1); fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
+    for (var ai = 0; ai < ASM.length; ai++) if (ASM[ai].g) showAsm(ASM[ai], (prev && prev.asm === ASM[ai] ? 1 - m : 0) + (cur && cur.asm === ASM[ai] ? m : 0), t, yaw);
     var tubeSegs = Math.round((route.length - 1) * PER * smooth(draw));
     routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
     pinB.visible = draw >= 1;

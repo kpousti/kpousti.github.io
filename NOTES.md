@@ -4,6 +4,29 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## While you were away: four more Blender scenes, the turbine switch, the skateboard (2026-11-15)
+
+You asked for every animation, header and tile to be custom-made in Blender, realistic, with strong transitions, plus an on/off control beside the turbine. You did not answer the Experience questions, so I used my recommended picks. This is what got done in this pass, and what did not.
+
+**Done**
+- **Turbine switch.** A small panel switch under the turbine ("Turbine running / stopped"). Off, the rotor coasts down to a stop; on, it spins up hard and settles. It is added by script, so with JavaScript off or reduced motion there is no dead control.
+- **Shared system for scene models.** A scene's model is a set of real parts from Blender. As the scene arrives its parts fly in and assemble; as it leaves they fly apart while the next one assembles. Each model also has its own motion.
+- **Experience: an approval line.** Left half by hand: a wooden bench, ink pads, a pile of forms, two hand stamps that press one job slowly, then it crawls to the next station. Right half automated: a conveyor with rollers and a drive motor, two stamping gantries with air cylinders that fire as each job passes, a control box with an emergency stop, and a stack light. It matches the "by hand / automated" demo beside it.
+- **Industrial AI Notebook: a strip-chart recorder.** A bench instrument with gridded paper off a roll, a pen on a rail, a dial gauge and knobs, wired to a vibration sensor bolted on a bearing. The pen follows the same synthetic sensor signal the project's own demo plots, the trace scrolls down the paper, and anomalies are marked in amber.
+- **TheAlgorithms/C++: gear trains.** Eleven gears on a back plate in four trains. Each train is one strongly connected component: Tarjan "finds" them one at a time, and a found train lights up and turns, every gear meshing correctly with its neighbours (tooth counts set the speeds and directions). Brass arrows on the plate show the one-way links between components.
+- **Surf Alert: a weather buoy and a board.** A discus buoy with a tripod mast, solar panels, an anemometer that spins and an antenna, and a three-fin shortboard, both riding a swell that rolls through.
+- **Mechanically inclined tile: the electric skateboard.** Modelled in Blender and rendered as a picture: deck with a kicked tail, trucks with bushings, four wheels, a ribbed battery case, the finned speed controller with its phase wires, and a belt-driven motor on the rear truck. `renders/eskate.jpg`, 53KB.
+
+**Not done yet** (still the old plain blocks or 2D line drawings)
+- Scene models: the Projects and Side builds chapter heads, Route Engine (flat map), Mini Maps, Agent City, Kia-bot, Quant Backtest Lab, Lead Autoresponder, Market Debrief, Math 163 Study Game, Skills, Contact.
+- Tiles: Sports, Boards, Cars, Family, Reading, Markets are still the small 2D drawings.
+- Chapter title cards ("headers") are unchanged.
+- The old 2D skateboard drawing code is still in the file, unused.
+
+**Files:** `blender/build_scenes.py` -> `blender/scenes.blend` -> `models/scenes.bin` (168KB, 215 parts). `blender/build_eskate.py` -> `blender/eskate.blend` -> `renders/eskate.jpg`.
+
+**Tested** at 1440x860 and 393x659: no errors, no sideways scroll, all six tabs, nothing left hidden, the switch toggles. In the slowed-down phone test the whole page scrolls without slow frames except one hitch of about a quarter of a second the first time a new model appears. Not tested on a real iPhone or in Safari.
+
 ## The city, thinned out so the route reads (2026-11-15)
 
 You liked the San Diego landmarks but said the city was too crowded to see the path.
