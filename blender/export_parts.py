@@ -1,5 +1,5 @@
 # Run inside Blender: writes every mesh object in the open file as "parts" the site can load without any extra library.
-# One file: [uint32 header length][JSON header][Int16 positions][Int8 normals][Uint16 indices][Float32 part transforms].
+# One file: [uint32 header length][JSON header][Int16 positions][Int8 normals][Uint16 indices][Float32 part transforms][Uint8 blade-section point].
 # Coordinates are turned from Blender's Z-up to the site's Y-up: (x, y, z) -> (x, z, -y).
 import bpy, json, struct, array, os
 
@@ -14,16 +14,16 @@ def srgb(c): return round((c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.
 
 objs = sorted((o for o in bpy.data.objects if o.type == 'MESH'), key=lambda o: o.name)
 mats, meshes, mesh_id, centre = [], [], {}, {}
-pos, nor, idx = array.array('f'), array.array('b'), array.array('H')
+pos, nor, idx, ring = array.array('f'), array.array('b'), array.array('H'), array.array('B')
 
 for o in objs:
     me = o.data
     if me.name in mesh_id: continue
     mesh_id[me.name] = len(meshes)
-    # a mesh used once and drawn around the world origin is re-centred, so each part turns and scales about its own middle
-    c = (0.0, 0.0, 0.0)
-    if me.users == 1:
-        n = len(me.vertices); c = tuple(sum(v.co[a] for v in me.vertices) / n for a in range(3))
+    # Blades and vanes keep their root as origin. Every other mesh is re-centred on the middle of its box, so each part turns, scales and rounds into a ball about its own middle.
+    strip = o.name.startswith(("blade", "vane")); c = (0.0, 0.0, 0.0)
+    if not strip:
+        c = tuple((min(v.co[a] for v in me.vertices) + max(v.co[a] for v in me.vertices)) / 2 for a in range(3))
     centre[me.name] = c
     m = me.materials[0]
     if m.name not in [x["name"] for x in mats]:
@@ -41,6 +41,7 @@ for o in objs:
                 seen[key] = len(seen); co = me.vertices[vi].co
                 pos.extend((co.x - c[0], co.z - c[2], -(co.y - c[1])))
                 nor.extend((round(nv.x * 127), round(nv.z * 127), round(-nv.y * 127)))
+                ring.append(vi % 6 if strip else 255)  # which of the six points round a blade section this is, so the site can round the blade into a rod
             idx.append(seen[key])
     assert len(seen) < 65536
     meshes.append({"mat": [x["name"] for x in mats].index(m.name), "v": [v0, len(seen)], "i": [i0, len(idx) - i0]})
@@ -55,7 +56,7 @@ for o in objs:
 scale = max(abs(x) for x in pos) / 32767
 q = array.array('h', (round(x / scale) for x in pos))
 def pad(b): return b + b"\0" * (-len(b) % 4)
-blobs = [pad(q.tobytes()), pad(nor.tobytes()), pad(idx.tobytes()), parts.tobytes()]
+blobs = [pad(q.tobytes()), pad(nor.tobytes()), pad(idx.tobytes()), parts.tobytes(), pad(ring.tobytes())]
 offs, at = [], 0
 for b in blobs: offs.append(at); at += len(b)
 head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr}, separators=(",", ":")).encode()

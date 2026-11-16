@@ -2290,62 +2290,85 @@ import * as THREE from './vendor/three.module.min.js';
   // Every block is one instance of a unit box, so the whole model is a single draw call.
   var N = lots.length, blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ roughness: 0.38, metalness: 0.65 }), N); // tinted per block below
   blocks.castShadow = true; blocks.receiveShadow = true; blocks.frustumCulled = false; city.add(blocks);
-  // The turbine, modelled in Blender (blender/turbine.blend, written out by blender/export_parts.py): 461 real parts, each free to fly on its own.
-  var turbine = new THREE.Group(), parts = [], partsAt = 0, K = 0.8; turbine.visible = false; city.add(turbine);
+  // The turbine, modelled in Blender (blender/turbine.blend, written out by blender/export_parts.py): 477 real parts, each free to fly on its own.
+  // Every part also knows a second shape: a blade or vane rounds into a rod, anything else rounds into a ball. So the turbine can become a network of balls and rods with nothing added and nothing thrown away.
+  var turbine = new THREE.Group(), parts = [], partsAt = 0, K = 0.8, mark = 0, markFor = '', seenNode = []; turbine.visible = false; city.add(turbine);
+  function reshape(shader) { // blend every vertex from the part's own shape to its rod or ball shape, part by part
+    shader.vertexShader = 'attribute vec3 aTo; attribute vec3 aToN; attribute float aMix;\n' + shader.vertexShader
+      .replace('#include <beginnormal_vertex>', 'vec3 objectNormal = normalize(mix(normal, aToN, aMix));')
+      .replace('#include <begin_vertex>', 'vec3 transformed = mix(position, aTo, aMix);');
+  }
   fetch('./models/turbine.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
-    var hl = new DataView(buf).getUint32(0, true), h = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))), base = 4 + hl, q, k;
-    var P = new Int16Array(buf, base + h.off[0], h.verts * 3), Nn = new Int8Array(buf, base + h.off[1], h.verts * 3), I = new Uint16Array(buf, base + h.off[2], (h.off[3] - h.off[2]) / 2), T = new Float32Array(buf, base + h.off[3], h.mesh.length * 10);
-    var mats = h.mats.map(function (m) { return new THREE.MeshStandardMaterial({ color: m.c, metalness: Math.min(m.m, 0.85), roughness: m.r }); }), count = h.meshes.map(function () { return 0; }), used = count.slice();
+    var hl = new DataView(buf).getUint32(0, true), h = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))), base = 4 + hl, q, k, a;
+    var P = new Int16Array(buf, base + h.off[0], h.verts * 3), Nn = new Int8Array(buf, base + h.off[1], h.verts * 3), I = new Uint16Array(buf, base + h.off[2], (h.off[3] - h.off[2]) / 2), T = new Float32Array(buf, base + h.off[3], h.mesh.length * 10), R = new Uint8Array(buf, base + h.off[4], h.verts);
+    var mats = h.mats.map(function (m) { var mt = new THREE.MeshStandardMaterial({ color: m.c, metalness: Math.min(m.m, 0.85), roughness: m.r }); mt.onBeforeCompile = reshape; return mt; }), count = h.meshes.map(function () { return 0; }), used = count.slice();
     h.mesh.forEach(function (m) { count[m]++; });
     var ims = h.meshes.map(function (me, k) {
-      var pos = new Float32Array(me.v[1] * 3), nor = new Float32Array(me.v[1] * 3), g = new THREE.BufferGeometry();
-      for (q = 0; q < pos.length; q++) { pos[q] = P[me.v[0] * 3 + q] * h.scale; nor[q] = Nn[me.v[0] * 3 + q] / 127; }
+      var nv = me.v[1], pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), to = new Float32Array(nv * 3), toN = new Float32Array(nv * 3), g = new THREE.BufferGeometry();
+      var strip = R[me.v[0]] !== 255, lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9], amin = 9, amax = -9;
+      for (q = 0; q < nv * 3; q++) { pos[q] = P[me.v[0] * 3 + q] * h.scale; nor[q] = Nn[me.v[0] * 3 + q] / 127; lo[q % 3] = Math.min(lo[q % 3], pos[q]); hi[q % 3] = Math.max(hi[q % 3], pos[q]); }
+      var rho = strip ? 0.012 : Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 2; // the rod's radius, or the ball's, in the part's own units
+      if (!strip) for (q = 0; q < nv; q++) { var y0 = pos[q * 3 + 1], z0 = pos[q * 3 + 2]; if (y0 * y0 + z0 * z0 > 1e-8) { a = Math.atan2(y0, -z0); amin = Math.min(amin, a); amax = Math.max(amax, a); } }
+      for (q = 0; q < nv; q++) {
+        var x = pos[q * 3], y = pos[q * 3 + 1], z = pos[q * 3 + 2], cx, cy, cz;
+        if (strip) { // a blade section's six points spread evenly round a circle: the blade becomes a rod along its own length
+          a = [180, 120, 60, 0, -60, -120][R[me.v[0] + q]] * Math.PI / 180; cx = Math.cos(a); cy = 0; cz = -Math.sin(a); to.set([rho * cx, y, rho * cz], q * 3);
+        } else { // anything turned on a lathe wraps onto a ball: its length becomes latitude, its angle round the shaft becomes longitude (a cutaway arc stretches to go all the way round)
+          var lat = hi[0] > lo[0] ? Math.PI * (x - lo[0]) / (hi[0] - lo[0]) : Math.PI / 2, lon = y * y + z * z > 1e-8 ? Math.atan2(y, -z) : 0;
+          if (amax - amin < 5.5) lon = (lon - amin) / (amax - amin) * Math.PI * 2;
+          cx = -Math.cos(lat); cy = Math.sin(lat) * Math.sin(lon); cz = -Math.sin(lat) * Math.cos(lon); to.set([rho * cx, rho * cy, rho * cz], q * 3);
+        }
+        toN.set([cx, cy, cz], q * 3);
+      }
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-      g.setIndex(new THREE.BufferAttribute(I.slice(me.i[0], me.i[0] + me.i[1]), 1)); g.computeBoundingBox();
-      var im = new THREE.InstancedMesh(g, mats[me.mat], count[k]); im.frustumCulled = false; im.castShadow = im.receiveShadow = window.innerWidth >= 700; turbine.add(im); return im; // phones: no shadow pass for 461 parts
+      g.setAttribute('aTo', new THREE.BufferAttribute(to, 3)); g.setAttribute('aToN', new THREE.BufferAttribute(toN, 3)); g.setAttribute('aMix', new THREE.InstancedBufferAttribute(new Float32Array(count[k]), 1));
+      g.setIndex(new THREE.BufferAttribute(I.slice(me.i[0], me.i[0] + me.i[1]), 1)); g.userData = { span: hi[1], rho: rho };
+      var im = new THREE.InstancedMesh(g, mats[me.mat], count[k]); im.frustumCulled = false; im.castShadow = im.receiveShadow = window.innerWidth >= 700; turbine.add(im); return im; // phones: no shadow pass for 477 parts
     });
-    // Where each part lands when the turbine becomes the street graph: blades and vanes lie down end to end as the streets, bolts, nozzles, cans and discs stand on the corners, and the casing and shaft sink into the base.
-    var streetsOf = h.kind.filter(function (c) { return c < 2; }).length, sAt = 0, nAt = 0, X = new THREE.Vector3(1, 0, 0), size = new THREE.Vector3(), dir = new THREE.Vector3(), side = new THREE.Vector3();
+    // What each part becomes in the network: blades and vanes are the rods (two or three end to end along every edge of the street graph); every other part is the ball at one corner. The model has exactly as many of those as the graph has corners.
+    var rods = h.kind.filter(function (c) { return c < 2; }).length, sAt = 0, nAt = 0, side = new THREE.Vector3();
     for (k = 0; k < h.mesh.length; k++) {
-      var im = ims[h.mesh[k]], o = k * 10, c = h.kind[k], bb = im.geometry.boundingBox.getSize(size);
-      var part = { im: im, idx: used[h.mesh[k]]++, rotor: h.rotor[k], p: new THREE.Vector3(T[o] - 0.06, T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), ex: new THREE.Vector3(), lp: new THREE.Vector3(), lq: new THREE.Quaternion(), ls: new THREE.Vector3(), key: 0 };
+      var im = ims[h.mesh[k]], o = k * 10, c = h.kind[k], ball = c > 1;
+      var part = { im: im, idx: used[h.mesh[k]]++, mix: im.geometry.attributes.aMix.array, c: im.material.color, rotor: h.rotor[k], p: new THREE.Vector3(T[o] - 0.06, T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), ex: new THREE.Vector3(), key: 0, span: im.geometry.userData.span, rho: im.geometry.userData.rho };
       var px = part.p.x, rad = Math.hypot(part.p.y, part.p.z) || 1;
       part.key = clamp((px + 1.1) / 2.2, 0, 1) * 0.7 + 0.3 * (hashNoise(k * 3.7) + 0.5); // the change sweeps from the nose to the exhaust, a little ragged
-      // Pulled apart: blades lift straight off their wheels, cans swing out, the casing drops, and everything spreads along the shaft.
+      // The way out: each part leaves along its own line (a blade straight off its wheel, a can outward, the casing downward), so paths arc clear of each other.
       if (c === 0) part.ex.set(0, 1, 0).applyQuaternion(part.q).multiplyScalar(0.36).add(side.set(px * 0.5, 0, 0));
       else if (c === 3 || c === 4) part.ex.set(px * 0.5 - (c === 4 ? 0.22 : 0), part.p.y / rad * 0.45, part.p.z / rad * 0.45);
       else if (c === 1 || c === 5 || c === 6) part.ex.set(px * 0.5, -0.55, 0);
       else part.ex.set(px * (c === 2 ? 0.5 : 0.7), 0, 0);
-      if (c < 2) { // a street piece
-        var e = edges[sAt % edges.length], slot = Math.floor(sAt / edges.length), on = Math.floor((streetsOf - 1 - sAt % edges.length) / edges.length) + 1; sAt++;
-        var len = Math.hypot(nx[e.b] - nx[e.a], nz[e.b] - nz[e.a]), seg = len / on;
-        dir.set(nx[e.b] - nx[e.a], 0, nz[e.b] - nz[e.a]).divideScalar(len); side.crossVectors(dir, UP);
-        part.lp.set(nx[e.a], 0.014, nz[e.a]).addScaledVector(dir, (slot + 0.04) * seg);
-        part.lq.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, dir, UP));
-        part.ls.set(0.03 / Math.max(bb.x, bb.z), seg * 0.92 / bb.y, 0.03 / Math.max(bb.x, bb.z));
-      } else if (c < 6) { // a stud on a street corner
-        var node = (nAt++ * 37 + 11) % (n * n), sc = c === 2 ? 0.09 / bb.y : c === 3 ? 0.25 : c === 4 ? 0.6 : 1.2;
-        part.lp.set(nx[node], c === 2 ? bb.x * sc / 2 + 0.004 : c === 4 ? 0.046 : c === 5 ? 0.03 : 0.004, nz[node]);
-        part.lq.setFromUnitVectors(X, UP); part.ls.setScalar(sc);
-      } else { part.lp.set(px * 0.3, -0.02, part.p.z * 0.3); part.lq.copy(part.q); } // sinks into the base and is gone
+      if (ball) { part.node = (nAt++ * 37 + 11) % (n * n); part.R = c > 5 ? 0.055 : 0.036; } // the casing and shaft make the big hubs
+      else { part.e = edges[sAt % edges.length]; part.slot = Math.floor(sAt / edges.length); part.on = Math.floor((rods - 1 - sAt % edges.length) / edges.length) + 1; sAt++; }
       parts.push(part);
     }
     partsAt = performance.now() - t0; lastKey = ''; if (REDUCE) frame(0);
   }).catch(function () {}); // no model: the page reads fine without it
-  function fly(lw, t, show) { // lw: 0 the turbine assembled, 1 landed as the street graph; show: 1 fully there, 0 gone
+  var nA = new THREE.Vector3(), nB = new THREE.Vector3(), cT = new THREE.Color(), ROD = new THREE.Color(0x7f8fb0), BALL = new THREE.Color(0xdfe6f2), BLUE = new THREE.Color(0x3f86ff).multiplyScalar(1.7);
+  function node3(i, lift, o) { var s = mix(1, 0.86, lift); return o.set(nx[i] * s, lift * (0.5 + 0.26 * Math.sin(nx[i] * 2.6 + 0.8) * Math.cos(nz[i] * 2.2) + 0.3 * hashNoise(i * 9.1)), nz[i] * s); } // lifted, every street corner floats at its own height: the street graph as a network in space. At lift 0 it is the flat map again.
+  function fly(lw, lift, t, show) { // lw: 0 the turbine assembled, 1 the network; lift: 1 floating in space, 0 lying flat as the streets; show: 1 fully there, 0 gone
     turbine.visible = show > 0.001 && parts.length > 0;
     if (!turbine.visible) return;
-    var ex = smooth(lw / 0.45);
     qSpin.setFromAxisAngle(vX.set(1, 0, 0), spin);
     for (var i = 0; i < parts.length; i++) {
-      var P = parts[i], land = smooth((lw * 1.6 - 0.6 * P.key - 0.3) / 0.7), grow = ease((t - partsAt - 150 - P.key * 900) / 700) * show; // on arrival the parts grow in from nose to exhaust
-      pa.p.copy(P.p).addScaledVector(P.ex, ex); pa.q.copy(P.q);
+      var P = parts[i], land = smooth(lw * 1.5 - 0.5 * P.key), grow = ease((t - partsAt - 150 - P.key * 900) / 700) * show, r; // on arrival the parts grow in from nose to exhaust
+      pa.p.copy(P.p).addScaledVector(P.ex, 0.7 * Math.sin(Math.PI * land)); pa.q.copy(P.q);
       if (P.rotor) { pa.p.applyQuaternion(qSpin); pa.q.premultiply(qSpin); }
       pa.p.multiplyScalar(K).applyQuaternion(qTurn); pa.p.y += AXIS; pa.q.premultiply(qTurn); pa.s.setScalar(K * grow);
-      if (land > 0) { pa.p.lerp(P.lp, land); pa.q.slerp(P.lq, land); pa.s.lerp(vT.copy(P.ls).multiplyScalar(show), land); }
-      P.im.setMatrixAt(P.idx, mat.compose(pa.p, pa.q, pa.s));
+      if (land > 0) {
+        if (P.e) { // a rod: one stretch of an edge, from corner to corner
+          node3(P.e.a, lift, nA); node3(P.e.b, lift, nB); nB.sub(nA); var len = nB.length(), seg = len / P.on; nB.divideScalar(len);
+          pb.p.copy(nA).addScaledVector(nB, P.slot * seg); pb.p.y += 0.012; pb.q.setFromUnitVectors(UP, nB); r = mix(0.007, 0.009, lift) / P.rho; pb.s.set(r, seg / P.span, r);
+          cT.copy(P.e.mark === mark ? BLUE : ROD); // edges the search has crossed turn blue
+        } else { // a ball: one corner
+          r = mix(0.018, P.R, lift); node3(P.node, lift, pb.p); pb.p.y += r; pb.q.identity(); pb.s.setScalar(r / P.rho);
+          cT.copy(P.node === start ? AMBER : seenNode[P.node] === mark ? BLUE : BALL);
+        }
+        pa.p.lerp(pb.p, land); pa.q.slerp(pb.q, land); pa.s.lerp(pb.s.multiplyScalar(show), land);
+      }
+      P.im.setMatrixAt(P.idx, mat.compose(pa.p, pa.q, pa.s)); P.mix[P.idx] = land;
+      P.im.setColorAt(P.idx, tint.setRGB(mix(1, cT.r / P.c.r, land), mix(1, cT.g / P.c.g, land), mix(1, cT.b / P.c.b, land))); // the tint multiplies the part's own colour, so this carries it over to its colour in the network
     }
-    for (i = 0; i < turbine.children.length; i++) turbine.children[i].instanceMatrix.needsUpdate = true;
+    for (i = 0; i < turbine.children.length; i++) { var im = turbine.children[i]; im.instanceMatrix.needsUpdate = im.instanceColor.needsUpdate = im.geometry.attributes.aMix.needsUpdate = true; }
   }
   var net = new THREE.Group(), trip = new THREE.Group(); city.add(net); net.add(trip); // streets, plus the trip (search, route, pins): shown only while the blocks form a city or a map
 
@@ -2356,12 +2379,6 @@ import * as THREE from './vendor/three.module.min.js';
   }
   var streets = new THREE.LineBasicMaterial({ color: 0x93a1b8, transparent: true, opacity: 0.28 });
   net.add(new THREE.LineSegments(segments(edges, 0.002), streets));
-  var dotGeo = new THREE.BufferGeometry(), dotPos = new Float32Array(nx.length * 3);
-  nx.forEach(function (x, q) { dotPos.set([x, 0.012, nz[q]], q * 3); });
-  dotGeo.setAttribute('position', new THREE.BufferAttribute(dotPos, 3));
-  var dotCol = new Float32Array(nx.length * 3), dotsFor = ''; dotGeo.setAttribute('color', new THREE.BufferAttribute(dotCol, 3));
-  var dots = new THREE.Points(dotGeo, new THREE.PointsMaterial({ vertexColors: true, size: 5, sizeAttenuation: false, transparent: true, opacity: 0, toneMapped: false })); // the graph's nodes: shown while the pinned scene says "graphs"
-  net.add(dots);
   var searched = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x6298ff, transparent: true, opacity: 0.9, toneMapped: false }));
   trip.add(searched);
   var amber = new THREE.MeshBasicMaterial({ color: 0xf2b56b, toneMapped: false });
@@ -2538,9 +2555,9 @@ import * as THREE from './vendor/three.module.min.js';
     // Poses blended by scroll: beside the hero words, crossing the giant word in the pinned scene, then centred behind each chapter.
     var en = smooth((H - r.top) / H), q = smooth(-r.top / Math.max(1, r.height - H)), out = clamp((H - r.bottom) / H, 0, 1), d = smooth(out);
     // Every chapter and every project is a stop with its own shape. Entering a chapter, the camera dives in close while the blocks rebuild; entering a project, the model slides across to the free side as it changes.
-    var ql = clamp(-r.top / Math.max(1, r.height - H), 0, 1), up = ql > 0.4; // how far through the pinned scene, unsmoothed
-    // The page opens on the rotor. Arriving at "How I think" it flattens into a street graph; at "routes" the blocks rise into a city and the route is drawn.
-    var fA = up ? 2 : 1, fB = up ? 0 : 2, m = up ? smooth((ql - 0.4) / 0.25) : en, bump = 0, nudge = 0, cur = null, prev = null;
+    var ql = clamp(-r.top / Math.max(1, r.height - H), 0, 1), lift = 1 - smooth((ql - 0.4) / 0.25); // how far through the pinned scene, unsmoothed; and how high the network floats
+    // The page opens on the turbine. Arriving at "How I think" its parts become a network of balls and rods floating in space, and the search spreads across it. At "routes" the network settles flat as the streets, the city rises between them and the route is drawn.
+    var fA = 1, fB = 0, m = 1 - lift, bump = 0, nudge = 0, cur = null, prev = null;
     for (var ci = 0; ci < stops.length; ci++) {
       var st = stops[ci], cb; st.top = st.el.getBoundingClientRect().top + lag;
       cb = st.chapter ? clamp((H - st.top) / H, 0, 1) : clamp((H * 0.9 - st.top) / (H * 0.55), 0, 1);
@@ -2594,26 +2611,24 @@ import * as THREE from './vendor/three.module.min.js';
       blocks.setMatrixAt(bi, mat.compose(pa.p, pa.q, pa.s)); blocks.setColorAt(bi, tint.copy(STEEL).lerp(AMBER, pa.c));
     }
     blocks.instanceMatrix.needsUpdate = true; blocks.instanceColor.needsUpdate = true;
-    fly(cur ? 1 : en, t, 1 - d); // the turbine's parts: assembled in the hero, pulled apart and landed as the street graph by "How I think", gone after it
     var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (STILL.indexOf(dom) < 0 || (m > 0 && m < 1));
     net.visible = slab.visible = dom === 0 || dom === 2 || dom === 7; trip.visible = dom !== 7; // every other shape stands free
-    var step = 16, g = cur ? 0 : up ? 1 - m : m; // how much of a bare graph it is right now
-    dots.material.opacity = g; dots.visible = g > 0.01; streets.opacity = mix(0.28, 0.8, g);
+    var step = 16;
+    streets.opacity = 0.28 * (1 - lift); searched.material.opacity = 0.9 * (1 - lift); // the flat street lines wait until the network has settled
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - plannedAt) / step)), Math.floor(explored.length * clamp((ql - 0.04) / 0.42, 0, 1)));
     var draw = REDUCE ? 1 : Math.min(clamp((now - plannedAt - explored.length * step) / 600, 0, 1), clamp((ql - 0.5) / 0.28, 0, 1));
     searched.geometry.setDrawRange(0, shown * 2);
-    if (g > 0.01 && dotsFor !== shown + ':' + plannedAt) { // nodes the search has reached turn blue
-      dotsFor = shown + ':' + plannedAt;
-      for (var di = 0; di < dotCol.length; di += 3) { dotCol[di] = 0.93; dotCol[di + 1] = 0.95; dotCol[di + 2] = 0.98; }
-      for (var xi = 0; xi < shown; xi++) { var ea = explored[xi].a * 3, eb = explored[xi].b * 3; dotCol[ea] = dotCol[eb] = 0.3; dotCol[ea + 1] = dotCol[eb + 1] = 0.55; dotCol[ea + 2] = dotCol[eb + 2] = 1; }
-      dotGeo.attributes.color.needsUpdate = true;
+    if (markFor !== shown + ':' + plannedAt) { // which edges and corners the search has reached so far
+      markFor = shown + ':' + plannedAt; mark++;
+      for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
+    fly(cur ? 1 : en, cur ? 0 : lift, t, 1 - d);
     var tubeSegs = Math.round((route.length - 1) * PER * ease(draw));
     routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
     pinB.visible = draw >= 1;
 
     screenNodes.length = 0;
-    for (var q = 0; q < n * n; q++) { tmpV.set(nx[q], 0, nz[q]).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H + (ride ? rT - sc : 0)); }
+    for (var q = 0; q < n * n; q++) { node3(q, cur ? 0 : lift, tmpV).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H + (ride ? rT - sc : 0)); }
     // Draw only when something on screen changed, so a still page costs nothing.
     var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1)].join();
     if (k !== lastKey) { lastKey = k; renderer.render(scene, camera); }

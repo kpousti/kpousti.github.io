@@ -4,6 +4,19 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Blender, second scene: "graphs" is a floating network made of the turbine's own parts (2026-11-15)
+
+Your picks from the questions: a floating 3D network; the turbine's parts become it; a search spreads across it.
+
+- **What you see.** Scrolling from the turbine to "How I think", every part reshapes as it flies: each blade and vane rounds into a rod, every other part (bolts, nozzles, cans, wheels, casing, shaft) rounds into a ball. They assemble into a network of 100 balls joined by rods, floating in space. Nothing is added and nothing disappears.
+- **The search is real.** While "graphs" is on screen, the A* search spreads from the amber start ball; rods and balls it reaches turn blue. Same algorithm and same graph as the route later.
+- **Into "routes".** When the word changes, the network settles flat: the rods are now the streets, the city rises between them and the amber route draws.
+- **How.** The network is the street graph with every corner lifted to its own height. Each part carries a second shape (rod or ball), and the page blends between the two per part.
+- **In Blender:** the turbine now has 13 bolts per flange (was 9), so it has exactly 100 ball-type parts, one per corner. 477 parts in all.
+- **Cost:** model file 191KB (was 180KB).
+- **Tested** at 1440x860 and 393x659: no errors, no sideways scroll, all six tabs, no slow frames in the slowed-down phone test. Not tested on a real iPhone or in Safari.
+- **Weak spots I can see:** the big hub balls (from the casing) are a little faceted; mid-flight the parts are a busy cloud for a moment.
+
 ## Blender models, first one: the opening turbine (2026-11-15)
 
 You asked for the animations to be made in Blender, each one its own thing, with visible turbine parts that turn into the next shape.
