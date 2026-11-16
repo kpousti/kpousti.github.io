@@ -3,7 +3,7 @@
 # kit.harbor Harbor Club, kit.library Central Library, kit.petco Petco Park, kit.conv Convention Center, kit.midway USS Midway, kit.bridge Coronado Bridge,
 # kit.caltower California Tower) and the bay (kit.bay, kit.boat, kit.palm). Shapes only, drawn from memory of the skyline: no logos or signs.
 # Every kit piece is one mesh in a unit box (footprint -0.5..0.5, height 0..1); the site places and scales copies of them.
-#   kit.t1-t3  towers          kit.m1-m3  mid-rise blocks      kit.l1-l4  low buildings      kit.park  a park block
+#   kit.b1-b3  plain low blocks for ordinary lots      kit.park  a park block
 #   kit.hub / kit.ferrule / kit.ring   the space-frame fittings of the network (node, strut end, cost collar)
 #   kit.plate  the base plate, with rim, ruler ticks, scale bar and north arrow       kit.pin  the route marker
 import bpy, math, os
@@ -96,78 +96,13 @@ def parapet(hw, hd, z, h=0.05, w=0.025, m=TRIM):
     box(-hw, hw, -hd, -hd + w, z, z + h, m); box(-hw, hw, hd - w, hd, z, z + h, m); box(-hw, -hw + w, -hd + w, hd - w, z, z + h, m); box(hw - w, hw, -hd + w, hd - w, z, z + h, m)
 
 report = {}
-# ---- towers ----
-for hw, z0, z1, fl in [(0.48, 0.0, 0.52, 6), (0.36, 0.52, 0.82, 4), (0.22, 0.82, 0.94, 2)]:
-    box(-hw, hw, -hw, hw, z0, z1, GLASS); slabs(hw, hw, z0, z1, fl); piers(hw, hw, z0, z1)
-box(-0.015, 0.015, -0.015, 0.015, 0.94, 1.0, TRIM)
-for (x, z) in [(-0.2, 0.2), (0.25, 0.36), (0.05, 0.62)]: box(x, x + 0.14, -0.486, -0.48, z, z + 0.05, LIT)
-report["kit.t1"] = finish("kit.t1")
-
-box(-0.5, 0.5, -0.5, 0.5, 0, 0.1, WALL); box(-0.46, 0.46, -0.3, 0.3, 0.1, 0.95, GLASS)
-for k in range(8):
-    x = -0.46 + 0.92 * k / 7
-    box(x - 0.012, x + 0.012, 0.3, 0.36, 0.1, 0.95, TRIM); box(x - 0.012, x + 0.012, -0.36, -0.3, 0.1, 0.95, TRIM)
-box(-0.48, 0.48, -0.32, 0.32, 0.95, 0.965, TRIM); box(-0.2, 0.2, -0.14, 0.14, 0.965, 1.0, ROOF)
-for (x, z) in [(-0.3, 0.3), (0.1, 0.55), (0.22, 0.75)]: box(x, x + 0.1, -0.304, -0.3, z, z + 0.035, LIT)
-report["kit.t2"] = finish("kit.t2")
-
-cyl(0, 0, 0.5, 0.5, 0, 0.86, GLASS, 8, True, math.pi / 8)
-for k in range(7): cyl(0, 0, 0.525, 0.525, 0.86 * k / 6 - 0.007 if k else 0.0, 0.86 * k / 6 + 0.007, TRIM, 8, True, math.pi / 8)
-cyl(0, 0, 0.4, 0.4, 0.86, 0.91, WALL, 8, True, math.pi / 8); cyl(0, 0, 0.3, 0.3, 0.91, 0.935, TRIM, 8, True, math.pi / 8); cyl(0, 0, 0.1, 0, 0.935, 1.0, TRIM, 6)
-report["kit.t3"] = finish("kit.t3")
-
-# ---- mid-rise ----
-box(-0.5, 0.5, -0.5, 0.5, 0, 0.84, WALL2)
-for k in range(4): box(-0.504, 0.504, -0.504, 0.504, 0.1 + 0.19 * k, 0.2 + 0.19 * k, GLASS)
-piers(0.5, 0.5, 0, 0.84, 0.035, WALL2); parapet(0.5, 0.5, 0.84)
-box(-0.3, -0.1, -0.25, -0.05, 0.84, 0.93, ROOF); box(0.05, 0.3, 0.1, 0.3, 0.84, 0.91, ROOF); box(-0.1, 0.12, 0.3, 0.46, 0.84, 1.0, WALL2)
-box(-0.2, -0.06, -0.508, -0.504, 0.3, 0.38, LIT)
-report["kit.m1"] = finish("kit.m1")
-
-for (x0, x1, y0, y1) in [(-0.5, -0.18, -0.5, 0.5), (0.18, 0.5, -0.5, 0.5), (-0.18, 0.18, 0.12, 0.5)]:
-    box(x0, x1, y0, y1, 0, 0.78, WALL)
-    for k in range(1, 4): box(x0 - 0.012, x1 + 0.012, y0 - 0.012, y1 + 0.012, 0.78 * k / 4 - 0.008, 0.78 * k / 4 + 0.008, TRIM)
-    box(x0, x1, y0, y1, 0.78, 0.8, ROOF)
-box(-0.18, 0.18, -0.5, 0.12, 0, 0.03, GREEN); box(-0.03, 0.03, -0.5, 0.12, 0.03, 0.036, TRIM)
-for (x, y) in [(-0.41, 0.26), (-0.29, 0.26), (-0.41, 0.38), (-0.29, 0.38)]: box(x - 0.01, x + 0.01, y - 0.01, y + 0.01, 0.8, 0.86, TRIM)
-cyl(-0.35, 0.32, 0.085, 0.085, 0.86, 0.97, TRIM, 8); cyl(-0.35, 0.32, 0.095, 0, 0.97, 1.0, ROOF, 8)
-report["kit.m2"] = finish("kit.m2")
-
-box(-0.5, 0.08, -0.5, 0.5, 0, 0.95, WALL); box(0.08, 0.5, -0.5, 0.5, 0, 0.52, WALL2)
-for k in range(4): box(-0.504, 0.084, -0.504, 0.504, 0.12 + 0.2 * k, 0.24 + 0.2 * k, GLASS)
-box(-0.5, 0.08, -0.5, 0.5, 0.95, 0.97, TRIM); box(-0.3, -0.1, -0.2, 0.1, 0.97, 1.0, ROOF)
-box(0.12, 0.46, -0.46, 0.46, 0.52, 0.54, GREEN)
-for y in (-0.3, 0.0, 0.3): box(0.14, 0.44, y - 0.008, y + 0.008, 0.62, 0.635, TRIM)
-for (x, y) in [(0.14, -0.3), (0.44, -0.3), (0.14, 0.3), (0.44, 0.3)]: box(x - 0.008, x + 0.008, y - 0.008, y + 0.008, 0.54, 0.62, TRIM)
-box(0.504, 0.508, -0.2, 0.0, 0.2, 0.3, LIT)
-report["kit.m3"] = finish("kit.m3")
-
-# ---- low buildings ----
-box(-0.5, 0.5, -0.5, 0.5, 0, 0.62, WALL2); parapet(0.5, 0.5, 0.62, 0.07)
-box(-0.42, 0.42, -0.508, -0.5, 0.05, 0.3, GLASS); box(-0.5, 0.5, -0.62, -0.5, 0.33, 0.37, LIT)
-box(-0.3, -0.08, 0.05, 0.3, 0.62, 0.8, ROOF); box(0.1, 0.34, -0.3, -0.1, 0.62, 0.74, ROOF); box(-0.36, 0.36, -0.51, -0.5, 0.42, 0.54, TRIM)
-report["kit.l1"] = finish("kit.l1")
-
-box(-0.5, 0.5, -0.5, 0.5, 0, 0.5, WALL2); gable(-0.54, 0.54, -0.56, 0.56, 0.5, 0.94, ROOF, WALL2)
-box(0.2, 0.32, 0.12, 0.26, 0.6, 1.0, TRIM); box(-0.12, 0.12, -0.506, -0.5, 0.0, 0.3, GLASS); box(-0.4, -0.22, -0.506, -0.5, 0.2, 0.36, LIT); box(0.22, 0.4, -0.506, -0.5, 0.2, 0.36, GLASS)
-report["kit.l2"] = finish("kit.l2")
-
-box(-0.5, 0.5, -0.5, 0.5, 0, 0.56, WALL)
-for k in range(4): shed(-0.5 + 0.25 * k, -0.25 + 0.25 * k, -0.5, 0.5, 0.56, 0.96, ROOF, GLASS)
-box(-0.5, 0.5, -0.506, -0.5, 0.3, 0.33, TRIM); box(-0.3, 0.3, -0.6, -0.5, 0.36, 0.385, TRIM)
-for x in (-0.25, 0.0, 0.25): box(x - 0.09, x + 0.09, -0.506, -0.5, 0.02, 0.28, GLASS)
-report["kit.l3"] = finish("kit.l3")
-
-box(-0.5, 0.5, -0.5, 0.5, 0, 0.42, WALL2)
-i = len(V); seg = 8
-for k in range(seg + 1):
-    a = math.pi * k / seg; y = -0.5 * math.cos(a); z = 0.42 + 0.56 * math.sin(a)
-    V.extend([(-0.5, y, z), (0.5, y, z)])
-for k in range(seg): F.append((i + 2 * k, i + 2 * k + 1, i + 2 * k + 3, i + 2 * k + 2)); M.append(ROOF)
-F.append(tuple(i + 2 * k for k in range(seg + 1))); M.append(WALL2); F.append(tuple(i + 2 * k + 1 for k in range(seg, -1, -1))); M.append(WALL2)
-for x in (-0.3, 0.0, 0.3): box(x - 0.012, x + 0.012, -0.52, 0.52, 0.42, 0.44, TRIM)
-box(-0.14, 0.14, -0.506, -0.5, 0.0, 0.3, GLASS)
-report["kit.l4"] = finish("kit.l4")
+# ---- ordinary buildings: three plain, low massing blocks in one quiet tone, so the landmarks and the route are what you see ----
+box(-0.5, 0.5, -0.5, 0.5, 0, 0.84, WALL); box(-0.36, 0.36, -0.36, 0.36, 0.84, 1.0, ROOF)
+report["kit.b1"] = finish("kit.b1")
+box(-0.5, 0.1, -0.5, 0.5, 0, 1.0, WALL); box(0.1, 0.5, -0.5, 0.5, 0, 0.6, WALL); box(-0.4, 0.0, -0.4, 0.4, 1.0, 1.02, ROOF)
+report["kit.b2"] = finish("kit.b2")
+box(-0.5, 0.5, -0.5, 0.5, 0, 0.9, WALL); parapet(0.5, 0.5, 0.9, 0.1, 0.03, ROOF)
+report["kit.b3"] = finish("kit.b3")
 
 # ---- park: lawn, crossing paths, a fountain, trees ----
 box(-0.5, 0.5, -0.5, 0.5, 0, 0.08, GREEN); box(-0.5, 0.5, -0.03, 0.03, 0.08, 0.1, TRIM); box(-0.03, 0.03, -0.5, 0.5, 0.08, 0.1, TRIM)

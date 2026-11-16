@@ -2248,6 +2248,7 @@ import * as THREE from './vendor/three.module.min.js';
     partsAt = performance.now() - t0; lastKey = ''; if (REDUCE) frame(0);
   }).catch(function () {}); // no model: the page reads fine without it
   var nA = new THREE.Vector3(), nB = new THREE.Vector3(), cT = new THREE.Color(), ROD = new THREE.Color(0x7f8fb0), BALL = new THREE.Color(0xdfe6f2), BLUE = new THREE.Color(0x3f86ff).multiplyScalar(1.7);
+  var QUIET = new THREE.Color(0x2b3346), DIM = new THREE.Color(0.22, 0.24, 0.3); // streets and rivets in the city: there, but not competing with the route
   var HUB_R = 0.034; // the node fitting's radius while the network floats
   function node3(i, lift, o) { var s = mix(1, 0.86, lift); return o.set(nx[i] * s, lift * (0.5 + 0.26 * Math.sin(nx[i] * 2.6 + 0.8) * Math.cos(nz[i] * 2.2) + 0.3 * hashNoise(i * 9.1)), nz[i] * s); } // lifted, every street corner floats at its own height: the street graph as a network in space. At lift 0 it is the flat map again.
   function fly(lw, lift, t, show) { // lw: 0 the turbine assembled, 1 the network; lift: 1 floating in space, 0 pressed flat into the plate as the streets; show: 1 fully there, 0 gone
@@ -2264,10 +2265,10 @@ import * as THREE from './vendor/three.module.min.js';
         if (P.e) { // a rod: one stretch of an edge, from corner to corner
           node3(P.e.a, lift, nA); node3(P.e.b, lift, nB); nB.sub(nA); var len = nB.length(), seg = len / P.on; nB.divideScalar(len);
           pb.p.copy(nA).addScaledVector(nB, P.slot * seg); pb.p.y += up; pb.q.setFromUnitVectors(UP, nB); r = mix(0.007, 0.009, lift) / P.rho; pb.s.set(r, seg / P.span, r);
-          cT.copy(P.e.mark === mark ? BLUE : ROD); // edges the search has crossed turn blue
+          cT.copy(P.e.mark === mark ? BLUE : ROD).lerp(QUIET, 1 - lift); // edges the search has crossed turn blue; pressed flat they are all just quiet streets, so the route is what you see
         } else { // a ball: the core of one corner's fitting
-          r = mix(0.014, HUB_R * 0.96, lift) / P.rho; node3(P.node, lift, pb.p); pb.p.y += up; pb.q.identity(); pb.s.set(r, r * squash, r);
-          cT.copy(P.node === start ? AMBER : seenNode[P.node] === mark ? BLUE : BALL);
+          r = mix(0.008, HUB_R * 0.96, lift) / P.rho; node3(P.node, lift, pb.p); pb.p.y += up; pb.q.identity(); pb.s.set(r, r * squash, r);
+          cT.copy(P.node === start ? AMBER : seenNode[P.node] === mark ? BLUE : BALL); if (P.node !== start) cT.lerp(QUIET, 1 - lift);
         }
         pa.p.lerp(pb.p, land); pa.q.slerp(pb.q, land); pa.s.lerp(pb.s.multiplyScalar(show), land);
       }
@@ -2283,20 +2284,22 @@ import * as THREE from './vendor/three.module.min.js';
     var h = readModel(buf), by = {}, need = {}, at = {}, rings = 0;
     h.meshes.forEach(function (me, k) { by[me.name.slice(4)] = { g: h.geo[k], m: h.mat3[me.mat] }; });
     // The city is downtown San Diego, laid out the way it stands: the bay along the near edge of the plate, the landmarks in their places, ordinary buildings on every other lot.
-    lots.forEach(function (L, i) {
-      if (L.cz > 0.79) return; // the last row of blocks is the bay; its streets read as the piers
-      var v = Math.floor((hashNoise(i * 5.7) + 0.5) * 12); L.kit = L.h > 0.12 ? 't' + (1 + v % 3) : L.h > 0.055 ? 'm' + (1 + v % 3) : 'l' + (1 + v % 4); sites.push(L);
-    });
+    var land = lots.filter(function (L) { return L.cz <= 0.79; }); // the last row of blocks is the bay; its streets read as the piers
     // name, where it stands (x, z), height, and the smallest lot it fits: each takes the nearest free lot
     [['petco', 0.56, 0.5, 0.075, 0.15], ['oap', -0.34, 0.25, 0.42, 0.09], ['hyatt', -0.2, 0.64, 0.37, 0.11], ['emerald', -0.6, 0.05, 0.3, 0.11], ['harbor', 0.34, 0.64, 0.31, 0.11], ['library', 0.78, 0.28, 0.17, 0.11]].forEach(function (q) {
-      var best = null, bd = 9; sites.forEach(function (L) { var dd = Math.hypot(L.cx - q[1], L.cz - q[2]); if (!L.land && Math.min(L.w, L.d) >= q[4] && dd < bd) { bd = dd; best = L; } });
-      if (best) { best.land = true; best.kit = q[0]; best.h = q[3]; }
+      var best = null, bd = 9; land.forEach(function (L) { var dd = Math.hypot(L.cx - q[1], L.cz - q[2]); if (!L.kit && Math.min(L.w, L.d) >= q[4] && dd < bd) { bd = dd; best = L; } });
+      if (best) { best.kit = q[0]; sites.push({ kit: q[0], cx: best.cx, cz: best.cz, w: best.w, h: q[3], d: best.d, ang: best.ang, key: best.key }); }
+    });
+    // Fewer than half the other lots are built on, low and plain, with their footprints pulled in: the streets stay open, so the route is easy to follow.
+    land.forEach(function (L, i) {
+      if (L.kit || hashNoise(i * 5.7) > -0.06) return;
+      sites.push({ kit: 'b' + (1 + Math.floor((hashNoise(i * 2.3) + 0.5) * 3) % 3), cx: L.cx, cz: L.cz, w: L.w * 0.78, h: Math.min(0.075, 0.02 + L.h * 0.45), d: L.d * 0.78, ang: L.ang, key: L.key });
     });
     function prop(name, cx, cz, w, hh, d, ang, key) { sites.push({ kit: name, cx: cx, cz: cz, w: w, h: hh, d: d, ang: ang || 0, key: key === undefined ? 0.5 : key }); }
     prop('bay', 0, 0.995, 2.36, 0.003, 0.37, 0, 0); prop('conv', 0.08, 0.905, 0.6, 0.075, 0.12); prop('midway', -0.55, 1.09, 0.46, 0.085, 0.46, 0, 0.3); prop('bridge', 0.88, 0.86, 0.62, 0.2, 0.62, 0, 0.9);
     if (parks.length) prop('caltower', parks[0].cx, parks[0].cz, 0.1, 0.2, 0.1); // Balboa Park
-    for (var b = 0; b < 15; b++) prop('palm', -0.98 + b * 0.14, 0.822, 0.05, 0.06, 0.05, b * 1.7, 0.6 + 0.02 * b); // palms along the Embarcadero
-    [[-0.95, 0.93, 0.4], [-0.82, 1.13, 2.2], [-0.2, 1.1, 0.2], [0.2, 1.06, 2.9], [0.45, 1.13, 0.9], [0.6, 0.95, 1.6]].forEach(function (q) { prop('boat', q[0], q[1], 0.05, 0.05, 0.05, q[2], 0.7); });
+    for (var b = 0; b < 9; b++) prop('palm', -0.94 + b * 0.235, 0.822, 0.05, 0.06, 0.05, b * 1.7, 0.6 + 0.03 * b); // palms along the Embarcadero
+    [[-0.95, 0.93, 0.4], [-0.2, 1.1, 0.2], [0.2, 1.06, 2.9], [0.45, 1.13, 0.9]].forEach(function (q) { prop('boat', q[0], q[1], 0.05, 0.05, 0.05, q[2], 0.7); });
     sites.forEach(function (L) { need[L.kit] = (need[L.kit] || 0) + 1; });
     var ims = {}; Object.keys(need).forEach(function (k) { ims[k] = many(by[k].g, by[k].m, need[k], town); at[k] = 0; });
     sites.forEach(function (L) { L.im = ims[L.kit]; L.ii = at[L.kit]++; });
@@ -2318,10 +2321,10 @@ import * as THREE from './vendor/three.module.min.js';
   function fittings(lw, lift, show) { // the network's hardware arrives as the parts land: a socketed node at each corner, a tapered end fitting where each strut meets it, and the cost collars. Pressed flat, the nodes are rivets and the rest is gone.
     var g = smooth((lw - 0.7) / 0.3) * show; fit.visible = !!kit && g > 0.001;
     if (!fit.visible) return;
-    var r = mix(0.016, HUB_R, lift) * g, up = mix(0.004, HUB_R, lift), i, c = 0, j;
+    var r = mix(0.009, HUB_R, lift) * g, up = mix(0.004, HUB_R, lift), i, c = 0, j;
     for (i = 0; i < n * n; i++) {
       node3(i, lift, pa.p); pa.p.y += up; kit.hub.setMatrixAt(i, mat.compose(pa.p, pa.q.identity(), pa.s.set(r, r * mix(0.4, 1, lift), r)));
-      kit.hub.setColorAt(i, i === start ? HOT : seenNode[i] === mark ? COOL : PLAIN);
+      kit.hub.setColorAt(i, i === start ? HOT : tint.copy(seenNode[i] === mark ? COOL : PLAIN).lerp(DIM, 1 - lift));
     }
     var fs = 0.012 * g * lift, rs2 = 0.0085 * g * lift;
     for (i = 0; i < edges.length; i++) {
@@ -2345,7 +2348,7 @@ import * as THREE from './vendor/three.module.min.js';
   trip.add(searched);
   var amber = new THREE.MeshBasicMaterial({ color: 0xf2b56b, toneMapped: false });
   var glow = new THREE.MeshBasicMaterial({ color: 0xf2b56b, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
-  var ghost = new THREE.MeshBasicMaterial({ color: 0xf2b56b, transparent: true, opacity: 0.3, depthTest: false, toneMapped: false }); // the route seen through buildings
+  var ghost = new THREE.MeshBasicMaterial({ color: 0xf2b56b, transparent: true, opacity: 0.55, depthTest: false, toneMapped: false }); // the route seen through buildings
   var routeMeshes = [new THREE.Mesh(undefined, amber), new THREE.Mesh(undefined, glow), new THREE.Mesh(undefined, ghost)];
   routeMeshes[2].renderOrder = 10;
   routeMeshes.forEach(function (m) { m.visible = false; trip.add(m); });
@@ -2477,11 +2480,11 @@ import * as THREE from './vendor/three.module.min.js';
     pinA.position.set(nx[start], 0.024, nz[start]); pinB.position.set(nx[goal], 0.024, nz[goal]);
     if (route.length < 2) return;
     var path = new THREE.CurvePath();
-    for (var q = 1; q < route.length; q++) path.add(new THREE.LineCurve3(new THREE.Vector3(nx[route[q - 1]], 0.008, nz[route[q - 1]]), new THREE.Vector3(nx[route[q]], 0.008, nz[route[q]])));
+    for (var q = 1; q < route.length; q++) path.add(new THREE.LineCurve3(new THREE.Vector3(nx[route[q - 1]], 0.03, nz[route[q - 1]]), new THREE.Vector3(nx[route[q]], 0.03, nz[route[q]])));
     var segs = (route.length - 1) * PER;
-    routeMeshes[0].geometry = new THREE.TubeGeometry(path, segs, 0.014, RADIAL, false);
-    routeMeshes[1].geometry = new THREE.TubeGeometry(path, segs, 0.034, RADIAL, false);
-    routeMeshes[2].geometry = new THREE.TubeGeometry(path, segs, 0.008, RADIAL, false);
+    routeMeshes[0].geometry = new THREE.TubeGeometry(path, segs, 0.02, RADIAL, false);
+    routeMeshes[1].geometry = new THREE.TubeGeometry(path, segs, 0.046, RADIAL, false);
+    routeMeshes[2].geometry = new THREE.TubeGeometry(path, segs, 0.014, RADIAL, false);
   }
 
   // ----- Camera and layout -----
@@ -2539,7 +2542,7 @@ import * as THREE from './vendor/three.module.min.js';
     cv.style.opacity = alpha;
     if (alpha <= 0) return;
     if (!REDUCE && pointer.active && net.visible) pick(now);
-    if (!REDUCE && !pointer.active && now - plannedAt > 6500) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every few seconds
+    if (!REDUCE && !pointer.active && now - plannedAt > 10000) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every ten seconds
     if (builtFor !== plannedAt) buildRoute();
 
     var gx = pointer.active && !REDUCE ? pointer.x / W - 0.5 : 0, gy = pointer.active && !REDUCE ? pointer.y / H - 0.5 : 0;
@@ -2582,22 +2585,22 @@ import * as THREE from './vendor/three.module.min.js';
     net.visible = dom === 0 || dom === 2 || dom === 7; trip.visible = dom !== 7; // every other shape stands free
     slab.visible = net.visible || (!cur && en > 0 && lift < 0.999); slab.position.y = slabY - (cur ? 0 : 0.4 * lift); // in the pinned scene the plate rises to meet the network as it settles, and the rods press into it
     var step = 16;
-    streets.opacity = 0.28 * (1 - lift); searched.material.opacity = 0.9 * (1 - lift); // the flat street lines wait until the network has settled
+    streets.opacity = 0.28 * (1 - lift); searched.material.opacity = 0.4 * (1 - lift); // the flat street lines wait until the network has settled
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - plannedAt) / step)), Math.floor(explored.length * clamp((ql - 0.04) / 0.42, 0, 1)));
-    var draw = REDUCE ? 1 : Math.min(clamp((now - plannedAt - explored.length * step) / 600, 0, 1), clamp((ql - 0.5) / 0.28, 0, 1));
+    var draw = REDUCE ? 1 : Math.min(clamp((now - plannedAt - explored.length * step) / 2400, 0, 1), clamp((ql - 0.5) / 0.28, 0, 1)); // the marker takes a couple of seconds to drive the route
     searched.geometry.setDrawRange(0, shown * 2);
     if (markFor !== shown + ':' + plannedAt) { // which edges and corners the search has reached so far
       markFor = shown + ':' + plannedAt; mark++;
       for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
     fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? wc : 1); fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
-    var tubeSegs = Math.round((route.length - 1) * PER * ease(draw));
+    var tubeSegs = Math.round((route.length - 1) * PER * smooth(draw));
     routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
     pinB.visible = draw >= 1;
     if (pin) { // the marker drives the route as it is drawn
-      var along = ease(draw) * (route.length - 1), ri = Math.max(0, Math.min(route.length - 2, Math.floor(along))), rf = along - ri;
+      var along = smooth(draw) * (route.length - 1), ri = Math.max(0, Math.min(route.length - 2, Math.floor(along))), rf = along - ri;
       pin.visible = route.length > 1 && draw > 0;
-      if (pin.visible) pin.position.set(mix(nx[route[ri]], nx[route[ri + 1]], rf), 0.02, mix(nz[route[ri]], nz[route[ri + 1]], rf));
+      if (pin.visible) pin.position.set(mix(nx[route[ri]], nx[route[ri + 1]], rf), 0.04, mix(nz[route[ri]], nz[route[ri + 1]], rf));
     }
 
     screenNodes.length = 0;

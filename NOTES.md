@@ -4,6 +4,17 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The city, thinned out so the route reads (2026-11-15)
+
+You liked the San Diego landmarks but said the city was too crowded to see the path.
+
+- **Landmarks kept**, all ten, plus the bay, bridge, Midway, palms and boats.
+- **Ordinary buildings:** fewer than half the other lots are built on now. They are three plain low blocks in one quiet tone, with their footprints pulled in so the streets are wider. The ten detailed building types are gone from the kit.
+- **Streets and rivets** go dark and small once the network is pressed flat, and the blue search lines are fainter.
+- **The route** is thicker, lifted clear of the street, and shows through anything in front of it. The pin takes about two seconds to drive it, at an even pace, and each route holds for ten seconds on phones.
+- Model file is smaller: 152KB (was 204KB).
+- Tested as before at both sizes: no errors, all tabs, no slow frames.
+
 ## Blender, scenes two and three in fine detail: the space-frame network and downtown San Diego (2026-11-15)
 
 You asked for every animation to be made in Blender with fine detail like the turbine, starting right after the turbine, and then for the city to be San Diego so locals recognise it. Your picks for "routes": a detailed city; the network settles and presses in; a marker drives the route.
