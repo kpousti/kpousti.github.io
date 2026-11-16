@@ -4,6 +4,16 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Phone lag fix (2026-11-15)
+
+You said the live site felt laggy on your phone. I measured it in a phone-sized Chrome slowed down 4 times, scrolling the whole page.
+
+- **Cause.** The scroll-progress line under the tab bar was updated through a variable on the page root, so the browser restyled the entire page on every scroll frame. The cursor light did the same on every mouse move.
+- **Fix.** Both variables now sit on their own small layers. Looks identical.
+- **Also on phones only:** cards no longer blur what is behind them (29 cards, re-blurred every frame). They are a little more solid instead (90% instead of 74%).
+- **Measured:** average frame 16.9ms before, 10.0ms after (10ms is the test screen's limit). Slow frames over the whole page: 13 before, 0 after. Time spent re-measuring the page: 6.1s of a 10s scroll before, 0.4s after.
+- Not measured: a real iPhone. If it is still laggy there, the next things to cut on phones are the soft shadows and the film grain.
+
 ## Newest pass: turbine first, then graphs and routes; readable big text
 
 Asked for: open on the turbine, and have it transform into graphs and routes at "How I think". Then: don't go back to a turbine at Experience, and stop the big text being hidden.
