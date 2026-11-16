@@ -1,6 +1,7 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Nothing is pushed. `main` and the live site are untouched.
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main` and kiapousti.com on 2026-11-15, on your "ship it".
+Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
 ## Newest pass: turbine first, then graphs and routes; readable big text
