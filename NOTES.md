@@ -4,6 +4,39 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The "workshop drawing" redesign: removing the AI look (2026-11-15)
+
+You said people call the site AI-generated, and picked the "Workshop drawing" option. I ran the unslop skill (by Damir Sokolovsky, @heydamir) as an audit and then rebuilt the page's look.
+
+**Direction**
+- Product: the portfolio of a software developer who builds routing engines in C++ and applied AI, for engineers and hiring managers.
+- Character: exact, mechanical, hand-built.
+- World: an engineering workshop. Drawing sheets, machined steel, a test bench.
+- Moments (the only rich things): the Blender model, and each project's live demo.
+- Signature: drawing-sheet details. Hairline rules, part numbers on every row, a title block with a sheet number, the construction lines on your name.
+
+**What the audit found:** 29 identical see-through rounded cards; blur, film grain, cursor glow, card tilt, magnetic buttons and a glitch all stacked; 48 things animating in; small all-caps spaced labels; pills on everything; the 3D model showing through the text.
+
+**What changed**
+- **Colours.** One near-neutral ink ramp instead of navy: page `#0b0d14`, rules `#262a35`, text `#c6cad4` / `#a3a9b8` / `#eef0f5`. Amber is the only accent in the page furniture. Blue now appears only inside the models and demos.
+- **Top bar.** A flat strip ruled off across the top, with a short amber line under the current tab. The floating frosted pill is gone. On phones the tabs fade at the edges instead of running into your name.
+- **Boxes became ruled lists.** About's four stat cards are a numbered spec list. Skills' eight boxes are a two-column parts list. Wins, contact and "Away from the keyboard" sit between hairlines with part numbers. Only the live demos keep a frame.
+- **Title blocks.** Each chapter head is left aligned with a rule above and "Sheet 01 / 06" at the far end.
+- **Labels.** Sentence case, normal spacing, quiet colour. Tags are plain text with dots between, not pills.
+- **Type.** Display weight down one step (700 to 600). Buttons have 8px corners.
+- **Effects removed.** Film grain, cursor glow, glitch, card tilt and cursor light, magnetic buttons, hover lifts, the looping scroll cue, the word-by-word headline reveal. Scroll-in is now one short fade (10px, 380ms).
+- **The model is never behind text.** At each chapter it sits in the open space of the title block and moves with the page. Going into a chapter it fades out where it was and fades in at its new place, already rebuilding. The camera dive over the text is gone. Between two projects it still slides across.
+
+**Kept on purpose:** the sliced chapter title cards, the giant "graphs / routes" scene, the live demos, the blinking dot on live demos (they are live), the count-up on the stats.
+
+**Not done, needs your say-so (wording):** headlines end with a full stop ("I think in graphs."); the audit would drop those. I did not touch any wording.
+
+**Not done yet:** the other chapters' models are still the old blocks (next in order: "routes"). The four other preview themes were not rechecked. The code that splits headlines into words is still there, unused.
+
+**This overrides the design-system notes in the kia-portfolio-site skill** (its colour values and its "signature effects to keep" list are now out of date).
+
+**Tested** at 1440x860 and 393x659: no errors, no sideways scroll, all six tabs, fonts loaded, nothing left hidden by scroll-in, no slow frames in the slowed-down phone test. Not tested: Safari, a real iPhone, JavaScript off.
+
 ## Blender, second scene: "graphs" is a floating network made of the turbine's own parts (2026-11-15)
 
 Your picks from the questions: a floating 3D network; the turbine's parts become it; a search spreads across it.
