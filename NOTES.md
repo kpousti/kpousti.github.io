@@ -3,16 +3,29 @@
 Branch: `nap-build` (built on top of `redesign/map-hero-test`). Nothing is pushed. `main` and the live site are untouched.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
-## Newest pass: an animation for every project
+## Newest pass: turbine first, then graphs and routes; readable big text
 
-The opening is now turbine, then routing: the rotor spins up, bursts into the city, and A* immediately searches and draws the amber route.
+Asked for: open on the turbine, and have it transform into graphs and routes at "How I think". Then: don't go back to a turbine at Experience, and stop the big text being hidden.
+
+- **Opening.** The hero model is now the turbine. Its blades grow out of the shaft row by row and it spins up fast, then settles.
+- **"How I think".** Scrolling there, the turbine flattens into a street graph: white dots are nodes, lines are edges. While "graphs" is on screen the A* search spreads and the nodes it reaches turn blue. When the word changes to "routes", the blocks rise into a city and the amber route draws. Both are tied to the scroll, so you can scrub back and forth.
+- **About** keeps the city ("I think in graphs."). The turbine no longer comes back.
+- **Experience** has a new shape for "Manual work, turned into software": a loose heap of sheets on the left, tiles flying across one at a time, and a tidy amber grid filling in column by column on the right. Then the new columns clear and a fresh heap arrives. About a 16 second loop.
+- **Big text was hidden** because during each dive the 3D model was drawn on top of the whole page, title cards included. The model now always stays behind the page. The chapter title cards ("Projects", "Side builds", "Skills"...) also sat too low to be seen before they slid away: the title is now near the top of the card, and the card rises whole until the chapter is halfway up the screen before it slices open. In the giant-word scene the model crosses underneath the word instead of in front of it.
+- Hero text changed again, because the map is no longer in the hero: "Scroll: the turbine rebuilds into a street map. Point at any corner of it and A* plans the route there, live."
+- Cost: the dive is less in-your-face, since it now plays behind cards and under the title card instead of over them.
+- Tested as before at 1440x860 and 390x800: no errors, no sideways scroll, all six tabs highlight, about 100 frames a second, page heights unchanged.
+
+## Earlier pass: an animation for every project
 
 Every chapter and every project is now a stop with its own 3D shape, built from the same blocks. On desktop the model sits beside the card under the project's name and slides across as you move between projects. On phones it sits in a gap under each name.
 
 | Where | Shape | What moves |
 |---|---|---|
-| Hero | City | A* search, then the route |
-| About, Experience | Gas turbine rotor | Spins; turbine rows amber |
+| Hero | Gas turbine rotor | Blades grow in, spins up, then turns slowly |
+| How I think | Street graph, then city | Search spreads over the nodes; city rises and the route draws |
+| About | City | The route, lit |
+| Experience | Heap of sheets into a tidy grid | Tiles fly left to right and snap into place |
 | Projects, Route Engine | Flat road map | The route, lit |
 | Industrial AI Notebook | Telemetry bars in a baseline band | The signal marches; anomalies spike in amber |
 | Mini Maps | City as a distance map | A Dijkstra wavefront; blocks rise as they are settled |
@@ -97,7 +110,7 @@ References used: the 19 ORYZO screenshots sent in chat. There is no `refs/` fold
 - **Text I changed** (the brief said not to; these lines described the dots): the hero pitch's second sentence, and the Projects sub-line. **Text I added**: the giant-word scene ("How I think / graphs", "What I build / routes", two captions). The 1.2 million figure is from your About section.
 - **three.js 0.160.0** is stored at `vendor/three.module.min.js`. Cost: 671KB on disk, about 167KB compressed for visitors. No GSAP, no CDN.
 - **Fix 4 (a glimpse per project)**: left as it was. Every project and build card already has its own live demo.
-- **The model is behind the text at rest.** Only during a dive does it come in front, with a "screen" blend so it adds light and never darkens text.
+- **The model is always behind the text.** It used to come in front during a dive; that hid the big titles, so it no longer does.
 - Kept from the earlier audit, not acted on: the Family and Markets tiles and the side-build status labels.
 
 ## Where it falls short of the references
@@ -118,8 +131,8 @@ Not tested: Safari, a real phone, JavaScript turned off, older or low-power devi
 ## Check in Safari
 
 1. The 3D city appears and is lit, on Mac and iPhone.
-2. The giant-word scene locks and the city passes in front of the word, not behind.
-3. During a dive the blocks glow over the page and never show as a grey box (this is the "screen" blend).
+2. The giant-word scene locks; the graph sits under "graphs" with white node dots, and the city rises as the word changes to "routes".
+3. During a dive the blocks stay behind the cards and title cards, and the titles are readable.
 4. The sliced curtains slide without flicker, and nothing stays covered.
 5. Headline glitch shows amber and blue copies for a moment, then clears.
 6. The name is condensed (narrow letters) with guide lines lined up under it.
