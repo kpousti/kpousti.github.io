@@ -2386,31 +2386,117 @@ import * as THREE from './vendor/three.module.min.js';
     cups.cp.sub(b.p).applyQuaternion(q2).add(b.p); cups.cp.y += h + 0.03; cups.cq.premultiply(q2).multiply(qL.setFromAxisAngle(LY, t * 0.006));
     var bd = A.by.board[0]; h = afloat(bd, t, q2); bd.cp.y += h + 0.012; bd.cq.premultiply(q2);
   }
-  var ASM = [ // the model's name in the file; the stop it belongs to (a chapter's id, or a project's number in page order); camera height; size; its motion
-    { name: 'line', at: 'experience', elev: 0.36, fit: 1.2, tick: tickLine },
-    { name: 'rec', at: 1, elev: 0.5, fit: 0.95, tick: tickRec, lit: true },
-    { name: 'gears', at: 3, elev: 0.2, fit: 1.05, tick: tickGears, lit: true },
-    { name: 'surf', at: 5, elev: 0.42, fit: 1.1, tick: tickSurf }
+  var LX = new THREE.Vector3(1, 0, 0), DULL = new THREE.Color(0.45, 0.5, 0.62), COOLB = new THREE.Color(0.45, 0.8, 1.9);
+  function tickMM(t, A) { // Dijkstra on the board's own pins and strings, weights being string lengths: pins are settled in order of distance and the shortest-path tree lights up
+    var pins = A.by.pin, strs = A.by.str, i;
+    if (!A.dj) { // run the real algorithm once
+      var N = pins.length, at = [], dist = [], done = [], via = [], order = [];
+      pins.forEach(function (P) { at[+P.n[2]] = P; });
+      for (i = 0; i < N; i++) dist[i] = Infinity;
+      dist[0] = 0;
+      for (var step = 0; step < N; step++) {
+        var best = -1; for (i = 0; i < N; i++) if (!done[i] && (best < 0 || dist[i] < dist[best])) best = i;
+        done[best] = true; order[best] = step;
+        strs.forEach(function (S) { var a = +S.n[2], b = +S.n[3], o = a === best ? b : b === best ? a : -1; if (o < 0 || done[o]) return; var w = at[a].p.distanceTo(at[b].p); if (dist[best] + w < dist[o]) { dist[o] = dist[best] + w; via[o] = S; } });
+      }
+      A.dj = { order: order, via: via, n: N };
+    }
+    var k = Math.floor(clamp(((t % 10000) / 10000) / 0.75, 0, 1) * (A.dj.n + 0.99));
+    for (i = 0; i < pins.length; i++) { var id = +pins[i].n[2], on = A.dj.order[id] < k; pins[i].tint = id === 0 ? HOT : on ? PLAIN : DULL; pins[i].cs = A.dj.order[id] === k - 1 ? 1.5 : 1; }
+    for (i = 0; i < strs.length; i++) strs[i].tint = DULL;
+    for (i = 0; i < A.dj.n; i++) if (A.dj.via[i] && A.dj.order[i] < k) A.dj.via[i].tint = HOT;
+  }
+  function tickAC(t, A) { // gentle water; each agent walks its boardwalk in to the hub to report, and back out
+    var w = A.by.w, ag = A.by.agent, i, q2 = pb.q;
+    for (i = 0; i < w.length; i++) w[i].cp.y += 0.4 * swell(w[i].p.x, w[i].p.z, t) - 0.03;
+    for (i = 0; i < ag.length; i++) { var u = 0.5 - 0.5 * Math.cos(t * 0.0006 + i * 1.3), P = ag[i]; P.cp.x = P.p.x * mix(1, 0.3, u); P.cp.z = P.p.z * mix(1, 0.3, u); P.cp.y += 0.006 * Math.abs(Math.sin(t * 0.012 + i)); }
+  }
+  function tickKB(t, A) { // the ring of bars rises and falls like speech; one tool at a time is called, its cable lights and it does its job
+    var bars = A.by.bar, i, call = Math.floor(t / 2600) % 3, ph = (t % 2600) / 2600, on = pulse(ph, 0.1, 0.8);
+    for (i = 0; i < bars.length; i++) { var j = +bars[i].n[2]; bars[i].sv = vR.set(1, 0.25 + 0.9 * Math.abs(Math.sin(t * 0.004 + j * 0.9) * Math.sin(t * 0.0013 + j * 0.37)), 1).clone(); }
+    for (i = 0; i < 3; i++) A.by.cable[i].tint = +A.by.cable[i].n[2] === call ? HOT : DULL;
+    A.by.drawer[0].cp.addScaledVector(vT.set(-0.48, 0, -0.88).normalize(), -0.07 * (call === 0 ? on : 0)); // the drawer slides open toward the front
+    A.by.hand[0].cq.multiply(qL.setFromAxisAngle(LZ, t * 0.0012 + (call === 1 ? on * 3 : 0)));
+    A.by.lens[0].cq.multiply(qL.setFromAxisAngle(LZ, call === 2 ? 0.5 * Math.sin(ph * Math.PI * 4) * on : 0));
+  }
+  function tickQB(t, A) { // walk-forward: the window steps along the curve; inside it the model trains on the blue stretch and is tested on the amber one
+    var bars = A.by.bar, win = A.by.win[0], T2 = 2200, step = Math.floor(t / T2) % 6, f = smooth(((t % T2) / T2 - 0.7) / 0.3), x = -0.66 + 0.266 * (step + f) - (step === 5 ? f * 0.266 * 6 : 0), i;
+    win.cp.x = x;
+    for (i = 0; i < bars.length; i++) { var d = bars[i].p.x - x; bars[i].tint = d < -0.235 || d > 0.235 ? PLAIN : d < 0.115 ? COOLB : HOT; }
+  }
+  function tickLA(t, A) { // each envelope drops into the hopper, falls through the neck, and the flipper sends it to one of three trays; the amber tray goes to a person
+    var env = A.by.env, i, T3 = 5400, lead = 0, lu = 0;
+    for (i = 0; i < env.length; i++) {
+      var u = ((t / T3) + i / env.length) % 1, bin = i % 3, bx = (bin - 1) * 0.42, P = env[i], a = smooth(u / 0.3), b = smooth((u - 0.3) / 0.2), c = smooth((u - 0.5) / 0.3);
+      var x0 = 0.25 * hashNoise(i * 4.1), z0 = 0.2 * hashNoise(i * 2.7);
+      P.cp.set(mix(mix(x0, 0, a), bx, c), mix(mix(mix(1.25, 0.98, a), 0.56, b), 0.06 + 0.012 * Math.floor(i / 3), c), mix(z0, 0, a));
+      P.cq.setFromEuler(eA.set(mix(1.2, 0, c) * Math.sin(u * 20 + i), u * 6 * (1 - c), mix(0.9, 0, c) * Math.cos(u * 17)));
+      P.cs = smooth(u / 0.05) * (1 - smooth((u - 0.93) / 0.06));
+      if (u > 0.4 && u < 0.62 && u > lu) { lu = u; lead = bin - 1; }
+    }
+    A.by.flipper[0].cq.multiply(qL.setFromAxisAngle(LZ, -0.45 * lead));
+  }
+  function tickMD(t, A) { // a split-flap board: the flaps turn over, column by column, to draw the bars of a market day; an amber flap is a level reached
+    var fl = A.by.flap, i, day = Math.floor(t / 7000);
+    for (i = 0; i < fl.length; i++) {
+      var r = +fl[i].n[2], c = +fl[i].n[3], lvl = function (d) { return Math.floor(clamp(1.5 + 1.4 * Math.sin(c * 0.7 + d * 1.9) + 0.6 * Math.sin(c * 1.9 + d), 0, 3.99)); };
+      var was = r < lvl(day - 1) ? 1 : 0, now2 = r < lvl(day) ? 1 : 0, f = smooth(((t % 7000) - c * 260 - r * 90) / 500);
+      fl[i].cq.multiply(qL.setFromAxisAngle(LX, Math.PI * mix(was, now2, f)));
+    }
+  }
+  function tickMG(t, A) { // the top card flips over the rings from the question pile to the answer pile, then the next one goes
+    var f = smooth(((t % 2400) / 2400 - 0.15) / 0.6);
+    A.by.flip[0].cq.multiply(qL.setFromAxisAngle(LX, -f * 3.7));
+  }
+  function tickTools(t, A) { // each tool in turn catches the light
+    var tl = A.by.t, i, k = Math.floor(t / 900) % tl.length;
+    for (i = 0; i < tl.length; i++) { var on = +tl[i].n[2] === k ? pulse((t % 900) / 900, 0.05, 0.7) : 0; tl[i].tint = cT.setRGB(1 + 0.9 * on, 1 + 0.45 * on, 1).clone(); tl[i].cp.z += 0.03 * on; }
+  }
+  var MORSE = (function () { // K I A in Morse: dash dot dash, dot dot, dot dash. Each entry is [key down?, length in dots]
+    var out = [], total = 0; ['-.-', '..', '.-'].forEach(function (L, li) { L.split('').forEach(function (ch, ci) { out.push([1, ch === '-' ? 3 : 1]); out.push([0, ci < L.length - 1 ? 1 : 3]); }); });
+    out[out.length - 1][1] = 9; out.forEach(function (q) { q.push(total); total += q[1]; }); out.total = total; return out;
+  })();
+  function tickTK(t, A) { // the key taps out K I A, and a spark shows at the contact each time it closes
+    var u = (t / 150) % MORSE.total, down = 0, i;
+    for (i = 0; i < MORSE.length; i++) if (u >= MORSE[i][2] && u < MORSE[i][2] + MORSE[i][1]) down = MORSE[i][0];
+    A.kd = (A.kd || 0) + (down - (A.kd || 0)) * 0.5;
+    A.by.lever[0].cq.multiply(qL.setFromAxisAngle(LZ, 0.05 * A.kd - 0.02)); A.by.spark[0].cs = A.kd > 0.6 ? 1 + 0.6 * Math.sin(t * 0.09) : 0.0001;
+  }
+  var ASM = [ // the model's name in the file; the stops it belongs to (a chapter's id, or a project's number in page order); camera height; size; its motion; lit: it faces the camera, so it gets the front light
+    { name: 'line', at: ['experience'], elev: 0.36, fit: 1.2, tick: tickLine },
+    { name: 'rec', at: [1], elev: 0.5, fit: 0.9, tick: tickRec, lit: true },
+    { name: 'mm', at: [2], elev: 0.2, fit: 0.8, tick: tickMM, lit: true },
+    { name: 'gears', at: [3], elev: 0.2, fit: 0.85, tick: tickGears, lit: true },
+    { name: 'ac', at: ['builds', 4], elev: 0.5, fit: 1.1, tick: tickAC },
+    { name: 'surf', at: [5], elev: 0.42, fit: 1.1, tick: tickSurf },
+    { name: 'kb', at: [6], elev: 0.5, fit: 1.0, tick: tickKB },
+    { name: 'qb', at: [7], elev: 0.34, fit: 0.9, tick: tickQB },
+    { name: 'la', at: [8], elev: 0.26, fit: 0.78, tick: tickLA, lit: true },
+    { name: 'md', at: [9], elev: 0.2, fit: 0.78, tick: tickMD, lit: true },
+    { name: 'mg', at: [10], elev: 0.44, fit: 1.25, tick: tickMG },
+    { name: 'tools', at: ['skills'], elev: 0.18, fit: 1.0, tick: tickTools, lit: true },
+    { name: 'tk', at: ['contact'], elev: 0.42, fit: 1.4, tick: tickTK }
   ];
   fetch('./models/scenes.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
     var h = readModel(buf), T = h.T;
     ASM.forEach(function (A) {
       var idxs = [], count = {}, used = {}, ims = {};
       h.pname.forEach(function (nm, k) { if (nm.split('.')[0] === A.name) { idxs.push(k); count[h.mesh[k]] = (count[h.mesh[k]] || 0) + 1; } });
-      var st = typeof A.at === 'string' ? stops.filter(function (q) { return q.chapter && q.el.id === A.at; })[0] : stops.filter(function (q) { return !q.chapter; })[A.at];
-      if (!idxs.length || !st) return;
+      var sts = A.at.map(function (w) { return typeof w === 'string' ? stops.filter(function (q) { return q.chapter && q.el.id === w; })[0] : stops.filter(function (q) { return !q.chapter; })[w]; }).filter(Boolean);
+      if (!idxs.length || !sts.length) return;
       A.g = new THREE.Group(); A.g.visible = false; city.add(A.g); A.parts = []; A.by = {}; A.ims = [];
       idxs.forEach(function (k) {
         var mi = h.mesh[k], o = k * 10, im = ims[mi];
         if (!im) { im = ims[mi] = many(h.geo[mi], h.mat3[h.meshes[mi].mat], count[mi], A.g); A.ims.push(im); used[mi] = 0; }
-        var P = { im: im, idx: used[mi]++, n: h.pname[k].split('.'), p: new THREE.Vector3(T[o], T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), cp: new THREE.Vector3(), cq: new THREE.Quaternion(), cs: 1, tint: null, sp: new THREE.Vector3(), sq: new THREE.Quaternion(), key: 0 };
+        var P = { im: im, idx: used[mi]++, n: h.pname[k].split('.'), p: new THREE.Vector3(T[o], T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), s: new THREE.Vector3(T[o + 7], T[o + 8], T[o + 9]), cp: new THREE.Vector3(), cq: new THREE.Quaternion(), cs: 1, sv: null, tint: null, sp: new THREE.Vector3(), sq: new THREE.Quaternion(), key: 0 };
         // Where a part comes from: thrown outward and upward from its place, tumbled, and arriving in a sweep from left to right
         var r1 = hashNoise(k * 3.7) + 0.5, r2 = hashNoise(k * 7.1 + 2), r3 = hashNoise(k * 1.9 + 5);
         P.sp.copy(P.p).sub(vT.set(0, 0.25, 0)).normalize().multiplyScalar(0.7 + 0.7 * r1).add(P.p); P.sp.y += 0.35 + 0.3 * r1;
         P.sq.setFromEuler(eA.set(r2 * 5, r3 * 5, r1 * 4)); P.key = clamp((P.p.x + 1) / 2, 0, 1) * 0.6 + 0.4 * r1;
         im.setColorAt(P.idx, PLAIN); A.parts.push(P); (A.by[P.n[1]] = A.by[P.n[1]] || []).push(P);
       });
-      st.asm = A; st.f = ELEV.length; ELEV.push(A.elev); FIT.push(A.fit); if (A.lit) UPRIGHT.push(st.f); // faces the camera, so it gets the front light // its own shape number: the plain blocks stand down there
+      var f = ELEV.length; ELEV.push(A.elev); FIT.push(A.fit); if (A.lit) UPRIGHT.push(f);
+      sts.forEach(function (st) { st.asm = A; st.f = f; }); // its own shape number: the plain blocks stand down there
     });
     lastKey = ''; if (REDUCE) frame(0);
   }).catch(function () {}); // no file: those scenes keep their plain blocks
@@ -2423,7 +2509,8 @@ import * as THREE from './vendor/three.module.min.js';
     A.tick(t, A);
     for (i = 0; i < A.parts.length; i++) {
       P = A.parts[i]; var u = smooth(a * 1.5 - 0.5 * P.key);
-      P.im.setMatrixAt(P.idx, mat.compose(pa.p.copy(P.sp).lerp(P.cp, u), pa.q.copy(P.sq).slerp(P.cq, u), pa.s.setScalar(Math.max(0.0001, u * P.cs))));
+      P.im.setMatrixAt(P.idx, mat.compose(pa.p.copy(P.sp).lerp(P.cp, u), pa.q.copy(P.sq).slerp(P.cq, u), pa.s.copy(P.s).multiplyScalar(Math.max(0.0001, u * P.cs))));
+      if (P.sv) { pa.s.multiply(P.sv); P.im.setMatrixAt(P.idx, mat.compose(pa.p, pa.q, pa.s)); }
       if (P.tint) P.im.setColorAt(P.idx, P.tint);
     }
     for (i = 0; i < A.ims.length; i++) { A.ims[i].instanceMatrix.needsUpdate = true; if (A.ims[i].instanceColor) A.ims[i].instanceColor.needsUpdate = true; }
@@ -2452,7 +2539,7 @@ import * as THREE from './vendor/three.module.min.js';
 
   // ----- Formations: the same blocks rebuild into a different shape for each chapter -----
   // 0 city (hero) · 1 turbine rotor (About, Experience) · 2 road map with the route (Projects) · 3 hub and huts (Side builds) · 5 wave (Skills, Contact)
-  var CHAPTER_FORM = { about: 0, experience: 15, projects: 2, builds: 3, skills: 14, contact: 5 }, SCENE_FORM = [2, 6, 7, 8, 3, 5, 9, 10, 11, 12, 13];
+  var CHAPTER_FORM = { about: 0, experience: 15, projects: 0, builds: 3, skills: 14, contact: 5 }, SCENE_FORM = [0, 6, 7, 8, 3, 5, 9, 10, 11, 12, 13]; // 0 is the San Diego model: About, the Projects opener and Route Engine share it
   // Per shape: the camera height that shows it best, and which shapes stand still (the rest keep moving, so they keep drawing).
   var ELEV = [0.78, 0.45, 0.85, 0.7, 0, 0.45, 0.3, 0.8, 0.95, 0.22, 0.5, 0.42, 0.25, 0.26, 0.26, 0.28], STILL = [0, 2, 3], UPRIGHT = [6, 9, 10, 11, 12, 13, 14, 15], FIT = [1, 1, 0.8, 0.95, 1, 1, 1, 0.8, 0.92, 1, 1, 0.88, 1, 1, 1, 1.4]; // FIT: flat, wide shapes are drawn a little smaller so they stay on screen
   var stops = [], sceneNo = 0, pl0 = {}, pl1 = {}, lagNow = 0;
@@ -2464,7 +2551,7 @@ import * as THREE from './vendor/three.module.min.js';
     o.k = 0;
     if (!st) { o.x = W / 2; o.y = H * 0.66; o.s = Math.min(W * 0.3, H * 0.25); o.a = 0.9; }
     else if (st.chapter) { o.x = W > 900 ? W * 0.6 : W / 2; o.y = st.head.getBoundingClientRect().bottom + lagNow - H * (W > 900 ? 0.3 : 0.25); o.s = W > 900 ? Math.min(W * 0.3, H * 0.23) : Math.min(W * 0.27, H * 0.2); o.a = 0.9; o.k = 1; } // in the open space of the chapter's title block, moving with the page: it is never behind the rows of text
-    else if (W > 900) { o.x = W * (st.side === 'left' ? 0.69 : 0.31); o.y = H * 0.67; o.s = Math.min(W * 0.19, H * 0.29); o.a = 0.95; } // beside the card, under the project's name
+    else if (W > 900) { o.x = W * (st.side === 'left' ? 0.69 : 0.31); o.y = H * 0.74; o.s = Math.min(W * 0.19, H * 0.29); o.a = 0.95; } // beside the card, under the project's name
     else { o.x = W / 2; o.y = (st.name ? st.name.getBoundingClientRect().bottom : st.top) + lagNow + W * 0.27; o.s = W * 0.3; o.a = 0.95; o.k = 1; } // phones: in the gap left under the project's name, moving with the page
   }
   var RING = [[-0.55, -0.35, 0.34, 0.25], [0.5, -0.45, 0.28, 0.456], [0.05, 0.1, 0.2, 0.603], [-0.5, 0.5, 0.24, 0.779], [0.55, 0.45, 0.3, 1]]; // Tarjan's five cycles: x, z, radius, share of the blocks so far
@@ -2601,11 +2688,11 @@ import * as THREE from './vendor/three.module.min.js';
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
   // The switch beside the turbine really starts and stops it. It is built here, so without JavaScript there is no dead control.
-  var running = true, spinV = 0, kick = 0;
+  var running = true, spinV = 0;
   if (!REDUCE) {
     var sw = document.createElement('button'); sw.type = 'button'; sw.className = 'switch'; sw.setAttribute('aria-pressed', 'true');
     sw.innerHTML = '<i aria-hidden="true"></i><span>Turbine <b>running</b></span>';
-    sw.addEventListener('click', function () { running = !running; kick = performance.now(); sw.setAttribute('aria-pressed', running); sw.querySelector('b').textContent = running ? 'running' : 'stopped'; });
+    sw.addEventListener('click', function () { running = !running; sw.setAttribute('aria-pressed', running); sw.querySelector('b').textContent = running ? 'running' : 'stopped'; });
     hero.appendChild(sw);
   }
   var idle = 0, spin = 0, riding = false, rideT = -1, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
@@ -2636,9 +2723,9 @@ import * as THREE from './vendor/three.module.min.js';
       nudge = st.chapter ? 0 : sw;
     }
     lagNow = lag; place(prev || cur, pl0); place(cur, pl1);
-    // The rotor has weight. Switched on (or on arrival) it spins up hard, then settles to a slow turn; switched off it coasts down to a stop.
-    spinV += ((running ? 1 : 0) - spinV) * (1 - Math.exp(-dt / (running ? 500 : 1600)));
-    spin += dt * spinV * (0.0007 + (running && (kick || INTRO) ? 0.009 * Math.exp(-(now - (kick || t0)) / 1000) : 0));
+    // The rotor has weight. Switched on it spins up over a second or so and then keeps running fast; switched off it coasts down to a stop.
+    spinV += ((running ? 1 : 0) - spinV) * (1 - Math.exp(-dt / (running ? 900 : 1800)));
+    spin += dt * spinV * 0.0085; // about 80 turns a minute: fast, but below the speed where the blades start to strobe on a 60Hz screen
     // Into or out of a chapter's title block the model does not travel across the text: it fades out where it was and fades in at its new place, already rebuilding. Between two projects it slides across as before.
     var far = !!cur && (cur.chapter || !!(prev && prev.chapter)), mp = far ? (m < 0.5 ? 0 : 1) : m;
     var alpha = mix(1, mix(pl0.a, pl1.a, m) * (far ? Math.abs(2 * m - 1) : 1), d);

@@ -4,6 +4,30 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Every scene now has its own Blender model; turbine runs fast (2026-11-15)
+
+You said "keep building", asked for the turbine to stay fast when it is on, and then "ship it".
+
+- **Turbine:** switched on it spins up over about a second and keeps running at roughly 80 turns a minute (it was a slow drift). Any faster and the blades start to strobe on a normal 60Hz screen. Off, it coasts down to a stop.
+- **Nine more models** (same fly-together system as the last batch):
+  - **Mini Maps:** a pin-and-string board. Real Dijkstra runs on the board's own pins, with string lengths as weights; pins are settled in order of distance and the shortest-path tree lights up.
+  - **Agent City** (and the Side builds opener): a hub pavilion and six huts on stilts with thatched roofs and ladders, joined by boardwalks over moving water; six agents walk in to report and back out.
+  - **Kia-bot:** a desk unit with a ring of bars that moves like speech, wired to three tools it "calls" in turn: a card drawer that slides open, a clock whose hand runs, a magnifier that sweeps.
+  - **Quant Backtest Lab:** an equity curve as 48 bars on a bed with rails, and a brass window that steps along it; inside the window the training stretch is blue and the test stretch amber.
+  - **Lead Autoresponder:** a mail sorter. Envelopes drop into a hopper, fall through the neck, and a flipper sends each to one of three trays; the amber tray is the one that goes to a person.
+  - **Market Debrief:** a split-flap board of 36 flaps that turn over column by column to draw the day's bars.
+  - **Math 163 Study Game:** flash cards on two rings; the top card flips from the question pile to the answer pile. A pencil, set square and compass on the base.
+  - **Skills:** a pegboard wall with eight tools (wrench, calipers, screwdriver, pliers, steel rule, hex key, multimeter, soldering iron); each catches the light in turn.
+  - **Contact:** a brass telegraph key with its sounder. It taps out K I A in Morse, with a spark at the contact.
+- **Projects opener and Route Engine** now show the San Diego model with its route, in place of the old flat block map.
+- **No scene uses the old blocks any more**, except during the hand-over between two scenes on phones.
+
+**Cost:** `models/scenes.bin` is now 504KB (13 models, 572 parts). It loads after the opening, but it is the biggest file on the site; with the turbine (191KB) and city (152KB) that is about 850KB of models. If phone data matters, this is the first thing to slim.
+
+**Not done:** the six small tiles under "Away from the keyboard" other than the skateboard (Sports, Boards, Cars, Family, Reading, Markets) are still 2D drawings, and the chapter title cards are unchanged. Several models overlap the bottom of their big project name a little on desktop.
+
+**Tested** at 1440x860 and 393x659: no errors, no sideways scroll, all six tabs, nothing left hidden, no slow frames in the slowed-down phone test. Not tested on a real iPhone or in Safari.
+
 ## While you were away: four more Blender scenes, the turbine switch, the skateboard (2026-11-15)
 
 You asked for every animation, header and tile to be custom-made in Blender, realistic, with strong transitions, plus an on/off control beside the turbine. You did not answer the Experience questions, so I used my recommended picks. This is what got done in this pass, and what did not.

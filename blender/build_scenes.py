@@ -4,6 +4,15 @@
 #   rec    Industrial AI Notebook: a strip-chart recorder wired to a vibration sensor on a bearing; the pen draws the live signal
 #   gears  TheAlgorithms/C++ (Tarjan): gear trains on a plate; each strongly connected component is one train that turns together
 #   surf   Surf Alert: a weather buoy and a surfboard on a rolling swell
+#   mm     Mini Maps (Dijkstra): a pin-and-string board; pins are settled in order of distance
+#   ac     Agent City: a hub pavilion and six huts on stilts over water, joined by boardwalks, with agents walking in to report
+#   kb     Kia-bot: a desk unit with a ring of level bars for its voice, wired to three tools it calls (a card drawer, a clock, a magnifier)
+#   qb     Quant Backtest Lab: an equity curve as a row of bars on a bed, with a brass window that steps forward along a rail (train, then test)
+#   la     Lead Autoresponder: a mail sorter. Envelopes drop through a hopper and a flipper sends each to one of three trays
+#   md     Market Debrief: a split-flap board whose flaps turn to draw the day's bars
+#   mg     Math 163 Study Game: flash cards on two rings, flipping over, with a pencil, a set square and a compass
+#   tools  Skills: a pegboard wall of real tools
+#   tk     Contact: a brass telegraph key and its sounder, tapping out a message
 import bpy, math, os
 from mathutils import Vector
 
@@ -70,7 +79,7 @@ def xprism(pts, x0, x1, m):
 def quad(a, b, c, d, m): i = len(V); V.extend([a, b, c, d]); F.append((i, i + 1, i + 2, i + 3)); M.append(m)
 
 count = {}
-def part(name, loc=(0, 0, 0), rot=(0, 0, 0), smooth=0.0, mesh=None):
+def part(name, loc=(0, 0, 0), rot=(0, 0, 0), smooth=0.0, mesh=None, scale=None):
     """turn what was drawn into one part (or reuse a mesh already made), standing at loc"""
     if mesh is None:
         me = bpy.data.meshes.new(name); me.from_pydata(V, [], F); me.update()
@@ -85,6 +94,7 @@ def part(name, loc=(0, 0, 0), rot=(0, 0, 0), smooth=0.0, mesh=None):
         V.clear(); F.clear(); M.clear()
     else: me = mesh
     o = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(o); o.location = loc; o.rotation_euler = rot; o["keep"] = 1
+    if scale: o.scale = scale
     return me
 
 # ================= line: the approval line =================
@@ -265,6 +275,241 @@ for (x, y, lean) in [(-0.42, 0, 0), (-0.33, 0.075, 0.25), (-0.33, -0.075, -0.25)
     for dy in (-0.003, 0.003): V.extend([(x + 0.06, y + dy, -0.012), (x - 0.04, y + dy, -0.012), (x - 0.07, y + dy + lean * 0.08, -0.095)])
     F.append((i, i + 1, i + 2)); M.append(BLUE); F.append((i + 3, i + 5, i + 4)); M.append(BLUE); F.append((i, i + 2, i + 5, i + 3)); M.append(BLUE); F.append((i + 1, i + 4, i + 5, i + 2)); M.append(BLUE)
 part("surf.board", (0.3, -0.12, 0.02), (0, 0, 0.35), smooth=0.8)
+
+
+from mathutils import Matrix
+def ngon(cx, cy, r, n, phase=0.0): return [(cx + r * math.cos(phase + math.tau * k / n), cy + r * math.sin(phase + math.tau * k / n)) for k in range(n)]
+def flat(angle=0.0): return (Matrix.Rotation(math.pi / 2, 4, 'X') @ Matrix.Rotation(angle, 4, 'Z')).to_euler()  # drawn lying flat, hung on an upright board facing the viewer
+
+# ================= mm: the pin-and-string board (Dijkstra) =================
+box(-0.92, 0.92, 0.0, 0.035, 0.06, 1.1, WOOD, True)
+for (x0, x1, z0, z1) in [(-0.95, 0.95, 0.03, 0.06), (-0.95, 0.95, 1.1, 1.13), (-0.95, -0.92, 0.06, 1.1), (0.92, 0.95, 0.06, 1.1)]: box(x0, x1, -0.012, 0.045, z0, z1, DARK, True)
+for k in range(13): box(-0.9 + 0.15 * k - 0.001, -0.9 + 0.15 * k + 0.001, -0.002, 0.0, 0.06, 1.1, DARK)
+for k in range(7): box(-0.92, 0.92, -0.002, 0.0, 0.08 + 0.16 * k - 0.001, 0.08 + 0.16 * k + 0.001, DARK)
+for x in (-0.6, 0.6): box(x - 0.03, x + 0.03, 0.035, 0.36, 0.0, 0.03, STEEL, True); rod((x, 0.33, 0.03), (x, 0.04, 0.7), 0.012, STEEL)
+part("mm.board")
+cyl((0, -0.05, 0), 0.008, 0.008, 0.05, BRASS, 8, 'y'); sphere(0, -0.058, 0, 0.02, BRASS, 10, 6)
+pin = None; PINS = []
+for j in range(3):
+    for i in range(6):
+        k = j * 6 + i; x = -0.74 + 0.296 * i + 0.07 * math.sin(k * 2.3); z = 0.27 + 0.31 * j + 0.06 * math.cos(k * 1.7)
+        PINS.append((x, z)); pin = part(f"mm.pin.{k}", (x, 0, z), smooth=0.7, mesh=pin)
+cyl((0, 0, 0), 0.0045, 0.0045, 1.0, PAPER, 6)
+string = None; EDGES = []
+for j in range(3):
+    for i in range(6):
+        k = j * 6 + i
+        if i < 5: EDGES.append((k, k + 1))
+        if j < 2: EDGES.append((k, k + 6))
+        if i < 5 and j < 2 and (k % 4 == 1): EDGES.append((k, k + 7))
+for (a, b) in EDGES:
+    dx, dz = PINS[b][0] - PINS[a][0], PINS[b][1] - PINS[a][1]
+    string = part(f"mm.str.{a}.{b}", (PINS[a][0], -0.036, PINS[a][1]), (0, math.atan2(dx, dz), 0), mesh=string, scale=(1, 1, math.hypot(dx, dz)))
+
+# ================= ac: Agent City, huts over the water =================
+box(-0.068, 0.068, -0.068, 0.068, -0.012, 0, WATER)
+tile = None; k = 0
+for iy in range(10):
+    for ix in range(13): tile = part(f"ac.w.{k}", (-0.84 + 0.14 * ix, -0.63 + 0.14 * iy, 0), mesh=tile); k += 1
+# the hub: an eight-sided deck and an open pavilion under a two-tier thatched roof
+for k in range(8): a = math.tau * k / 8; rod((0.2 * math.cos(a), 0.2 * math.sin(a), -0.05), (0.2 * math.cos(a), 0.2 * math.sin(a), 0.13), 0.012, WOOD)
+prism(ngon(0, 0, 0.27, 8, math.pi / 8), 0.13, 0.15, WOOD)
+for k in range(8): a = math.tau * k / 8 + math.pi / 8; rod((0.2 * math.cos(a), 0.2 * math.sin(a), 0.15), (0.2 * math.cos(a), 0.2 * math.sin(a), 0.32), 0.008, WOOD)
+cyl((0, 0, 0.32), 0.3, 0.12, 0.12, YELLOW, 12); cyl((0, 0, 0.42), 0.16, 0.0, 0.14, YELLOW, 12); cyl((0, 0, 0.15), 0.06, 0.06, 0.1, DARK, 10); sphere(0, 0, 0.275, 0.022, AMBER, 8, 5)
+part("ac.hub", smooth=0.5)
+# a hut: four stilts, a deck with a rail, walls with a doorway, a thatched roof, a ladder
+for (x, y) in [(-0.07, -0.06), (0.07, -0.06), (-0.07, 0.06), (0.07, 0.06)]: rod((x, y, -0.05), (x, y, 0.11), 0.007, WOOD)
+box(-0.1, 0.1, -0.09, 0.09, 0.11, 0.122, WOOD, True); box(-0.075, 0.075, -0.06, 0.06, 0.122, 0.21, PAPER); box(-0.02, 0.02, -0.062, -0.06, 0.122, 0.19, DARK)
+cyl((0, 0, 0.2), 0.14, 0.05, 0.07, YELLOW, 8); cyl((0, 0, 0.26), 0.07, 0.0, 0.08, YELLOW, 8)
+for x in (-0.03, 0.03): rod((x, -0.09, 0.122), (x, -0.15, -0.04), 0.004, WOOD, 4)
+for z in (0.0, 0.04, 0.08): rod((-0.03, -0.11 - (0.08 - z) * 0.4, z), (0.03, -0.11 - (0.08 - z) * 0.4, z), 0.003, WOOD, 4)
+hut = None; HUTS = []
+for k in range(6):
+    a = math.tau * k / 6 + 0.3; hx, hy = 0.68 * math.cos(a), 0.5 * math.sin(a); HUTS.append((hx, hy))
+    hut = part(f"ac.hut.{k}", (hx, hy, 0), (0, 0, math.atan2(-hy, -hx) + math.pi / 2), smooth=0.5, mesh=hut)
+# boardwalks: a unit length of planks, stretched from each hut to the hub
+box(-0.03, 0.03, 0, 1, 0, 0.008, WOOD, True)
+for k in range(10): box(-0.036, 0.036, 0.04 + 0.1 * k, 0.07 + 0.1 * k, 0.008, 0.011, WOOD)
+walk = None
+for k, (hx, hy) in enumerate(HUTS):
+    d = math.hypot(hx, hy); ux, uy = hx / d, hy / d; L2 = d - 0.27 - 0.1
+    walk = part(f"ac.walk.{k}", (ux * 0.27, uy * 0.27, 0.118), (0, 0, math.atan2(hy, hx) - math.pi / 2), mesh=walk, scale=(1, L2, 1))
+cyl((0, 0, 0), 0.016, 0.006, 0.04, BLUE, 8); sphere(0, 0, 0.05, 0.013, AMBER, 8, 5)
+agent = None
+for k in range(6): agent = part(f"ac.agent.{k}", (HUTS[k][0] * 0.8, HUTS[k][1] * 0.8, 0.13), smooth=0.6, mesh=agent)
+
+# ================= kb: Kia-bot =================
+cyl((0, 0, 0), 0.4, 0.4, 0.03, DARK, 28); cyl((0, 0, 0.03), 0.37, 0.37, 0.006, STEEL, 28)
+part("kb.base", smooth=0.5)
+cyl((0, 0, 0.036), 0.2, 0.2, 0.46, GREY, 24); cyl((0, 0, 0.496), 0.2, 0.16, 0.03, DARK, 24); cyl((0, 0, 0.526), 0.16, 0.16, 0.004, GLASS, 24); cyl((0, 0, 0.53), 0.05, 0.05, 0.006, AMBER, 16)
+for k in range(9): cyl((0, 0, 0.09 + 0.04 * k), 0.2035, 0.2035, 0.014, DARK, 24)
+box(-0.05, 0.05, -0.206, -0.2, 0.06, 0.08, AMBER)
+part("kb.body", smooth=0.5)
+box(-0.013, 0.013, -0.008, 0.008, 0, 0.1, AMBER)
+bar = None
+for k in range(24): a = math.tau * k / 24; bar = part(f"kb.bar.{k}", (0.29 * math.cos(a), 0.29 * math.sin(a), 0.036), (0, 0, a + math.pi / 2), mesh=bar)
+# tool one: a card drawer (what it looks things up in)
+box(-0.1, 0.1, -0.12, 0.12, 0, 0.16, WOOD, True); box(-0.104, 0.104, -0.124, 0.124, 0.16, 0.17, WOOD); box(-0.085, 0.085, -0.122, -0.12, 0.02, 0.07, DARK)
+part("kb.tool.0", (-0.72, -0.12, 0), (0, 0, 0.5))
+box(-0.085, 0.085, -0.02, 0.18, 0, 0.055, WOOD, True); box(-0.085, 0.085, -0.03, -0.02, -0.005, 0.06, WOOD, True); cyl((0, -0.045, 0.028), 0.012, 0.012, 0.015, BRASS, 8, 'y'); box(-0.04, 0.04, -0.032, -0.03, 0.036, 0.052, PAPER)
+for k in range(8): box(-0.07, 0.07, 0.0 + 0.02 * k, 0.003 + 0.02 * k, 0.055, 0.075 + 0.006 * (k % 3), PAPER)
+part("kb.drawer", (-0.72, -0.12, 0.085), (0, 0, 0.5))
+# tool two: a clock (what day it is)
+box(-0.08, 0.08, -0.03, 0.03, 0, 0.03, DARK, True); cyl((0, -0.02, 0.15), 0.11, 0.11, 0.04, STEEL, 20, 'y'); cyl((0, -0.024, 0.15), 0.098, 0.098, 0.004, PAPER, 20, 'y'); box(-0.012, 0.012, -0.012, 0.012, 0.03, 0.05, DARK)
+for k in range(12): a = math.tau * k / 12; box(0.084 * math.sin(a) - 0.003, 0.084 * math.sin(a) + 0.003, -0.0262, -0.024, 0.15 + 0.084 * math.cos(a) - 0.008, 0.15 + 0.084 * math.cos(a) + 0.008, DARK)
+part("kb.tool.1", (0.0, 0.74, 0), (0, 0, math.pi), smooth=0.5)
+box(-0.004, 0.004, -0.004, 0, -0.01, 0.075, DARK); cyl((0, -0.006, 0), 0.008, 0.008, 0.006, BRASS, 8, 'y')
+part("kb.hand", (0.0, 0.7675, 0.15), (0, 0, math.pi))
+# tool three: a magnifier on a stand (what it searches with)
+box(-0.07, 0.07, -0.05, 0.05, 0, 0.025, DARK, True); rod((0, 0, 0.025), (0, 0, 0.16), 0.008, STEEL)
+part("kb.tool.2", (0.72, -0.12, 0), (0, 0, -0.5))
+for k in range(16): a0, a1 = math.tau * k / 16, math.tau * (k + 1) / 16; rod((0.085 * math.cos(a0), 0, 0.085 * math.sin(a0) + 0.1), (0.085 * math.cos(a1), 0, 0.085 * math.sin(a1) + 0.1), 0.009, BRASS, 6)
+cyl((0, -0.003, 0.1), 0.08, 0.08, 0.006, GLASS, 16, 'y'); rod((0, 0, 0.015), (0, 0, -0.08), 0.011, WOOD)
+part("kb.lens", (0.72, -0.12, 0.16), (0, 0, -0.5))
+for k, (tx, ty) in enumerate([(-0.72, -0.12), (0.0, 0.74), (0.72, -0.12)]):
+    d = math.hypot(tx, ty); ux, uy = tx / d, ty / d
+    wire_pts = [(ux * 0.2, uy * 0.2, 0.05), (ux * 0.3, uy * 0.3, 0.012), (ux * (d - 0.14), uy * (d - 0.14), 0.012), (ux * (d - 0.09), uy * (d - 0.09), 0.03)]
+    for q in range(3): rod(wire_pts[q], wire_pts[q + 1], 0.007, PAPER)
+    part(f"kb.cable.{k}")
+
+# ================= qb: the walk-forward bed =================
+box(-1.02, 1.02, -0.26, 0.26, 0, 0.04, DARK, True); box(-0.98, 0.98, -0.235, -0.215, 0.04, 0.062, STEEL); box(-0.98, 0.98, 0.215, 0.235, 0.04, 0.062, STEEL)
+for k in range(50): box(-0.94 + 0.0384 * k - 0.0015, -0.94 + 0.0384 * k + 0.0015, -0.2, -0.18 if k % 6 else -0.16, 0.04, 0.043, STEEL)
+for x in (-0.99, 0.99): box(x - 0.02, x + 0.02, -0.25, 0.25, 0.04, 0.1, STEEL)
+cyl((1.01, 0.0, 0.07), 0.05, 0.05, 0.02, STEEL, 14, 'x'); rod((1.03, 0.0, 0.07), (1.03, 0.04, 0.07), 0.006, STEEL); rod((1.03, 0.04, 0.07), (1.08, 0.04, 0.07), 0.008, WOOD)
+part("qb.base", smooth=0.5)
+box(-0.016, 0.016, -0.12, 0.12, 0, 1.0, GREY, True)
+qbar = None
+for k in range(48):
+    hh = 0.1 + 0.42 * (k / 47) ** 0.85 + 0.07 * math.sin(k * 0.55) + 0.045 * math.sin(k * 1.37 + 1) - (0.12 if 26 <= k <= 31 else 0)
+    qbar = part(f"qb.bar.{k}", (-0.9 + 0.0383 * k, 0.0, 0.04), mesh=qbar, scale=(1, 1, max(0.05, hh)))
+for x in (-0.235, 0.235): box(x - 0.012, x + 0.012, -0.24, -0.21, 0.022, 0.8, BRASS); box(x - 0.012, x + 0.012, 0.21, 0.24, 0.022, 0.8, BRASS); box(x - 0.012, x + 0.012, -0.24, 0.24, 0.78, 0.8, BRASS)
+box(-0.235, 0.235, -0.24, -0.225, 0.76, 0.8, BRASS); box(-0.235, 0.235, 0.225, 0.24, 0.76, 0.8, BRASS)
+box(0.112, 0.118, -0.24, 0.24, 0.03, 0.8, AMBER)   # the line between training and testing
+for (x, y) in [(-0.235, -0.225), (0.235, -0.225), (-0.235, 0.225), (0.235, 0.225)]: box(x - 0.03, x + 0.03, y - 0.022, y + 0.022, 0.0, 0.03, STEEL, True)
+box(0.118, 0.235, -0.26, -0.24, 0.6, 0.66, AMBER)
+part("qb.win", (-0.66, 0, 0.062))
+
+# ================= la: the mail sorter =================
+for (x, y) in [(-0.62, -0.2), (0.62, -0.2), (-0.62, 0.2), (0.62, 0.2)]: box(x - 0.015, x + 0.015, y - 0.015, y + 0.015, 0, 1.0, STEEL)
+box(-0.64, 0.64, -0.215, 0.215, 0, 0.03, DARK, True); box(-0.64, 0.64, -0.215, -0.185, 0.96, 1.0, STEEL); box(-0.64, 0.64, 0.185, 0.215, 0.96, 1.0, STEEL)
+for x in (-0.21, 0.21): box(x - 0.008, x + 0.008, -0.18, 0.18, 0.03, 0.3, STEEL)
+for k, x in enumerate((-0.42, 0.0, 0.42)):
+    m = AMBER if k == 2 else GREY
+    box(x - 0.19, x + 0.19, -0.18, 0.18, 0.03, 0.045, m, True); box(x - 0.19, x + 0.19, -0.18, -0.17, 0.045, 0.22, m); box(x - 0.19, x + 0.19, 0.17, 0.18, 0.045, 0.22, m)
+    box(x - 0.06, x + 0.06, -0.184, -0.18, 0.1, 0.16, PAPER)
+part("la.frame")
+cyl((0, 0, 0.76), 0.1, 0.34, 0.2, GREY, 20); cyl((0, 0, 0.955), 0.345, 0.345, 0.012, STEEL, 20); cyl((0, 0, 0.66), 0.1, 0.1, 0.1, GREY, 20)
+for k in range(3): a = math.tau * k / 3 + 0.4; rod((0.3 * math.cos(a), 0.3 * math.sin(a), 0.9), (0.6 * (1 if math.cos(a) > 0 else -1), 0.2 * (1 if math.sin(a) > 0 else -1), 0.97), 0.008, STEEL)
+part("la.hopper", smooth=0.5)
+box(-0.16, 0.16, -0.14, 0.14, -0.006, 0.006, STEEL, True); cyl((0, -0.16, 0), 0.014, 0.014, 0.32, DARK, 8, 'y')
+part("la.flipper", (0, 0, 0.52))
+box(-0.075, 0.075, -0.05, 0.05, 0, 0.006, PAPER, True)
+i = len(V); V.extend([(-0.075, 0.05, 0.0065), (0.075, 0.05, 0.0065), (0, -0.005, 0.0065)]); F.append((i, i + 2, i + 1)); M.append(GREY); box(0.035, 0.06, -0.04, -0.012, 0.006, 0.0068, AMBER)
+env = None
+for k in range(9): env = part(f"la.env.{k}", (0, 0, 1.1), mesh=env)
+
+# ================= md: the split-flap board =================
+box(-0.86, 0.86, 0.0, 0.14, 0.2, 1.06, DARK, True)
+for (x0, x1, z0, z1) in [(-0.88, 0.88, 0.17, 0.2), (-0.88, 0.88, 1.06, 1.09), (-0.88, -0.86, 0.2, 1.06), (0.86, 0.88, 0.2, 1.06)]: box(x0, x1, -0.015, 0.15, z0, z1, STEEL, True)
+for x in (-0.6, 0.6): box(x - 0.02, x + 0.02, 0.04, 0.1, 0.0, 0.2, STEEL); box(x - 0.14, x + 0.14, -0.08, 0.22, 0.0, 0.02, STEEL, True)
+for r in range(3):
+    for c in range(12):
+        x = -0.737 + 0.134 * c; z = 0.26 + 0.27 * r
+        box(x - 0.058, x + 0.058, -0.004, 0.0, z, z + 0.105, GLASS)                      # the lower half of the cell
+        cyl((x - 0.062, -0.008, z + 0.11), 0.005, 0.005, 0.124, STEEL, 6, 'x')            # its spindle
+part("md.board")
+i = len(V); V.extend([(-0.058, -0.004, 0.003), (0.058, -0.004, 0.003), (0.058, -0.004, 0.105), (-0.058, -0.004, 0.105), (-0.058, 0.0, 0.003), (0.058, 0.0, 0.003), (0.058, 0.0, 0.105), (-0.058, 0.0, 0.105)])
+for f, m in [((0, 1, 2, 3), PAPER), ((5, 4, 7, 6), AMBER), ((3, 2, 6, 7), DARK), ((0, 3, 7, 4), DARK), ((1, 5, 6, 2), DARK), ((0, 4, 5, 1), DARK)]: F.append(tuple(i + k for k in f)); M.append(m)
+flap = None
+for r in range(3):
+    for c in range(12): flap = part(f"md.flap.{r}.{c}", (-0.737 + 0.134 * c, -0.006, 0.26 + 0.27 * r + 0.11), mesh=flap)
+
+# ================= mg: the flash cards =================
+box(-0.55, 0.55, -0.34, 0.34, 0, 0.04, WOOD, True)
+for x in (-0.2, 0.2):
+    box(x - 0.02, x + 0.02, -0.03, 0.03, 0.04, 0.1, STEEL)
+    for k in range(14): a0, a1 = math.tau * k / 14, math.tau * (k + 1) / 14; rod((x, 0.11 * math.sin(a0), 0.2 + 0.11 * math.cos(a0)), (x, 0.11 * math.sin(a1), 0.2 + 0.11 * math.cos(a1)), 0.008, STEEL, 6)
+# pencil, set square and compass on the base
+rod((0.4, -0.25, 0.052), (0.48, 0.2, 0.052), 0.011, YELLOW, 6); rod((0.48, 0.2, 0.052), (0.487, 0.24, 0.052), 0.008, WOOD, 6)
+i = len(V); V.extend([(-0.5, -0.3, 0.042), (-0.3, -0.3, 0.042), (-0.5, 0.05, 0.042), (-0.5, -0.3, 0.05), (-0.3, -0.3, 0.05), (-0.5, 0.05, 0.05)])
+for f in [(3, 4, 5), (0, 1, 4, 3), (1, 2, 5, 4), (2, 0, 3, 5)]: F.append(tuple(i + k for k in f)); M.append(BLUE)
+rod((-0.42, 0.14, 0.05), (-0.34, 0.3, 0.05), 0.006, STEEL); rod((-0.42, 0.14, 0.05), (-0.48, 0.3, 0.05), 0.006, STEEL); cyl((-0.42, 0.14, 0.042), 0.014, 0.014, 0.02, BRASS, 8)
+part("mg.base", smooth=0.5)
+box(-0.17, 0.17, -0.002, 0.002, 0.09, 0.48, PAPER, True)
+for k in range(4): box(-0.13, 0.1 - 0.05 * (k % 2), -0.0035, -0.002, 0.4 - 0.06 * k, 0.408 - 0.06 * k, INK)
+box(-0.17, 0.17, 0.002, 0.0035, 0.09, 0.16, AMBER); box(-0.1, 0.1, 0.002, 0.0035, 0.26, 0.3, INK)
+card2 = None
+for k in range(7): card2 = part(f"mg.card.{k}", (0, 0, 0.2), (math.radians(108 + 2.2 * k), 0, 0), mesh=card2)
+for k in range(7, 12): card2 = part(f"mg.card.{k}", (0, 0, 0.2), (math.radians(-108 - 2.2 * (k - 7)), 0, 0), mesh=card2)
+part("mg.flip.0", (0, 0, 0.2), (math.radians(106), 0, 0), mesh=card2)
+
+# ================= tools: the pegboard wall =================
+box(-0.95, 0.95, 0.0, 0.03, 0.08, 1.12, PAPER, True)
+for (x0, x1, z0, z1) in [(-0.98, 0.98, 0.05, 0.08), (-0.98, 0.98, 1.12, 1.15), (-0.98, -0.95, 0.08, 1.12), (0.95, 0.98, 0.08, 1.12)]: box(x0, x1, -0.012, 0.04, z0, z1, WOOD, True)
+for ix in range(30):
+    for iz in range(16): x = -0.9 + 0.062 * ix; z = 0.12 + 0.064 * iz; quad((x - 0.007, -0.0006, z - 0.007), (x + 0.007, -0.0006, z - 0.007), (x + 0.007, -0.0006, z + 0.007), (x - 0.007, -0.0006, z + 0.007), DARK)
+for x in (-0.6, 0.6): box(x - 0.03, x + 0.03, 0.03, 0.34, 0.0, 0.03, STEEL, True); rod((x, 0.31, 0.03), (x, 0.035, 0.7), 0.012, STEEL)
+part("tools.board")
+T = 0.014
+def hook(): cyl((0, 0, 0), 0.006, 0.006, 0.03, STEEL, 6)
+# 0 wrench
+box(-0.022, 0.022, -0.24, 0.2, 0, T, STEEL, True); prism([(-0.06, 0.2), (0.06, 0.2), (0.072, 0.3), (0.034, 0.3), (0.03, 0.245), (-0.03, 0.245), (-0.034, 0.3), (-0.072, 0.3)], 0, T, STEEL)
+prism(ngon(0, -0.285, 0.052, 12), 0, T, STEEL); prism(ngon(0, -0.285, 0.028, 6), T, T + 0.001, DARK)
+part("tools.t.0", (-0.77, -0.012, 0.6), flat(0.08))
+# 1 calipers
+box(-0.013, 0.013, -0.3, 0.3, 0, 0.01, STEEL, True)
+for k in range(24): box(-0.013, -0.003 if k % 4 else 0.004, -0.27 + 0.022 * k, -0.268 + 0.022 * k, 0.01, 0.0108, DARK)
+box(-0.11, 0.013, 0.27, 0.3, 0, 0.01, STEEL, True); prism([(-0.11, 0.27), (-0.085, 0.27), (-0.1, 0.2)], 0, 0.01, STEEL)
+box(-0.11, 0.035, 0.06, 0.1, 0, 0.014, GREY, True); prism([(-0.11, 0.1), (-0.1, 0.17), (-0.085, 0.1)], 0, 0.01, GREY); cyl((0.03, 0.045, 0.004), 0.014, 0.014, 0.01, BRASS, 10)
+part("tools.t.1", (-0.52, -0.012, 0.6), flat(0.0))
+# 2 screwdriver
+box(-0.034, 0.034, -0.3, -0.07, 0, 0.03, AMBER, True)
+for k in range(5): box(-0.036, 0.036, -0.28 + 0.045 * k, -0.27 + 0.045 * k, 0.0, 0.031, DARK)
+box(-0.02, 0.02, -0.07, -0.04, 0.004, 0.026, STEEL, True); box(-0.008, 0.008, -0.04, 0.26, 0.01, 0.02, STEEL, True); prism([(-0.008, 0.26), (0.008, 0.26), (0.013, 0.3), (-0.013, 0.3)], 0.013, 0.017, STEEL)
+part("tools.t.2", (-0.3, -0.012, 0.6), flat(-0.05))
+# 3 pliers
+quad((-0.05, -0.3, T), (-0.02, -0.3, T), (0.012, 0.02, T), (-0.014, 0.02, T), BLUE); quad((0.02, -0.3, T), (0.05, -0.3, T), (0.014, 0.02, T), (-0.012, 0.02, T), BLUE)
+prism([(-0.05, -0.3), (-0.02, -0.3), (0.012, 0.02), (-0.014, 0.02)], 0, T, BLUE); prism([(0.02, -0.3), (0.05, -0.3), (0.014, 0.02), (-0.012, 0.02)], 0, T, BLUE)
+prism([(-0.03, 0.02), (0.0, 0.02), (-0.004, 0.2), (-0.02, 0.18)], 0, T, STEEL); prism([(0.0, 0.02), (0.03, 0.02), (0.02, 0.18), (0.004, 0.2)], 0, T, STEEL); cyl((0, 0.03, T), 0.016, 0.016, 0.006, DARK, 10)
+part("tools.t.3", (-0.08, -0.012, 0.6), flat(0.06))
+# 4 steel rule
+box(-0.022, 0.022, -0.34, 0.34, 0, 0.004, STEEL, True)
+for k in range(33): box(-0.022, -0.008 if k % 4 else 0.0, -0.32 + 0.02 * k, -0.3185 + 0.02 * k, 0.004, 0.0046, DARK)
+cyl((0, 0.31, 0.004), 0.007, 0.007, 0.001, DARK, 8)
+part("tools.t.4", (0.12, -0.012, 0.6), flat(0.0))
+# 5 hex key
+prism([(-0.01, -0.26), (0.01, -0.26), (0.01, 0.18), (0.13, 0.18), (0.13, 0.2), (-0.01, 0.2)], 0, 0.018, DARK)
+part("tools.t.5", (0.3, -0.012, 0.58), flat(-0.1))
+# 6 multimeter
+box(-0.1, 0.1, -0.17, 0.17, 0, 0.04, AMBER, True); box(-0.085, 0.085, -0.155, 0.155, 0.04, 0.046, DARK); box(-0.065, 0.065, 0.07, 0.135, 0.046, 0.049, GLASS)
+cyl((0, -0.03, 0.046), 0.05, 0.05, 0.012, GREY, 16); box(-0.004, 0.004, -0.03, 0.02, 0.058, 0.061, PAPER)
+for k in range(10): a = math.tau * k / 10; box(0.066 * math.cos(a) - 0.003, 0.066 * math.cos(a) + 0.003, -0.03 + 0.066 * math.sin(a) - 0.003, -0.03 + 0.066 * math.sin(a) + 0.003, 0.046, 0.048, PAPER)
+for k, m in enumerate((BRICK, DARK, BRICK)): cyl((-0.05 + 0.05 * k, -0.13, 0.046), 0.011, 0.011, 0.006, m, 8)
+part("tools.t.6", (0.54, -0.012, 0.62), flat(0.0), smooth=0.5)
+# 7 soldering iron
+box(-0.022, 0.022, -0.3, -0.06, 0, 0.034, BLUE, True); box(-0.026, 0.026, -0.07, -0.05, 0, 0.036, DARK, True); box(-0.014, 0.014, -0.05, 0.02, 0.006, 0.028, STEEL, True); box(-0.007, 0.007, 0.02, 0.24, 0.011, 0.023, STEEL, True)
+prism([(-0.007, 0.24), (0.007, 0.24), (0.0, 0.3)], 0.013, 0.021, BRASS); rod((0, -0.3, 0.017), (0.03, -0.36, 0.017), 0.007, RUBBER)
+part("tools.t.7", (0.79, -0.012, 0.6), flat(0.04))
+
+# ================= tk: the telegraph key =================
+box(-0.62, 0.62, -0.32, 0.32, 0, 0.06, WOOD, True); box(-0.62, 0.62, -0.32, 0.32, 0.06, 0.066, WOOD); box(-0.5, 0.36, -0.14, 0.14, 0.066, 0.078, BRASS, True)
+for y in (-0.08, 0.08): box(0.03, 0.09, y - 0.012, y + 0.012, 0.078, 0.2, BRASS, True)
+cyl((0.06, -0.1, 0.18), 0.008, 0.008, 0.2, STEEL, 8, 'y')
+cyl((-0.34, 0, 0.078), 0.022, 0.018, 0.03, BRASS, 10); cyl((-0.34, 0, 0.108), 0.008, 0.008, 0.008, STEEL, 8)        # the anvil the lever strikes
+for (x, y) in [(0.5, -0.2), (0.5, 0.2)]: cyl((x, y, 0.066), 0.03, 0.03, 0.012, BRASS, 12); cyl((x, y, 0.078), 0.012, 0.012, 0.05, BRASS, 8); cyl((x, y, 0.1), 0.026, 0.026, 0.018, BRASS, 12)
+rod((0.5, -0.2, 0.09), (0.36, -0.12, 0.085), 0.006, AMBER); rod((0.5, 0.2, 0.09), (0.58, 0.3, 0.075), 0.006, RUBBER); rod((0.58, 0.3, 0.075), (0.64, 0.4, 0.02), 0.006, RUBBER)
+for (x, y) in [(-0.58, -0.28), (0.58, -0.28), (-0.58, 0.28), (0.58, 0.28)]: cyl((x, y, 0.066), 0.014, 0.014, 0.008, BRASS, 6)
+# the sounder at the back: two coils, and the armature they pull
+for y in (-0.05, 0.05): cyl((0.26, y + 0.2, 0.066), 0.045, 0.045, 0.13, BRICK, 14); cyl((0.26, y + 0.2, 0.196), 0.05, 0.05, 0.01, BRASS, 14); cyl((0.26, y + 0.2, 0.06), 0.05, 0.05, 0.01, BRASS, 14)
+box(0.2, 0.32, 0.1, 0.3, 0.215, 0.228, STEEL, True)
+part("tk.base", smooth=0.5)
+box(-0.46, 0.26, -0.022, 0.022, -0.012, 0.012, BRASS, True); cyl((-0.4, 0, 0.012), 0.012, 0.012, 0.05, BRASS, 8); cyl((-0.4, 0, 0.062), 0.07, 0.07, 0.012, DARK, 18); cyl((-0.4, 0, 0.074), 0.05, 0.03, 0.03, DARK, 18)
+cyl((-0.4, 0, -0.03), 0.008, 0.008, 0.018, STEEL, 8); cyl((0.2, 0, 0.012), 0.012, 0.012, 0.05, BRASS, 8); cyl((0.2, 0, 0.05), 0.024, 0.024, 0.014, BRASS, 12)
+for k in range(5): cyl((0.2, 0, -0.07 + 0.011 * k), 0.016, 0.016, 0.004, STEEL, 10)
+part("tk.lever", (0.06, 0, 0.18), smooth=0.5)
+sphere(0, 0, 0, 0.014, AMBER, 8, 5)
+part("tk.spark", (-0.34, 0, 0.122))
 
 path = os.path.join("/Users/kiapousti/Documents/kpousti.github.io/blender", "scenes.blend")
 bpy.ops.wm.save_as_mainfile(filepath=path)
