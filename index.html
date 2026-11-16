@@ -2290,10 +2290,63 @@ import * as THREE from './vendor/three.module.min.js';
   // Every block is one instance of a unit box, so the whole model is a single draw call.
   var N = lots.length, blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshStandardMaterial({ roughness: 0.38, metalness: 0.65 }), N); // tinted per block below
   blocks.castShadow = true; blocks.receiveShadow = true; blocks.frustumCulled = false; city.add(blocks);
-  // The rotor's shaft and drum, turned on a lathe from one profile: stub shaft, bearing journal, compressor drum, combustor waist, turbine disks, exhaust end.
-  var hub = new THREE.Mesh(new THREE.LatheGeometry([[0, -1], [0.05, -1], [0.05, -0.84], [0.09, -0.84], [0.09, -0.74], [0.17, -0.69], [0.29, 0.11], [0.29, 0.15], [0.2, 0.2], [0.2, 0.34], [0.24, 0.37], [0.24, 0.74], [0.12, 0.8], [0.09, 0.8], [0.09, 0.9], [0.05, 0.9], [0.05, 1.02], [0, 1.02]].map(function (q) { return new THREE.Vector2(q[0], q[1]); }), 48).rotateZ(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0x39476a, roughness: 0.3, metalness: 0.9 }));
-  hub.castShadow = true; hub.position.y = 0.34; hub.visible = false; city.add(hub);
+  // The turbine, modelled in Blender (blender/turbine.blend, written out by blender/export_parts.py): 461 real parts, each free to fly on its own.
+  var turbine = new THREE.Group(), parts = [], partsAt = 0, K = 0.8; turbine.visible = false; city.add(turbine);
+  fetch('./models/turbine.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+    var hl = new DataView(buf).getUint32(0, true), h = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))), base = 4 + hl, q, k;
+    var P = new Int16Array(buf, base + h.off[0], h.verts * 3), Nn = new Int8Array(buf, base + h.off[1], h.verts * 3), I = new Uint16Array(buf, base + h.off[2], (h.off[3] - h.off[2]) / 2), T = new Float32Array(buf, base + h.off[3], h.mesh.length * 10);
+    var mats = h.mats.map(function (m) { return new THREE.MeshStandardMaterial({ color: m.c, metalness: Math.min(m.m, 0.85), roughness: m.r }); }), count = h.meshes.map(function () { return 0; }), used = count.slice();
+    h.mesh.forEach(function (m) { count[m]++; });
+    var ims = h.meshes.map(function (me, k) {
+      var pos = new Float32Array(me.v[1] * 3), nor = new Float32Array(me.v[1] * 3), g = new THREE.BufferGeometry();
+      for (q = 0; q < pos.length; q++) { pos[q] = P[me.v[0] * 3 + q] * h.scale; nor[q] = Nn[me.v[0] * 3 + q] / 127; }
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      g.setIndex(new THREE.BufferAttribute(I.slice(me.i[0], me.i[0] + me.i[1]), 1)); g.computeBoundingBox();
+      var im = new THREE.InstancedMesh(g, mats[me.mat], count[k]); im.frustumCulled = false; im.castShadow = im.receiveShadow = window.innerWidth >= 700; turbine.add(im); return im; // phones: no shadow pass for 461 parts
+    });
+    // Where each part lands when the turbine becomes the street graph: blades and vanes lie down end to end as the streets, bolts, nozzles, cans and discs stand on the corners, and the casing and shaft sink into the base.
+    var streetsOf = h.kind.filter(function (c) { return c < 2; }).length, sAt = 0, nAt = 0, X = new THREE.Vector3(1, 0, 0), size = new THREE.Vector3(), dir = new THREE.Vector3(), side = new THREE.Vector3();
+    for (k = 0; k < h.mesh.length; k++) {
+      var im = ims[h.mesh[k]], o = k * 10, c = h.kind[k], bb = im.geometry.boundingBox.getSize(size);
+      var part = { im: im, idx: used[h.mesh[k]]++, rotor: h.rotor[k], p: new THREE.Vector3(T[o] - 0.06, T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), ex: new THREE.Vector3(), lp: new THREE.Vector3(), lq: new THREE.Quaternion(), ls: new THREE.Vector3(), key: 0 };
+      var px = part.p.x, rad = Math.hypot(part.p.y, part.p.z) || 1;
+      part.key = clamp((px + 1.1) / 2.2, 0, 1) * 0.7 + 0.3 * (hashNoise(k * 3.7) + 0.5); // the change sweeps from the nose to the exhaust, a little ragged
+      // Pulled apart: blades lift straight off their wheels, cans swing out, the casing drops, and everything spreads along the shaft.
+      if (c === 0) part.ex.set(0, 1, 0).applyQuaternion(part.q).multiplyScalar(0.36).add(side.set(px * 0.5, 0, 0));
+      else if (c === 3 || c === 4) part.ex.set(px * 0.5 - (c === 4 ? 0.22 : 0), part.p.y / rad * 0.45, part.p.z / rad * 0.45);
+      else if (c === 1 || c === 5 || c === 6) part.ex.set(px * 0.5, -0.55, 0);
+      else part.ex.set(px * (c === 2 ? 0.5 : 0.7), 0, 0);
+      if (c < 2) { // a street piece
+        var e = edges[sAt % edges.length], slot = Math.floor(sAt / edges.length), on = Math.floor((streetsOf - 1 - sAt % edges.length) / edges.length) + 1; sAt++;
+        var len = Math.hypot(nx[e.b] - nx[e.a], nz[e.b] - nz[e.a]), seg = len / on;
+        dir.set(nx[e.b] - nx[e.a], 0, nz[e.b] - nz[e.a]).divideScalar(len); side.crossVectors(dir, UP);
+        part.lp.set(nx[e.a], 0.014, nz[e.a]).addScaledVector(dir, (slot + 0.04) * seg);
+        part.lq.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, dir, UP));
+        part.ls.set(0.03 / Math.max(bb.x, bb.z), seg * 0.92 / bb.y, 0.03 / Math.max(bb.x, bb.z));
+      } else if (c < 6) { // a stud on a street corner
+        var node = (nAt++ * 37 + 11) % (n * n), sc = c === 2 ? 0.09 / bb.y : c === 3 ? 0.25 : c === 4 ? 0.6 : 1.2;
+        part.lp.set(nx[node], c === 2 ? bb.x * sc / 2 + 0.004 : c === 4 ? 0.046 : c === 5 ? 0.03 : 0.004, nz[node]);
+        part.lq.setFromUnitVectors(X, UP); part.ls.setScalar(sc);
+      } else { part.lp.set(px * 0.3, -0.02, part.p.z * 0.3); part.lq.copy(part.q); } // sinks into the base and is gone
+      parts.push(part);
+    }
+    partsAt = performance.now() - t0; lastKey = ''; if (REDUCE) frame(0);
+  }).catch(function () {}); // no model: the page reads fine without it
+  function fly(lw, t, show) { // lw: 0 the turbine assembled, 1 landed as the street graph; show: 1 fully there, 0 gone
+    turbine.visible = show > 0.001 && parts.length > 0;
+    if (!turbine.visible) return;
+    var ex = smooth(lw / 0.45);
+    qSpin.setFromAxisAngle(vX.set(1, 0, 0), spin);
+    for (var i = 0; i < parts.length; i++) {
+      var P = parts[i], land = smooth((lw * 1.6 - 0.6 * P.key - 0.3) / 0.7), grow = ease((t - partsAt - 150 - P.key * 900) / 700) * show; // on arrival the parts grow in from nose to exhaust
+      pa.p.copy(P.p).addScaledVector(P.ex, ex); pa.q.copy(P.q);
+      if (P.rotor) { pa.p.applyQuaternion(qSpin); pa.q.premultiply(qSpin); }
+      pa.p.multiplyScalar(K).applyQuaternion(qTurn); pa.p.y += AXIS; pa.q.premultiply(qTurn); pa.s.setScalar(K * grow);
+      if (land > 0) { pa.p.lerp(P.lp, land); pa.q.slerp(P.lq, land); pa.s.lerp(vT.copy(P.ls).multiplyScalar(show), land); }
+      P.im.setMatrixAt(P.idx, mat.compose(pa.p, pa.q, pa.s));
+    }
+    for (i = 0; i < turbine.children.length; i++) turbine.children[i].instanceMatrix.needsUpdate = true;
+  }
   var net = new THREE.Group(), trip = new THREE.Group(); city.add(net); net.add(trip); // streets, plus the trip (search, route, pins): shown only while the blocks form a city or a map
 
   function segments(list, y) { // street edges as one line buffer, in the order given
@@ -2340,7 +2393,7 @@ import * as THREE from './vendor/three.module.min.js';
   var RING = [[-0.55, -0.35, 0.34, 0.25], [0.5, -0.45, 0.28, 0.456], [0.05, 0.1, 0.2, 0.603], [-0.5, 0.5, 0.24, 0.779], [0.55, 0.45, 0.3, 1]]; // Tarjan's five cycles: x, z, radius, share of the blocks so far
   function price(k) { k = Math.max(0, k); return 0.12 + 0.52 * Math.sin(Math.min(k / 26, 1) * Math.PI / 2) - Math.max(0, k - 26) * 0.019 + 0.035 * Math.sin(k * 1.7) + 0.02 * Math.sin(k * 0.6); } // a climb to a high, then a pullback
   function face(o) { o.p.applyQuaternion(qFace); o.q.premultiply(qFace); } // turn an upright chart to the camera
-  var UP = new THREE.Vector3(0, 1, 0), FWD = new THREE.Vector3(0, 0, 1), STAGES = 10, COMP = 7, AXIS = 0.34, COLS = 23, ROWS = Math.ceil(N / 23), HUT = Math.ceil(N / 7);
+  var UP = new THREE.Vector3(0, 1, 0), FWD = new THREE.Vector3(0, 0, 1), AXIS = 0.36, COLS = 23, ROWS = Math.ceil(N / 23), HUT = Math.ceil(N / 7);
   function Pose() { this.p = new THREE.Vector3(); this.q = new THREE.Quaternion(); this.s = new THREE.Vector3(); this.c = 0; } // c: how amber the block is, 0 to 1
   var STEEL = new THREE.Color(0x5d7096), AMBER = new THREE.Color(0xf2b56b), tint = new THREE.Color();
   var pa = new Pose(), pb = new Pose(), vR = new THREE.Vector3(), vT = new THREE.Vector3(), vZ = new THREE.Vector3(), vX = new THREE.Vector3(), m4 = new THREE.Matrix4();
@@ -2349,15 +2402,7 @@ import * as THREE from './vendor/three.module.min.js';
   function pose(f, L, i, t, rise, o) {
     var a, rad;
     o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d); o.c = 0;
-    if (f === 1) { // a gas turbine rotor: compressor rows that shorten along the shaft, then three turbine rows; every block is one blade
-      var per = N / STAGES, st = Math.min(STAGES - 1, Math.floor(i / per)), k = i - Math.floor(st * per), cnt = Math.floor((st + 1) * per) - Math.floor(st * per);
-      var comp = st < COMP, u = comp ? st / (COMP - 1) : (st - COMP) / 2, hubR = comp ? 0.17 + 0.12 * u : 0.24, tip = comp ? 0.5 - 0.13 * u : 0.4 + 0.07 * u;
-      a = k / cnt * Math.PI * 2 + st * 0.21 + spin; rad = comp ? 0.6 : -0.75; // blade pitch; the turbine rows lean the other way
-      vR.set(0, Math.cos(a), Math.sin(a)); vT.set(0, -Math.sin(a), Math.cos(a));
-      vZ.set(Math.cos(rad), 0, 0).addScaledVector(vT, Math.sin(rad)); vX.crossVectors(vR, vZ);
-      o.q.setFromRotationMatrix(m4.makeBasis(vX, vR, vZ)).premultiply(qTurn);
-      o.p.set(comp ? -0.62 + st * 0.116 : 0.43 + (st - COMP) * 0.13, 0, 0).addScaledVector(vR, hubR * 0.97).applyQuaternion(qTurn); o.p.y += AXIS;
-      o.s.set(0.01, (tip - hubR) * rise, comp ? 0.055 : 0.085); o.c = comp ? 0 : 0.85; // the turbine rows run hot
+    if (f === 1) { o.s.set(0, 0, 0);  // under the Blender turbine the blocks wait, shrunk to nothing, where their map tile will be
     } else if (f === 2) { o.s.y = 0.004; } // pressed flat: only the streets and the route stand out
     else if (f === 3) { // a hub and six huts on stilts, joined by boardwalks: each block is a stilt, a deck, a wall, a roof tier or a plank
       var c = i % 7, j = Math.floor(i / 7), isHub = c === 0, ca = (c - 1) / 6 * Math.PI * 2, g = isHub ? 1.5 : 1, hx = isHub ? 0 : 0.78 * Math.cos(ca), hz = isHub ? 0 : 0.78 * Math.sin(ca);
@@ -2526,7 +2571,6 @@ import * as THREE from './vendor/three.module.min.js';
     if (ride) CY += sc - rT;
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
     var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(ELEV[1], 0.6, en), mix(mix(ELEV[fA], ELEV[fB], m), 0.32, bump), d) - gy * 0.08 * Math.max(1 - en, d);
-    var w1 = fA === 1 ? (fB === 1 ? 1 : 1 - m) : fB === 1 ? m : 0; // how much of a rotor it is right now
     qTurn.setFromAxisAngle(UP, yaw + 0.5); qWave.setFromAxisAngle(UP, yaw - 0.35);
     qFace.setFromAxisAngle(UP, yaw - 0.14 + (REDUCE ? 0 : 0.1 * Math.sin(now * 0.0004)));
     fill.intensity = mix(0.5, 2.8, mix(UPRIGHT.indexOf(fA) < 0 ? 0 : 1, UPRIGHT.indexOf(fB) < 0 ? 0 : 1, m)); // upright charts face the camera and sway a little
@@ -2550,8 +2594,7 @@ import * as THREE from './vendor/three.module.min.js';
       blocks.setMatrixAt(bi, mat.compose(pa.p, pa.q, pa.s)); blocks.setColorAt(bi, tint.copy(STEEL).lerp(AMBER, pa.c));
     }
     blocks.instanceMatrix.needsUpdate = true; blocks.instanceColor.needsUpdate = true;
-    hub.visible = w1 > 0.02; hub.scale.setScalar(Math.max(0.001, smooth(w1 * 1.4 - 0.4))); // the shaft grows in and out with the blades
-    hub.quaternion.copy(qTurn).multiply(qSpin.setFromAxisAngle(vX.set(1, 0, 0), spin));
+    fly(cur ? 1 : en, t, 1 - d); // the turbine's parts: assembled in the hero, pulled apart and landed as the street graph by "How I think", gone after it
     var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (STILL.indexOf(dom) < 0 || (m > 0 && m < 1));
     net.visible = slab.visible = dom === 0 || dom === 2 || dom === 7; trip.visible = dom !== 7; // every other shape stands free
     var step = 16, g = cur ? 0 : up ? 1 - m : m; // how much of a bare graph it is right now

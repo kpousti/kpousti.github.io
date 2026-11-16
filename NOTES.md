@@ -4,6 +4,19 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Blender models, first one: the opening turbine (2026-11-15)
+
+You asked for the animations to be made in Blender, each one its own thing, with visible turbine parts that turn into the next shape.
+
+- **Why they looked alike.** All 17 were the same 270 blocks rearranged. Blender lets each area have its own real model.
+- **The turbine** is modelled in Blender from 461 separate parts: nose cone, 9 compressor wheels with curved blades, fixed vanes, 10 combustor cans with fuel nozzles, 3 amber turbine wheels, exhaust cone, a cutaway casing with flanges and bolts. File: `blender/turbine.blend`.
+- **On the site** it spins in the opening. As you scroll to "How I think" it pulls apart into its parts, and the parts land as the street graph: blades and vanes lie down end to end as the streets, bolts, nozzles, cans and wheels stand on the street corners, and the casing and shaft sink into the base. The old block turbine is deleted.
+- **How it gets there (my call).** Blender does not run in a browser, so `blender/export_parts.py` writes the model to one small file, `models/turbine.bin`, which the site reads directly. No extra library was added, and I did not use rendered video (heavy on phone data, and it cannot react to scrolling).
+- **Cost:** 180KB for the model file. About 10,400 triangles stored, drawn as 51 batches.
+- **Phones:** the parts do not cast shadows there, to keep it light.
+- **Tested** at 1440x860 and 393x659: no errors, no sideways scroll, no slow frames in the slowed-down phone test. Not tested on a real iPhone or in Safari.
+- **Still blocks:** every other area. They get their own Blender models one at a time, after you say what each should be.
+
 ## Phone lag, round two: the turbine trailing the page (2026-11-15)
 
 You said it was still laggy, especially the turbine while scrolling.
