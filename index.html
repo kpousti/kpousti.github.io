@@ -2331,10 +2331,11 @@ import * as THREE from './vendor/three.module.min.js';
     if (el.classList.contains('chapter')) stops.push({ el: el, chapter: true, f: CHAPTER_FORM[el.id] || 0, top: 0 });
     else stops.push({ el: el, chapter: false, f: SCENE_FORM[sceneNo++] || 0, side: el.getAttribute('data-side'), top: 0, name: el.querySelector('.sname') });
   });
-  function place(st, o) { // where the model rests at a stop, and how strongly it shows
+  function place(st, o) { // where the model rests at a stop, how strongly it shows, and (k) whether that spot moves with the page
+    o.k = 0;
     if (!st || st.chapter) { o.x = W / 2; o.y = H * 0.66; o.s = Math.min(W * 0.3, H * 0.25); o.a = st ? mix(0.8, 0.16, clamp((H * 0.1 - st.top) / (H * 0.5), 0, 1)) : 0.8; } // clear under the headline, then it steps back behind the cards
     else if (W > 900) { o.x = W * (st.side === 'left' ? 0.69 : 0.31); o.y = H * 0.67; o.s = Math.min(W * 0.19, H * 0.29); o.a = 0.95; } // beside the card, under the project's name
-    else { o.x = W / 2; o.y = (st.name ? st.name.getBoundingClientRect().bottom : st.top) + lagNow + W * 0.27; o.s = W * 0.3; o.a = 0.95; } // phones: in the gap left under the project's name, moving with the page
+    else { o.x = W / 2; o.y = (st.name ? st.name.getBoundingClientRect().bottom : st.top) + lagNow + W * 0.27; o.s = W * 0.3; o.a = 0.95; o.k = 1; } // phones: in the gap left under the project's name, moving with the page
   }
   var RING = [[-0.55, -0.35, 0.34, 0.25], [0.5, -0.45, 0.28, 0.456], [0.05, 0.1, 0.2, 0.603], [-0.5, 0.5, 0.24, 0.779], [0.55, 0.45, 0.3, 1]]; // Tarjan's five cycles: x, z, radius, share of the blocks so far
   function price(k) { k = Math.max(0, k); return 0.12 + 0.52 * Math.sin(Math.min(k / 26, 1) * Math.PI / 2) - Math.max(0, k - 26) * 0.019 + 0.035 * Math.sin(k * 1.7) + 0.02 * Math.sin(k * 0.6); } // a climb to a high, then a pullback
@@ -2461,7 +2462,7 @@ import * as THREE from './vendor/three.module.min.js';
   var W = 0, H = 0, tmpV = new THREE.Vector3(), screenNodes = [], lastPick = 0, t0 = performance.now(), lastKey = '';
   function size() {
     W = window.innerWidth; H = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, W < 700 ? 1.5 : 2)); renderer.setSize(W, H, false); // phones: fewer pixels to shade
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, W < 700 ? 1.5 : 2)); renderer.setSize(W, H, false); cv.style.height = H + 'px'; // phones: fewer pixels to shade
     camera.aspect = W / H; lastKey = '';
   }
   size();
@@ -2476,13 +2477,17 @@ import * as THREE from './vendor/three.module.min.js';
   function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // stand-in for the page's entrance curve
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-  var idle = 0, spin = 0, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
+  var idle = 0, spin = 0, riding = false, rideT = -1, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
 
+  // Add ?fps to the address to see how many frames a second this device draws (for chasing lag on a real phone).
+  var fpsEl = /[?&]fps\b/.test(location.search) && document.body.appendChild(document.createElement('div')), fpsN = 0, fpsT = 0;
+  if (fpsEl) fpsEl.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:4px 8px;background:#000;color:#fff;font:14px monospace';
   function frame(now) {
     if (!REDUCE) requestAnimationFrame(frame);
+    if (fpsEl && ++fpsN && now - fpsT > 1000) { fpsEl.textContent = Math.round(fpsN * 1000 / (now - fpsT)) + ' fps'; fpsN = 0; fpsT = now; }
     var t = REDUCE ? 1e9 : now - t0, sc = window.scrollY, wide = W >= 1000, dt = Math.min(64, now - lastNow); lastNow = now;
     // The model follows the scroll with weight: it lags a little, then settles. Everything below reads the page as if scrolled to sS.
-    sS = REDUCE || sS < 0 ? sc : sS + (sc - sS) * (1 - Math.exp(-dt / (wide ? 110 : 50)));
+    sS = REDUCE || sS < 0 || !wide ? sc : sS + (sc - sS) * (1 - Math.exp(-dt / 110)); // phones: no lag, the model is carried by the page itself (see "ride" below)
     if (Math.abs(sc - sS) < 0.2) sS = sc;
     var lag = sc - sS, heroBottom = hero.getBoundingClientRect().bottom, rr = thru.getBoundingClientRect(), r = { top: rr.top + lag, bottom: rr.bottom + lag, height: rr.height };
     // Poses blended by scroll: beside the hero words, crossing the giant word in the pinned scene, then centred behind each chapter.
@@ -2514,6 +2519,11 @@ import * as THREE from './vendor/three.module.min.js';
     var S = mix(mix(heroS, sceneS, smooth(en * 1.5)), mix(pl0.s, pl1.s, m) * mix(FIT[fA], FIT[fB], m), d) * (1 + 2.4 * bump + 0.3 * nudge);
     var CX = mix(mix(wide ? W * 0.72 : W / 2, mix(W * 0.74, W * 0.26, q), en), mix(pl0.x, pl1.x, m), d);
     var CY = mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, wide ? H * 0.8 : H * 0.72, en), mix(pl0.y, pl1.y, m), d);
+    // Phones: where the model moves with the page, the canvas is laid on the page itself, so the phone's own scrolling carries it and it cannot trail behind the text. Where it holds still on screen, or during a dive, the canvas is fixed to the screen as before.
+    var ride = !REDUCE && bump < 0.01 && mix(mix(wide ? 0 : 1, 0, en), mix(pl0.k, pl1.k, m), d) > 0.5, rT = ride ? Math.round(clamp(CY + sc - H / 2, 0, document.body.offsetHeight - H)) : 0;
+    if (ride !== riding) { riding = ride; cv.style.position = ride ? 'absolute' : 'fixed'; }
+    if (rT !== rideT) { rideT = rT; cv.style.transform = 'translate3d(0,' + rT + 'px,0)'; }
+    if (ride) CY += sc - rT;
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
     var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(ELEV[1], 0.6, en), mix(mix(ELEV[fA], ELEV[fB], m), 0.32, bump), d) - gy * 0.08 * Math.max(1 - en, d);
     var w1 = fA === 1 ? (fB === 1 ? 1 : 1 - m) : fB === 1 ? m : 0; // how much of a rotor it is right now
@@ -2560,7 +2570,7 @@ import * as THREE from './vendor/three.module.min.js';
     pinB.visible = draw >= 1;
 
     screenNodes.length = 0;
-    for (var q = 0; q < n * n; q++) { tmpV.set(nx[q], 0, nz[q]).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H); }
+    for (var q = 0; q < n * n; q++) { tmpV.set(nx[q], 0, nz[q]).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H + (ride ? rT - sc : 0)); }
     // Draw only when something on screen changed, so a still page costs nothing.
     var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1)].join();
     if (k !== lastKey) { lastKey = k; renderer.render(scene, camera); }

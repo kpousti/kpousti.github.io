@@ -4,6 +4,16 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Phone lag, round two: the turbine trailing the page (2026-11-15)
+
+You said it was still laggy, especially the turbine while scrolling.
+
+- **Cause.** On a real iPhone screen (about 393 by 659) the hero is taller than the screen, so the turbine starts half below the fold and has to move up with the page. Its position was recalculated in code every frame. A phone scrolls the page on its own fast track and only then runs the code, so the turbine was always a frame or more behind the text. In Low Power Mode the code runs at 30 frames a second while scrolling stays smooth, which makes it much worse.
+- **Fix.** On phones, wherever the model is meant to move with the page (the hero, and the gap under each project name), the 3D canvas is now laid on the page itself, so the phone's own scrolling carries it. Where the model holds still on screen (the giant-word scene, chapter openings, dives) the canvas is fixed to the screen as before. It swaps between the two as needed. The built-in lag ("weight") is off on phones.
+- **Checked:** the turbine and the project models sit in exactly the same places as before; the page is no taller; no errors; desktop is untouched (canvas always fixed there).
+- **Not checked:** a real iPhone. A one-frame nudge is possible at the moment the canvas swaps mode.
+- **New tool:** add `?fps` to the address (kiapousti.com/?fps) to see frames a second in the bottom-left corner. 60 is smooth, 30 usually means Low Power Mode.
+
 ## Phone lag fix (2026-11-15)
 
 You said the live site felt laggy on your phone. I measured it in a phone-sized Chrome slowed down 4 times, scrolling the whole page.
