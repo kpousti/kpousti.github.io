@@ -1,5 +1,5 @@
 # Run inside Blender: writes every mesh object in the open file as "parts" the site can load without any extra library.
-# One file: [uint32 header length][JSON header][Int16 positions][Int8 normals][Uint16 indices][Float32 part transforms][Uint8 blade-section point].
+# One file: [uint32 header length][JSON header][Int16 positions][Int8 normals][Uint16 indices][Float32 part transforms][Uint8 blade-section point][Uint8 vertex colours, only if some mesh uses more than one material].
 # Coordinates are turned from Blender's Z-up to the site's Y-up: (x, y, z) -> (x, z, -y).
 import bpy, json, struct, array, os
 
@@ -14,7 +14,11 @@ def srgb(c): return round((c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.
 
 objs = sorted((o for o in bpy.data.objects if o.type == 'MESH'), key=lambda o: o.name)
 mats, meshes, mesh_id, centre = [], [], {}, {}
-pos, nor, idx, ring = array.array('f'), array.array('b'), array.array('H'), array.array('B')
+pos, nor, idx, ring, vcol = array.array('f'), array.array('b'), array.array('H'), array.array('B'), array.array('B')
+multi = any(len({p.material_index for p in o.data.polygons}) > 1 for o in objs)  # then every vertex carries its own colour
+def rgb(m):
+    c = next(nd for nd in m.node_tree.nodes if nd.type == "BSDF_PRINCIPLED").inputs["Base Color"].default_value
+    return (srgb(c[0]), srgb(c[1]), srgb(c[2]))
 
 for o in objs:
     me = o.data
@@ -22,7 +26,7 @@ for o in objs:
     mesh_id[me.name] = len(meshes)
     # Blades and vanes keep their root as origin. Every other mesh is re-centred on the middle of its box, so each part turns, scales and rounds into a ball about its own middle.
     strip = o.name.startswith(("blade", "vane")); c = (0.0, 0.0, 0.0)
-    if not strip:
+    if not strip and not o.name.startswith("kit."):  # kit pieces keep the origin they were drawn around
         c = tuple((min(v.co[a] for v in me.vertices) + max(v.co[a] for v in me.vertices)) / 2 for a in range(3))
     centre[me.name] = c
     m = me.materials[0]
@@ -35,16 +39,17 @@ for o in objs:
     seen, v0, i0 = {}, len(pos) // 3, len(idx)
     for t in me.loop_triangles:
         for li in t.loops:
-            vi = me.loops[li].vertex_index; nv = cn[li].vector
-            key = (vi, round(nv.x, 2), round(nv.y, 2), round(nv.z, 2))
+            vi = me.loops[li].vertex_index; nv = cn[li].vector; mi = me.polygons[t.polygon_index].material_index
+            key = (vi, round(nv.x, 2), round(nv.y, 2), round(nv.z, 2), mi)
             if key not in seen:
                 seen[key] = len(seen); co = me.vertices[vi].co
                 pos.extend((co.x - c[0], co.z - c[2], -(co.y - c[1])))
                 nor.extend((round(nv.x * 127), round(nv.z * 127), round(-nv.y * 127)))
+                vcol.extend(rgb(me.materials[mi]))
                 ring.append(vi % 6 if strip else 255)  # which of the six points round a blade section this is, so the site can round the blade into a rod
             idx.append(seen[key])
     assert len(seen) < 65536
-    meshes.append({"mat": [x["name"] for x in mats].index(m.name), "v": [v0, len(seen)], "i": [i0, len(idx) - i0]})
+    meshes.append({"name": o.name, "mat": [x["name"] for x in mats].index(m.name), "v": [v0, len(seen)], "i": [i0, len(idx) - i0]})
 
 parts, pm, pk, pr = array.array('f'), [], [], []
 for o in objs:
@@ -56,7 +61,7 @@ for o in objs:
 scale = max(abs(x) for x in pos) / 32767
 q = array.array('h', (round(x / scale) for x in pos))
 def pad(b): return b + b"\0" * (-len(b) % 4)
-blobs = [pad(q.tobytes()), pad(nor.tobytes()), pad(idx.tobytes()), parts.tobytes(), pad(ring.tobytes())]
+blobs = [pad(q.tobytes()), pad(nor.tobytes()), pad(idx.tobytes()), parts.tobytes(), pad(ring.tobytes())] + ([pad(vcol.tobytes())] if multi else [])
 offs, at = [], 0
 for b in blobs: offs.append(at); at += len(b)
 head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr}, separators=(",", ":")).encode()

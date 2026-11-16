@@ -4,6 +4,31 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Blender, scenes two and three in fine detail: the space-frame network and downtown San Diego (2026-11-15)
+
+You asked for every animation to be made in Blender with fine detail like the turbine, starting right after the turbine, and then for the city to be San Diego so locals recognise it. Your picks for "routes": a detailed city; the network settles and presses in; a marker drives the route.
+
+**"graphs": the network is now a space frame**
+- Each corner is a machined node with six sockets. Each strut ends in a tapered fitting with a hex collar where it meets the node.
+- Every strut carries one to three brass collars. That is real data: the number is what that street costs to drive in the routing graph.
+- The turbine's parts still become it: a ball-type part is the core of each node, the blades are the struts, and the fittings grow on as the parts land.
+
+**"routes": the network presses into a plate and San Diego rises**
+- The base is a machined plate with a rim, ruler ticks on two edges, a scale bar, a north arrow, corner bolts and feet. It rises to meet the network as it settles; the struts lie half sunk in it as the streets, and the nodes flatten into rivets at each corner.
+- Landmarks, placed roughly where they stand downtown, with the bay along the near edge:
+  One America Plaza (the pointed crown), the Manchester Grand Hyatt twins, Emerald Plaza (hexagonal towers cut at a slant, green on top), the Harbor Club oval twins, the Central Library dome, Petco Park (with the brick warehouse in the corner), the Convention Center (fins and white sails), the USS Midway, the Coronado Bridge curving out over the bay, and the California Tower in a park. Palms along the Embarcadero and sailboats on the bay.
+- Every other lot gets one of ten ordinary buildings by its height (towers, mid-rises, shop, house, sawtooth warehouse, barrel-roofed hall), and open blocks are parks with trees and a fountain.
+- A brass map pin drives the route as it draws. On a computer it still re-plans to wherever you point.
+- The same city is the model for About ("I think in graphs.").
+
+**How it is built:** `blender/build_city.py` draws every piece and saves `blender/city.blend`; `blender/export_parts.py` writes `models/city.bin` (204KB). The landmarks are shapes drawn from memory of the skyline, with no logos or signs. They are simplified, not surveyed: tell me which ones read wrong.
+
+**Location rule kept:** this shows downtown San Diego as a city, nothing about where you live.
+
+**Tested** at 1440x860 and 393x659: no errors, no sideways scroll, all six tabs, nothing left hidden, no slow frames in the slowed-down phone test. Not tested on a real iPhone or in Safari. The test measures the phone's processor, not its graphics chip, and the city is the heaviest scene so far (about 300 buildings plus the 477 turbine parts as streets), so this is the one to watch on your phone.
+
+**Still plain blocks:** Experience, the project scenes, the side builds, Skills, Contact.
+
 ## The "workshop drawing" redesign: removing the AI look (2026-11-15)
 
 You said people call the site AI-generated, and picked the "Workshop drawing" option. I ran the unslop skill (by Damir Sokolovsky, @heydamir) as an audit and then rebuilt the page's look.
