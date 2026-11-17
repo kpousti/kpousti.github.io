@@ -6,12 +6,12 @@
 #   surf   Surf Alert: a weather buoy and a surfboard on a rolling swell
 #   mm     Mini Maps (Dijkstra): a pin-and-string board; pins are settled in order of distance
 #   ac     Agent City: a hub pavilion and six huts on stilts over water, joined by boardwalks, with agents walking in to report
-#   kb     Kia-bot: a desk unit with a ring of level bars for its voice, wired to three tools it calls (a card drawer, a clock, a magnifier)
+#   kb     Kia-bot: a small desk robot with a ring of level bars for its voice, wired to three tools it calls (a card drawer, a clock, a magnifier)
 #   qb     Quant Backtest Lab: an equity curve as a row of bars on a bed, with a brass window that steps forward along a rail (train, then test)
 #   la     Lead Autoresponder: a mail sorter. Envelopes drop through a hopper and a flipper sends each to one of three trays
 #   md     Market Debrief: a split-flap board whose flaps turn to draw the day's bars
 #   mg     Math 163 Study Game: flash cards on two rings, flipping over, with a pencil, a set square and a compass
-#   tools  Skills: a pegboard wall of real tools
+#   tools  Skills: a dark pegboard wall of real tools, each one doing its job in turn
 #   tk     Contact: a brass telegraph key and its sounder, tapping out a message
 import bpy, math, os
 from mathutils import Vector
@@ -339,34 +339,53 @@ agent = None
 for k in range(6): agent = part(f"ac.agent.{k}", (HUTS[k][0] * 0.8, HUTS[k][1] * 0.8, 0.13), smooth=0.6, mesh=agent)
 
 # ================= kb: Kia-bot =================
+# A small desk robot. Its head turns to the tool it is calling, its eyes blink and light, the ring of bars round it is its voice.
+def rrect(hx, hy, r, n=5):
+    """a rounded rectangle outline, counter-clockwise"""
+    pts = []
+    for q, (cx, cy) in enumerate(((hx - r, hy - r), (-hx + r, hy - r), (-hx + r, -hy + r), (hx - r, -hy + r))):
+        for k in range(n + 1): a = math.pi / 2 * (q + k / n); pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return pts
 cyl((0, 0, 0), 0.4, 0.4, 0.03, DARK, 28); cyl((0, 0, 0.03), 0.37, 0.37, 0.006, STEEL, 28)
 part("kb.base", smooth=0.5)
-cyl((0, 0, 0.036), 0.2, 0.2, 0.46, GREY, 24); cyl((0, 0, 0.496), 0.2, 0.16, 0.03, DARK, 24); cyl((0, 0, 0.526), 0.16, 0.16, 0.004, GLASS, 24); cyl((0, 0, 0.53), 0.05, 0.05, 0.006, AMBER, 16)
-for k in range(9): cyl((0, 0, 0.09 + 0.04 * k), 0.2035, 0.2035, 0.014, DARK, 24)
-box(-0.05, 0.05, -0.206, -0.2, 0.06, 0.08, AMBER)
+# the body: a tapered torso with a speaker grille, a chest light, a brass collar, a neck and two short arms
+cyl((0, 0, 0.036), 0.2, 0.17, 0.3, GREY, 28); cyl((0, 0, 0.336), 0.185, 0.185, 0.02, BRASS, 28); cyl((0, 0, 0.356), 0.07, 0.07, 0.05, STEEL, 16)
+for k in range(5): z = 0.07 + 0.035 * k; r = 0.2 - 0.03 * (z - 0.036) / 0.3 + 0.004; cyl((0, 0, z), r, r - 0.001, 0.012, DARK, 28)
+box(-0.05, 0.05, -0.186, -0.17, 0.25, 0.29, AMBER)
+for sx in (-1, 1):
+    sphere(sx * 0.2, 0, 0.3, 0.036, STEEL, 10, 6); rod((sx * 0.2, 0, 0.3), (sx * 0.265, -0.07, 0.15), 0.018, GREY, 8); sphere(sx * 0.265, -0.07, 0.15, 0.03, BRASS, 10, 6)
 part("kb.body", smooth=0.5)
+HEAD = 0.406  # the height of the neck joint the head turns on
+prism(rrect(0.19, 0.14, 0.05), 0, 0.2, PAPER); box(-0.14, 0.14, -0.146, -0.14, 0.05, 0.15, GLASS); rod((0, 0, 0.2), (0, 0, 0.29), 0.008, STEEL)
+for k in range(5): box(-0.05 + 0.022 * k, -0.038 + 0.022 * k, -0.143, -0.14, 0.018, 0.034, DARK)
+for sx in (-1, 1): cyl((0.19 if sx > 0 else -0.215, 0, 0.1), 0.045, 0.045, 0.025, BRASS, 14, 'x')
+part("kb.head", (0, 0, HEAD), smooth=0.5)
+box(-0.024, 0.024, -0.004, 0, -0.032, 0.032, AMBER)
+eye = part("kb.eye.0", (-0.062, -0.147, HEAD + 0.1)); part("kb.eye.1", (0.062, -0.147, HEAD + 0.1), mesh=eye)
+sphere(0, 0, 0, 0.024, AMBER, 10, 6)
+part("kb.tip", (0, 0, HEAD + 0.305), smooth=0.5)
 box(-0.013, 0.013, -0.008, 0.008, 0, 0.1, AMBER)
 bar = None
 for k in range(24): a = math.tau * k / 24; bar = part(f"kb.bar.{k}", (0.29 * math.cos(a), 0.29 * math.sin(a), 0.036), (0, 0, a + math.pi / 2), mesh=bar)
 # tool one: a card drawer (what it looks things up in)
 box(-0.1, 0.1, -0.12, 0.12, 0, 0.16, WOOD, True); box(-0.104, 0.104, -0.124, 0.124, 0.16, 0.17, WOOD); box(-0.085, 0.085, -0.122, -0.12, 0.02, 0.07, DARK)
-part("kb.tool.0", (-0.72, -0.12, 0), (0, 0, 0.5))
+part("kb.tool.0", (-0.6, -0.1, 0), (0, 0, 0.5))
 box(-0.085, 0.085, -0.02, 0.18, 0, 0.055, WOOD, True); box(-0.085, 0.085, -0.03, -0.02, -0.005, 0.06, WOOD, True); cyl((0, -0.045, 0.028), 0.012, 0.012, 0.015, BRASS, 8, 'y'); box(-0.04, 0.04, -0.032, -0.03, 0.036, 0.052, PAPER)
 for k in range(8): box(-0.07, 0.07, 0.0 + 0.02 * k, 0.003 + 0.02 * k, 0.055, 0.075 + 0.006 * (k % 3), PAPER)
-part("kb.drawer", (-0.72, -0.12, 0.085), (0, 0, 0.5))
+part("kb.drawer", (-0.6, -0.1, 0.085), (0, 0, 0.5))
 # tool two: a clock (what day it is)
 box(-0.08, 0.08, -0.03, 0.03, 0, 0.03, DARK, True); cyl((0, -0.02, 0.15), 0.11, 0.11, 0.04, STEEL, 20, 'y'); cyl((0, -0.024, 0.15), 0.098, 0.098, 0.004, PAPER, 20, 'y'); box(-0.012, 0.012, -0.012, 0.012, 0.03, 0.05, DARK)
 for k in range(12): a = math.tau * k / 12; box(0.084 * math.sin(a) - 0.003, 0.084 * math.sin(a) + 0.003, -0.0262, -0.024, 0.15 + 0.084 * math.cos(a) - 0.008, 0.15 + 0.084 * math.cos(a) + 0.008, DARK)
-part("kb.tool.1", (0.0, 0.74, 0), (0, 0, math.pi), smooth=0.5)
+part("kb.tool.1", (0.0, 0.62, 0), (0, 0, math.pi), smooth=0.5)
 box(-0.004, 0.004, -0.004, 0, -0.01, 0.075, DARK); cyl((0, -0.006, 0), 0.008, 0.008, 0.006, BRASS, 8, 'y')
-part("kb.hand", (0.0, 0.7675, 0.15), (0, 0, math.pi))
+part("kb.hand", (0.0, 0.6475, 0.15), (0, 0, math.pi))
 # tool three: a magnifier on a stand (what it searches with)
 box(-0.07, 0.07, -0.05, 0.05, 0, 0.025, DARK, True); rod((0, 0, 0.025), (0, 0, 0.16), 0.008, STEEL)
-part("kb.tool.2", (0.72, -0.12, 0), (0, 0, -0.5))
+part("kb.tool.2", (0.6, -0.1, 0), (0, 0, -0.5))
 for k in range(16): a0, a1 = math.tau * k / 16, math.tau * (k + 1) / 16; rod((0.085 * math.cos(a0), 0, 0.085 * math.sin(a0) + 0.1), (0.085 * math.cos(a1), 0, 0.085 * math.sin(a1) + 0.1), 0.009, BRASS, 6)
 cyl((0, -0.003, 0.1), 0.08, 0.08, 0.006, GLASS, 16, 'y'); rod((0, 0, 0.015), (0, 0, -0.08), 0.011, WOOD)
-part("kb.lens", (0.72, -0.12, 0.16), (0, 0, -0.5))
-for k, (tx, ty) in enumerate([(-0.72, -0.12), (0.0, 0.74), (0.72, -0.12)]):
+part("kb.lens", (0.6, -0.1, 0.16), (0, 0, -0.5))
+for k, (tx, ty) in enumerate([(-0.6, -0.1), (0.0, 0.62), (0.6, -0.1)]):
     d = math.hypot(tx, ty); ux, uy = tx / d, ty / d
     wire_pts = [(ux * 0.2, uy * 0.2, 0.05), (ux * 0.3, uy * 0.3, 0.012), (ux * (d - 0.14), uy * (d - 0.14), 0.012), (ux * (d - 0.09), uy * (d - 0.09), 0.03)]
     for q in range(3): rod(wire_pts[q], wire_pts[q + 1], 0.007, PAPER)
@@ -445,52 +464,59 @@ for k in range(7, 12): card2 = part(f"mg.card.{k}", (0, 0, 0.2), (math.radians(-
 part("mg.flip.0", (0, 0, 0.2), (math.radians(106), 0, 0), mesh=card2)
 
 # ================= tools: the pegboard wall =================
-box(-0.95, 0.95, 0.0, 0.03, 0.08, 1.12, PAPER, True)
+# A dark shadow board. Each tool is a part the page moves: the wrench turns a bolt, the caliper's jaw slides, the screwdriver spins, the pliers open,
+# the hex key turns, the meter's needle sweeps and the iron's tip heats.
+box(-0.95, 0.95, 0.0, 0.03, 0.08, 1.12, DARK, True)
 for (x0, x1, z0, z1) in [(-0.98, 0.98, 0.05, 0.08), (-0.98, 0.98, 1.12, 1.15), (-0.98, -0.95, 0.08, 1.12), (0.95, 0.98, 0.08, 1.12)]: box(x0, x1, -0.012, 0.04, z0, z1, WOOD, True)
 for ix in range(30):
-    for iz in range(16): x = -0.9 + 0.062 * ix; z = 0.12 + 0.064 * iz; quad((x - 0.007, -0.0006, z - 0.007), (x + 0.007, -0.0006, z - 0.007), (x + 0.007, -0.0006, z + 0.007), (x - 0.007, -0.0006, z + 0.007), DARK)
+    for iz in range(16): x = -0.9 + 0.062 * ix; z = 0.12 + 0.064 * iz; quad((x - 0.007, -0.0006, z - 0.007), (x + 0.007, -0.0006, z - 0.007), (x + 0.007, -0.0006, z + 0.007), (x - 0.007, -0.0006, z + 0.007), GREY)
 for x in (-0.6, 0.6): box(x - 0.03, x + 0.03, 0.03, 0.34, 0.0, 0.03, STEEL, True); rod((x, 0.31, 0.03), (x, 0.035, 0.7), 0.012, STEEL)
+cyl((-0.77, -0.03, 0.87), 0.03, 0.03, 0.03, BRASS, 6, 'y')  # the bolt the wrench turns
 part("tools.board")
 T = 0.014
-def hook(): cyl((0, 0, 0), 0.006, 0.006, 0.03, STEEL, 6)
-# 0 wrench
-box(-0.022, 0.022, -0.24, 0.2, 0, T, STEEL, True); prism([(-0.06, 0.2), (0.06, 0.2), (0.072, 0.3), (0.034, 0.3), (0.03, 0.245), (-0.03, 0.245), (-0.034, 0.3), (-0.072, 0.3)], 0, T, STEEL)
-prism(ngon(0, -0.285, 0.052, 12), 0, T, STEEL); prism(ngon(0, -0.285, 0.028, 6), T, T + 0.001, DARK)
-part("tools.t.0", (-0.77, -0.012, 0.6), flat(0.08))
-# 1 calipers
+# 0 wrench: drawn with its open jaw at the origin, so it turns about the bolt
+box(-0.022, 0.022, -0.51, -0.07, 0, T, STEEL, True); prism([(-0.06, -0.07), (0.06, -0.07), (0.072, 0.03), (0.034, 0.03), (0.03, -0.025), (-0.03, -0.025), (-0.034, 0.03), (-0.072, 0.03)], 0, T, STEEL)
+prism(ngon(0, -0.555, 0.052, 12), 0, T, STEEL); prism(ngon(0, -0.555, 0.028, 6), T, T + 0.001, DARK)
+part("tools.t.0", (-0.77, -0.012, 0.87), flat(0.08))
+# 1 calipers: the beam with its fixed jaw, and the sliding jaw as its own part
 box(-0.013, 0.013, -0.3, 0.3, 0, 0.01, STEEL, True)
 for k in range(24): box(-0.013, -0.003 if k % 4 else 0.004, -0.27 + 0.022 * k, -0.268 + 0.022 * k, 0.01, 0.0108, DARK)
 box(-0.11, 0.013, 0.27, 0.3, 0, 0.01, STEEL, True); prism([(-0.11, 0.27), (-0.085, 0.27), (-0.1, 0.2)], 0, 0.01, STEEL)
-box(-0.11, 0.035, 0.06, 0.1, 0, 0.014, GREY, True); prism([(-0.11, 0.1), (-0.1, 0.17), (-0.085, 0.1)], 0, 0.01, GREY); cyl((0.03, 0.045, 0.004), 0.014, 0.014, 0.01, BRASS, 10)
 part("tools.t.1", (-0.52, -0.012, 0.6), flat(0.0))
-# 2 screwdriver
-box(-0.034, 0.034, -0.3, -0.07, 0, 0.03, AMBER, True)
-for k in range(5): box(-0.036, 0.036, -0.28 + 0.045 * k, -0.27 + 0.045 * k, 0.0, 0.031, DARK)
-box(-0.02, 0.02, -0.07, -0.04, 0.004, 0.026, STEEL, True); box(-0.008, 0.008, -0.04, 0.26, 0.01, 0.02, STEEL, True); prism([(-0.008, 0.26), (0.008, 0.26), (0.013, 0.3), (-0.013, 0.3)], 0.013, 0.017, STEEL)
-part("tools.t.2", (-0.3, -0.012, 0.6), flat(-0.05))
-# 3 pliers
-quad((-0.05, -0.3, T), (-0.02, -0.3, T), (0.012, 0.02, T), (-0.014, 0.02, T), BLUE); quad((0.02, -0.3, T), (0.05, -0.3, T), (0.014, 0.02, T), (-0.012, 0.02, T), BLUE)
-prism([(-0.05, -0.3), (-0.02, -0.3), (0.012, 0.02), (-0.014, 0.02)], 0, T, BLUE); prism([(0.02, -0.3), (0.05, -0.3), (0.014, 0.02), (-0.012, 0.02)], 0, T, BLUE)
-prism([(-0.03, 0.02), (0.0, 0.02), (-0.004, 0.2), (-0.02, 0.18)], 0, T, STEEL); prism([(0.0, 0.02), (0.03, 0.02), (0.02, 0.18), (0.004, 0.2)], 0, T, STEEL); cyl((0, 0.03, T), 0.016, 0.016, 0.006, DARK, 10)
-part("tools.t.3", (-0.08, -0.012, 0.6), flat(0.06))
+box(-0.11, 0.035, 0.06, 0.1, 0, 0.014, GREY, True); prism([(-0.11, 0.1), (-0.1, 0.17), (-0.085, 0.1)], 0, 0.01, GREY); cyl((0.03, 0.045, 0.004), 0.014, 0.014, 0.01, BRASS, 10)
+part("tools.jaw", (-0.52, -0.012, 0.6), flat(0.0))
+# 2 screwdriver: drawn about its own long axis, so it can spin
+box(-0.034, 0.034, -0.3, -0.07, -0.015, 0.015, AMBER, True)
+for k in range(5): box(-0.036, 0.036, -0.28 + 0.045 * k, -0.27 + 0.045 * k, -0.0155, 0.0155, DARK, True)
+box(-0.02, 0.02, -0.07, -0.04, -0.011, 0.011, STEEL, True); box(-0.008, 0.008, -0.04, 0.26, -0.005, 0.005, STEEL, True); prism([(-0.008, 0.26), (0.008, 0.26), (0.013, 0.3), (-0.013, 0.3)], -0.002, 0.002, STEEL)
+part("tools.t.2", (-0.3, -0.03, 0.6), flat(-0.05))
+# 3 pliers: two halves on one pivot at the origin
+prism([(-0.05, -0.33), (-0.02, -0.33), (0.012, -0.01), (-0.014, -0.01)], 0, T, BLUE); prism([(0.0, -0.01), (0.03, -0.01), (0.02, 0.15), (0.004, 0.17)], 0, T, STEEL); cyl((0, 0, T), 0.016, 0.016, T + 0.006, DARK, 10)
+part("tools.pl.0", (-0.08, -0.012, 0.63), flat(0.06))
+prism([(0.02, -0.33), (0.05, -0.33), (0.014, -0.01), (-0.012, -0.01)], T, 2 * T, BLUE); prism([(-0.03, -0.01), (0.0, -0.01), (-0.004, 0.17), (-0.02, 0.15)], T, 2 * T, STEEL)
+part("tools.pl.1", (-0.08, -0.012, 0.63), flat(0.06))
 # 4 steel rule
 box(-0.022, 0.022, -0.34, 0.34, 0, 0.004, STEEL, True)
 for k in range(33): box(-0.022, -0.008 if k % 4 else 0.0, -0.32 + 0.02 * k, -0.3185 + 0.02 * k, 0.004, 0.0046, DARK)
 cyl((0, 0.31, 0.004), 0.007, 0.007, 0.001, DARK, 8)
 part("tools.t.4", (0.12, -0.012, 0.6), flat(0.0))
-# 5 hex key
-prism([(-0.01, -0.26), (0.01, -0.26), (0.01, 0.18), (0.13, 0.18), (0.13, 0.2), (-0.01, 0.2)], 0, 0.018, DARK)
-part("tools.t.5", (0.3, -0.012, 0.58), flat(-0.1))
-# 6 multimeter
-box(-0.1, 0.1, -0.17, 0.17, 0, 0.04, AMBER, True); box(-0.085, 0.085, -0.155, 0.155, 0.04, 0.046, DARK); box(-0.065, 0.065, 0.07, 0.135, 0.046, 0.049, GLASS)
-cyl((0, -0.03, 0.046), 0.05, 0.05, 0.012, GREY, 16); box(-0.004, 0.004, -0.03, 0.02, 0.058, 0.061, PAPER)
-for k in range(10): a = math.tau * k / 10; box(0.066 * math.cos(a) - 0.003, 0.066 * math.cos(a) + 0.003, -0.03 + 0.066 * math.sin(a) - 0.003, -0.03 + 0.066 * math.sin(a) + 0.003, 0.046, 0.048, PAPER)
-for k, m in enumerate((BRICK, DARK, BRICK)): cyl((-0.05 + 0.05 * k, -0.13, 0.046), 0.011, 0.011, 0.006, m, 8)
+# 5 hex key: drawn about its long leg, so it can turn
+prism([(-0.01, -0.26), (0.01, -0.26), (0.01, 0.18), (0.13, 0.18), (0.13, 0.2), (-0.01, 0.2)], -0.009, 0.009, STEEL)
+part("tools.t.5", (0.3, -0.021, 0.58), flat(-0.1))
+# 6 multimeter: an analog face, with the needle as its own part
+box(-0.1, 0.1, -0.17, 0.17, 0, 0.04, AMBER, True); box(-0.085, 0.085, -0.155, 0.155, 0.04, 0.046, DARK); box(-0.07, 0.07, 0.06, 0.14, 0.046, 0.049, PAPER)
+for k in range(9): a = math.radians(-48 + 12 * k); box(0.058 * math.sin(a) - 0.0015, 0.058 * math.sin(a) + 0.0015, 0.072 + 0.058 * math.cos(a) - 0.004, 0.072 + 0.058 * math.cos(a) + 0.004, 0.049, 0.0496, DARK)
+cyl((0, -0.05, 0.046), 0.045, 0.045, 0.012, GREY, 16); box(-0.004, 0.004, -0.05, -0.008, 0.058, 0.061, PAPER)
+for k, m in enumerate((BRICK, DARK, BRICK)): cyl((-0.05 + 0.05 * k, -0.135, 0.046), 0.011, 0.011, 0.006, m, 8)
 part("tools.t.6", (0.54, -0.012, 0.62), flat(0.0), smooth=0.5)
-# 7 soldering iron
+box(-0.0025, 0.0025, 0, 0.056, 0, 0.002, BRICK, True); cyl((0, 0, 0), 0.006, 0.006, 0.003, DARK, 8)
+part("tools.needle", (0.54, -0.0625, 0.692), flat(0.0))
+# 7 soldering iron, with the tip as its own part
 box(-0.022, 0.022, -0.3, -0.06, 0, 0.034, BLUE, True); box(-0.026, 0.026, -0.07, -0.05, 0, 0.036, DARK, True); box(-0.014, 0.014, -0.05, 0.02, 0.006, 0.028, STEEL, True); box(-0.007, 0.007, 0.02, 0.24, 0.011, 0.023, STEEL, True)
-prism([(-0.007, 0.24), (0.007, 0.24), (0.0, 0.3)], 0.013, 0.021, BRASS); rod((0, -0.3, 0.017), (0.03, -0.36, 0.017), 0.007, RUBBER)
+rod((0, -0.3, 0.017), (0.03, -0.36, 0.017), 0.007, RUBBER)
 part("tools.t.7", (0.79, -0.012, 0.6), flat(0.04))
+prism([(-0.007, 0.24), (0.007, 0.24), (0.0, 0.3)], 0.013, 0.021, BRASS)
+part("tools.tip", (0.79, -0.012, 0.6), flat(0.04))
 
 # ================= tk: the telegraph key =================
 box(-0.62, 0.62, -0.32, 0.32, 0, 0.06, WOOD, True); box(-0.62, 0.62, -0.32, 0.32, 0.06, 0.066, WOOD); box(-0.5, 0.36, -0.14, 0.14, 0.066, 0.078, BRASS, True)

@@ -2368,14 +2368,21 @@ import * as THREE from './vendor/three.module.min.js';
   // A scanned steel plate from Poly Haven (metal_plate_02, CC0), shrunk to one small image: its roughness in red, its height in green. It is wrapped onto every part from three sides, so no part needs its own texture layout.
   var wear = new THREE.TextureLoader().load(window.innerWidth >= 1000 ? './textures/wear-wide.jpg' : './textures/wear.jpg', function () { lastKey = ''; }); wear.wrapS = wear.wrapT = THREE.MirroredRepeatWrapping; // mirrored, so the patch joins itself without a visible edge
   wear.colorSpace = THREE.NoColorSpace; wear.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); // stays sharp on surfaces seen at a glancing angle, as along the blades in the fly-through
-  function reshape(shader) { // per part: blend every vertex from its own shape to its rod or ball shape; per pixel: real metal's uneven shine, scuffs and fine relief
+  function wearFrag(shader) {
     shader.uniforms.uWear = { value: wear };
-    shader.vertexShader = 'attribute vec3 aTo; attribute vec3 aToN; attribute float aMix; varying vec3 vLp; varying vec3 vLn;\n' + shader.vertexShader
-      .replace('#include <beginnormal_vertex>', 'vec3 objectNormal = normalize(mix(normal, aToN, aMix)); vLn = objectNormal;')
-      .replace('#include <begin_vertex>', 'vec3 transformed = mix(position, aTo, aMix); vLp = transformed;');
     shader.fragmentShader = 'uniform sampler2D uWear; varying vec3 vLp; varying vec3 vLn;\n' + shader.fragmentShader
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n vec3 bw = pow(abs(normalize(vLn)), vec3(4.0)); bw /= bw.x + bw.y + bw.z; vec3 wp = vLp * 5.0; vec4 wr = texture2D(uWear, wp.yz) * bw.x + texture2D(uWear, wp.zx) * bw.y + texture2D(uWear, wp.xy) * bw.z; roughnessFactor = clamp(roughnessFactor * mix(0.6, 1.7, wr.r), 0.05, 1.0); diffuseColor.rgb *= mix(0.78, 1.08, wr.g);')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n { vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx); float det = dot(sx, r1); vec3 grad = sign(det) * (dFdx(wr.g) * r1 + dFdy(wr.g) * r2); normal = normalize(abs(det) * normal - 0.003 * grad); }');
+  }
+  function worn(shader) { // a part that keeps its own shape: only the surface wear
+    shader.vertexShader = 'varying vec3 vLp; varying vec3 vLn;\n' + shader.vertexShader.replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n vLn = objectNormal;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vLp = transformed;');
+    wearFrag(shader);
+  }
+  function reshape(shader) { // per part: blend every vertex from its own shape to its rod or ball shape; per pixel: real metal's uneven shine, scuffs and fine relief
+    shader.vertexShader = 'attribute vec3 aTo; attribute vec3 aToN; attribute float aMix; varying vec3 vLp; varying vec3 vLn;\n' + shader.vertexShader
+      .replace('#include <beginnormal_vertex>', 'vec3 objectNormal = normalize(mix(normal, aToN, aMix)); vLn = objectNormal;')
+      .replace('#include <begin_vertex>', 'vec3 transformed = mix(position, aTo, aMix); vLp = transformed;');
+    wearFrag(shader);
   }
   fetch('./models/turbine.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
     var h = readModel(buf), T = h.T, R = h.R, q, k, a, count = h.meshes.map(function () { return 0; }), used = count.slice();
@@ -2577,10 +2584,14 @@ import * as THREE from './vendor/three.module.min.js';
     for (i = 0; i < w.length; i++) w[i].cp.y += 0.4 * swell(w[i].p.x, w[i].p.z, t) - 0.03;
     for (i = 0; i < ag.length; i++) { var u = 0.5 - 0.5 * Math.cos(t * 0.0006 + i * 1.3), P = ag[i]; P.cp.x = P.p.x * mix(1, 0.3, u); P.cp.z = P.p.z * mix(1, 0.3, u); P.cp.y += 0.006 * Math.abs(Math.sin(t * 0.012 + i)); }
   }
-  function tickKB(t, A) { // the ring of bars rises and falls like speech; one tool at a time is called, its cable lights and it does its job
+  function tickKB(t, A) { // a small desk robot: the ring of bars rises and falls like speech; it turns its head to the tool it is calling, that tool's cable lights and the tool does its job; it blinks
     var bars = A.by.bar, i, call = Math.floor(t / 2600) % 3, ph = (t % 2600) / 2600, on = pulse(ph, 0.1, 0.8);
     for (i = 0; i < bars.length; i++) { var j = +bars[i].n[2]; bars[i].sv = vR.set(1, 0.25 + 0.9 * Math.abs(Math.sin(t * 0.004 + j * 0.9) * Math.sin(t * 0.0013 + j * 0.37)), 1).clone(); }
     for (i = 0; i < 3; i++) A.by.cable[i].tint = +A.by.cable[i].n[2] === call ? HOT : DULL;
+    var turn = [-1.1, 2.1, 1.1][call] * smooth((ph - 0.04) / 0.2) * (1 - smooth((ph - 0.8) / 0.18)), blink = 1 - 0.9 * pulse((t % 3100) / 3100, 0.02, 0.05);
+    qL.setFromAxisAngle(LY, turn); A.by.head[0].cq.premultiply(qL); // the head's neck is on the model's own upright axis, so its eyes swing round the same axis
+    for (i = 0; i < 2; i++) { var E = A.by.eye[i]; E.cp.applyQuaternion(qL); E.cq.premultiply(qL); E.sv = vR.set(1, blink, 1).clone(); E.tint = on > 0.5 ? HOT : PLAIN; }
+    A.by.tip[0].tint = on > 0.5 && Math.sin(t * 0.012) > 0 ? HOT : PLAIN;
     A.by.drawer[0].cp.addScaledVector(vT.set(-0.48, 0, -0.88).normalize(), -0.07 * (call === 0 ? on : 0)); // the drawer slides open toward the front
     A.by.hand[0].cq.multiply(qL.setFromAxisAngle(LZ, t * 0.0012 + (call === 1 ? on * 3 : 0)));
     A.by.lens[0].cq.multiply(qL.setFromAxisAngle(LZ, call === 2 ? 0.5 * Math.sin(ph * Math.PI * 4) * on : 0));
@@ -2614,9 +2625,21 @@ import * as THREE from './vendor/three.module.min.js';
     var f = smooth(((t % 2400) / 2400 - 0.15) / 0.6);
     A.by.flip[0].cq.multiply(qL.setFromAxisAngle(LX, -f * 3.7));
   }
-  function tickTools(t, A) { // each tool in turn catches the light
-    var tl = A.by.t, i, k = Math.floor(t / 900) % tl.length;
-    for (i = 0; i < tl.length; i++) { var on = +tl[i].n[2] === k ? pulse((t % 900) / 900, 0.05, 0.7) : 0; tl[i].tint = cT.setRGB(1 + 0.9 * on, 1 + 0.45 * on, 1).clone(); tl[i].cp.z += 0.03 * on; }
+  function tickTools(t, A) { // each tool in turn comes off the board, catches the light and does its job: the wrench turns its bolt, the caliper's jaw slides, the screwdriver spins, the pliers open, the hex key turns, the meter's needle sweeps, the iron's tip heats
+    var T4 = 1600, k = Math.floor(t / T4) % 8, ph = (t % T4) / T4, e = smooth((ph - 0.06) / 0.22) * (1 - smooth((ph - 0.72) / 0.22)), w = Math.sin(ph * Math.PI * 6), i, P;
+    var lit = cT.setRGB(1 + 0.9 * e, 1 + 0.45 * e, 1).clone();
+    function act(P, on) { P.tint = on ? lit : PLAIN; if (on) P.cp.z += 0.03 * e; return P; }
+    for (i = 0; i < A.by.t.length; i++) {
+      P = A.by.t[i]; var j = +P.n[2]; act(P, j === k); if (j !== k) continue;
+      if (j === 0) P.cq.multiply(qL.setFromAxisAngle(LY, 0.3 * e * w));
+      if (j === 2) P.cq.multiply(qL.setFromAxisAngle(LZ, Math.PI * 6 * smooth(ph))); // three whole turns, so it ends where it began
+      if (j === 5) P.cq.multiply(qL.setFromAxisAngle(LZ, Math.PI / 2 * e));
+    }
+    act(A.by.jaw[0], k === 1).cp.y += k === 1 ? 0.11 * e : 0;
+    var open = k === 3 ? 0.16 * e * (0.5 - 0.5 * Math.cos(ph * Math.PI * 6)) : 0;
+    act(A.by.pl[0], k === 3).cq.multiply(qL.setFromAxisAngle(LY, -open)); act(A.by.pl[1], k === 3).cq.multiply(qL.setFromAxisAngle(LY, open));
+    act(A.by.needle[0], k === 6).cq.multiply(qL.setFromAxisAngle(LY, 0.8 - (k === 6 ? 1.6 * e * (0.8 + 0.2 * w) : 0)));
+    act(A.by.tip[0], k === 7); if (k === 7 && e > 0.3) A.by.tip[0].tint = HOT;
   }
   var MORSE = (function () { // K I A in Morse: dash dot dash, dot dot, dot dash. Each entry is [key down?, length in dots]
     var out = [], total = 0; ['-.-', '..', '.-'].forEach(function (L, li) { L.split('').forEach(function (ch, ci) { out.push([1, ch === '-' ? 3 : 1]); out.push([0, ci < L.length - 1 ? 1 : 3]); }); });
@@ -2636,7 +2659,7 @@ import * as THREE from './vendor/three.module.min.js';
     { name: 'gears', at: [3], elev: 0.2, fit: 0.85, tick: tickGears, lit: true },
     { name: 'ac', at: ['builds', 4], elev: 0.5, fit: 1.1, tick: tickAC },
     { name: 'surf', at: [5], elev: 0.42, fit: 1.1, tick: tickSurf },
-    { name: 'kb', at: [6], elev: 0.5, fit: 1.0, tick: tickKB },
+    { name: 'kb', at: [6], elev: 0.5, fit: 1.25, tick: tickKB },
     { name: 'qb', at: [7], elev: 0.34, fit: 0.9, tick: tickQB },
     { name: 'la', at: [8], elev: 0.26, fit: 0.78, tick: tickLA, lit: true },
     { name: 'md', at: [9], elev: 0.2, fit: 0.78, tick: tickMD, lit: true },
@@ -2646,6 +2669,7 @@ import * as THREE from './vendor/three.module.min.js';
   ];
   fetch('./models/scenes.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
     var h = readModel(buf), T = h.T;
+    h.mat3.forEach(function (m) { m.onBeforeCompile = worn; }); // the same scanned-metal wear as the turbine: uneven shine, scuffs and fine relief on every part
     ASM.forEach(function (A) {
       var idxs = [], count = {}, used = {}, ims = {};
       h.pname.forEach(function (nm, k) { if (nm.split('.')[0] === A.name) { idxs.push(k); count[h.mesh[k]] = (count[h.mesh[k]] || 0) + 1; } });
@@ -2724,7 +2748,7 @@ import * as THREE from './vendor/three.module.min.js';
     else if (!st) { o.x = W / 2; o.y = H * 0.66; o.s = Math.min(W * 0.3, H * 0.25); o.a = 0.9; }
     else if (st.story) { var sb = st.box.getBoundingClientRect(), sp2 = st.el.getBoundingClientRect(); o.x = sb.left + sb.width / 2; o.y = sb.top + lagNow + sb.height * 0.54; o.s = Math.min(sb.width * 0.25, sb.height * 0.33); o.a = 1; o.k = sp2.top <= 90 && sp2.bottom >= H - 12 ? 0 : 1; } // inside the story's frame: held still while the story is pinned, carried by the page on the way in and out
     else if (st.fin) { var fb = st.el.getBoundingClientRect(); o.x = W / 2; o.s = Math.min(W * (W > 900 ? 0.3 : 0.44), fb.height * 0.42); o.y = fb.top + lagNow + fb.height * 0.56 + 0.3 * o.s; o.a = 1; o.k = 1; } // the ending: centred in its own open space
-    else if (st.chapter) { o.x = W > 900 ? W * 0.73 : W / 2; o.y = st.head.getBoundingClientRect().bottom + lagNow - H * (W > 900 ? 0.3 : 0.25); o.s = W > 900 ? Math.min(W * 0.3, H * 0.21) : Math.min(W * 0.27, H * 0.2); o.a = 0.9; o.k = 1; if (W <= 900) o.y = Math.max(o.y, st.head.lastElementChild.getBoundingClientRect().bottom + lagNow + o.s * 1.05); } // in the open space of the chapter's title block (phones: always under the last line of the headline text), moving with the page: it is never behind the rows of text
+    else if (st.chapter) { o.x = W > 900 ? W * 0.73 : W / 2; o.y = st.head.getBoundingClientRect().bottom + lagNow - H * (W > 900 ? 0.24 : 0.25); o.s = W > 900 ? Math.min(W * 0.3, H * 0.21) : Math.min(W * 0.27, H * 0.2); o.a = 0.9; o.k = 1; if (W <= 900) o.y = Math.max(o.y, st.head.lastElementChild.getBoundingClientRect().bottom + lagNow + o.s * 1.25); } // in the open space of the chapter's title block (phones: always under the last line of the headline text), moving with the page: it is never behind the rows of text
     else if (W > 900) { o.x = W * (st.side === 'left' ? 0.69 : 0.31); o.s = Math.min(W * 0.19, H * 0.29); o.y = Math.max(H * 0.74, st.name ? st.name.getBoundingClientRect().bottom + lagNow + o.s : 0); o.a = 0.95; } // beside the card, under the project's name: it drops with the name when the name is low on the screen, so it never sits on the words
     else { o.x = W / 2; o.y = (st.name ? st.name.getBoundingClientRect().bottom : st.top) + lagNow + W * 0.27; o.s = W * 0.3; o.a = 0.95; o.k = 1; } // phones: in the gap left under the project's name, moving with the page
   }

@@ -4,6 +4,15 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Chapter models pass: Kia-bot and the tools board rebuilt (2026-11-16)
+
+- Kia-bot is now a small desk robot (`kb.*` in `blender/build_scenes.py`): torso with speaker grille, head on a neck joint, two eyes, antenna. `tickKB` turns the head to the tool being called, blinks the eyes, lights them and the antenna tip during a call. Still the same story: one voice agent calling three tools.
+- The Skills board is a dark shadow board and every tool does its job in turn (`tickTools`): the wrench turns a bolt, the caliper jaw slides, the screwdriver spins, the pliers open, the hex key turns, the meter needle sweeps, the iron tip heats. New parts: `tools.jaw`, `tools.pl.0/1`, `tools.needle`, `tools.tip`.
+- Every chapter model now gets the turbine's scanned-metal wear (`worn()` shares `wearFrag()` with the turbine's `reshape()`): uneven shine and fine relief instead of flat colour. No new download.
+- Models are built with a second, background Blender so the open turbine session is not touched: `Blender -b --python blender/build_scenes.py`, then `Blender -b blender/scenes.blend --python blender/finish_scenes.py`. `models/scenes.bin` 504 KB -> 519 KB.
+- Chapter models sit 6% of the screen lower on computers so they clear the "Sheet" label; on phones they sit a little further under the headline.
+- Not done: the other nine chapter models keep their shapes; flat demo panels, "Away from the keyboard" tiles, empty space under the pinned story.
+
 ## Review pass: three faults fixed, sharper zoom (2026-11-16)
 
 - Opening line says "Developer" (Kia's call), matching the Experience section.
