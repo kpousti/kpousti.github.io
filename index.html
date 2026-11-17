@@ -149,15 +149,26 @@ h1 {
 .cue { margin-top: 56px; display: inline-flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--text-dim); }
 .cue::after { content: ""; width: 1px; height: 32px; background: var(--line); }
 
-/* The turbine's switch: a small panel control, like the one on a machine. It starts and stops the rotor. */
-.switch { display: inline-flex; align-items: center; gap: 12px; margin-top: 32px; padding: 8px 14px 8px 8px; border: 1px solid var(--line); border-radius: 8px; background: none; color: var(--text-dim); font: 12.5px var(--font-mono); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
-.switch:hover { border-color: var(--accent); color: var(--bright); }
-.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-.switch i { position: relative; width: 36px; height: 20px; border-radius: 10px; border: 1px solid var(--line); background: rgb(var(--panel)); }
-.switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text-dim); transition: transform var(--t-fast) var(--ease-out), background var(--t-fast); }
-.switch[aria-pressed="true"] i::after { transform: translateX(16px); background: var(--accent); }
-.switch b { font-weight: 500; color: var(--bright); }
-@media (min-width: 1000px) { .hero .switch { position: absolute; left: 72vw; bottom: 11vh; margin: 0; transform: translateX(-50%); } }
+/* The route map: the page dims, downtown stands alone, and each section is a label on its landmark. Built by the script; see "The route engine as navigation". */
+.bar-map { align-self: center; display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: none; color: var(--text-dim); font: 500 13px var(--font-body, inherit); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.bar-map:hover { border-color: var(--accent); color: var(--accent); }
+.bar-map:focus-visible, .navmap button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 900px) { .bar-map { padding: 8px; } .bar-map span { display: none; } }
+.navveil, .navmap { position: fixed; inset: 0; opacity: 0; visibility: hidden; transition: opacity 0.4s, visibility 0s 0.4s; }
+.navveil { z-index: 30; background: rgba(var(--ink-rgb), 0.94); }
+.navmap { z-index: 32; pointer-events: none; }
+body.nav .navveil, body.nav .navmap { opacity: 1; visibility: visible; transition: opacity 0.25s; }
+body.nav #map { z-index: 31; }
+.navmap button { position: absolute; left: 0; top: 0; pointer-events: auto; padding: 6px 10px 6px 22px; border: 1px solid var(--line); border-radius: 6px; background: rgba(var(--panel), 0.92); color: var(--bright); font: 12.5px var(--font-mono, monospace); white-space: nowrap; cursor: pointer; will-change: transform; }
+.navmap button::before { content: ""; position: absolute; left: 9px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--text-dim); }
+.navmap button:hover { border-color: var(--accent); }
+.navmap button[aria-current]::before { background: var(--accent); }
+.navmap button[aria-current] { border-color: var(--accent); }
+.navmap .navclose { left: auto; right: max(24px, calc((100vw - 1240px) / 2)); top: 76px; padding: 8px 14px; }
+.navmap .navclose::before { display: none; }
+@media (max-width: 900px) { .navmap .navread { top: auto; bottom: 14vh; } }
+.navread { position: absolute; left: 0; right: 0; top: 84px; margin: 0; text-align: center; font: 12.5px var(--font-mono, monospace); color: var(--text-dim); }
+
 /* Ruled cells: content sits on the sheet between hairlines, like the rows of a parts list. No boxes, and the model is never behind them. */
 .glass { border-top: 1px solid var(--line); }
 /* Part numbers: every row of a list is numbered, the way a parts list is. */
@@ -234,7 +245,8 @@ h1 {
 
 /* Pinned story: stays on screen while the scroll scrubs through four stages. */
 .pin { margin: 0 auto 72px; }
-.pin.live { height: 290vh; }
+.pin.live { height: 230vh; }
+@media (max-width: 900px) { .pin.live { height: 160vh; } } /* phones show no captions here, so the scene needs less travel */
 .pin-stage {
   max-width: 1080px; margin: 0 auto;
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); gap: 36px; align-items: center;
@@ -268,7 +280,7 @@ h1 {
 .beyond .wide { grid-column: span 2; }
 .beyond li { padding: 0 0 8px; border-top: 0; }
 
-.mini { display: block; width: 100%; height: 124px; margin: 0 0 16px; background: var(--screen); border: 1px solid var(--line); border-radius: 4px; object-fit: cover; } }
+.mini { display: block; width: 100%; height: 124px; margin: 0 0 16px; background: var(--screen); border: 1px solid var(--line); border-radius: 4px; object-fit: cover; }
 .beyond li { font-size: 0.94rem; text-align: left; }
 .beyond i { color: var(--bright); }
 .beyond b { display: block; text-align: left; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
@@ -289,7 +301,7 @@ footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 au
 .fly { padding: 0 24px 48px; }
 .calls { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 auto; padding: 16px 0 0; max-width: 1080px; list-style: none; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 12.5px; color: var(--bright); }
 .calls span { color: var(--text-dim); margin-left: 8px; }
-.fly.live { height: 260vh; padding: 0; }
+.fly.live { height: 190vh; padding: 0; }
 .fly.live .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; pointer-events: none; }
 .fly.live .calls { display: block; max-width: none; padding: 0; border: 0; opacity: var(--o, 0); }
 .fly.live .calls li { position: absolute; left: 0; top: 0; padding: 3px 8px 3px 80px; margin-top: -1em; white-space: nowrap; will-change: transform; background: linear-gradient(to right, transparent 72px, var(--ink) 72px); } /* the words sit on a small ink tag, so they read over the metal */
@@ -297,7 +309,7 @@ footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 au
 .fly.live .calls li::after { content: ""; position: absolute; left: 0; top: 50%; width: 7px; height: 7px; margin: -3px 0 0 -3px; border: 1px solid var(--accent); background: var(--ink); }
 @media (max-width: 700px) { .fly.live .calls li { padding-left: 44px; background: linear-gradient(to right, transparent 36px, var(--ink) 36px); } .fly.live .calls li::before { width: 24px; } .fly.live .calls span { display: none; } } /* phones: shorter leaders, the part's name only */
 /* Pinned scene after the hero: the page holds still while one giant word fills the screen and the city model crosses in front of it. */
-.thru { position: relative; height: 210vh; }
+.thru { position: relative; height: 170vh; }
 .thru-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
 .thru-line { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vh; text-align: center; padding: 0 24px 28vh; opacity: 0; transition: opacity var(--t-fast) var(--ease-out); }
 .thru-line.on { opacity: 1; }
@@ -394,11 +406,11 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
   .stage span { position: absolute; left: 20px; top: 16px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.02em; color: var(--text-dim); }
 }
 /* Each chapter headline is followed by open space, where that chapter's shape has a clear moment before the cards arrive. */
-.chapter > .wrap > .head:first-child { min-height: 68vh; }
-@media (max-width: 900px) { .chapter > .wrap > .head:first-child { min-height: 86vh; } } /* phones: the headline wraps to more lines, so the model needs more room under it */
+.chapter > .wrap > .head:first-child { min-height: 54vh; }
+@media (max-width: 900px) { .chapter > .wrap > .head:first-child { min-height: 70vh; } } /* phones: the headline wraps to more lines, so the model needs more room under it */
 
 /* One project per screen: the card on one side, its name set large on the other, like a magazine spread. */
-.scene { position: relative; display: flex; align-items: center; min-height: 82vh; padding: 40px 0; }
+.scene { position: relative; display: flex; align-items: center; min-height: 72vh; padding: 40px 0; }
 .scene > article { width: min(480px, 100%); }
 .scene[data-side="right"] { justify-content: flex-end; }
 .scene .screen canvas, .scene .build.wide .screen canvas { height: 250px; }
@@ -895,7 +907,7 @@ function signalValue(k) {
 // ---------- Pointer: the 3D model leans toward it, and the route re-plans to the corner nearest it ----------
 var pointer = { x: -1, y: -1, active: false };
 (function () {
-  window.addEventListener('pointermove', function (e) { pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; }, { passive: true });
+  window.addEventListener('pointermove', function (e) { if (e.pointerType === 'touch') return; pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; }, { passive: true });
   if (window.console) console.log('%cKia Pousti%c  Designed and built by hand. kiapousti.com', 'font-weight:700;color:#f2b56b', 'color:#93a1b8');
 })();
 
@@ -919,18 +931,30 @@ var pointer = { x: -1, y: -1, active: false };
     }
     requestAnimationFrame(step);
   }
+  window.KP_AIM = aim;
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href^="#"]');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
     var el = document.getElementById(a.getAttribute('href').slice(1));
     if (!el) return;
     e.preventDefault();
-    glide(el);
+    if (!(window.KP_TRIP && window.KP_TRIP(el))) glide(el); // a far section: the route engine plans the trip and drives there (see "The route engine as navigation")
     try { history.replaceState(null, '', a.getAttribute('href')); } catch (err) {}
   });
   // Scrolling by hand cancels the glide.
   ['wheel', 'touchstart', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { run++; }, { passive: true }); });
 })();
+
+// Something to find: for the three quarters of an hour either side of the real sunset in San Diego today, wherever you are reading from, the veil over the sky lifts and the backdrop glows.
+// Sunset is worked out from the date with the standard solar-position approximation (NOAA's), for 32.72 N, 117.16 W. It returns minutes after midnight UTC.
+window.KP_SUNSET = function (d) {
+  var N = Math.floor((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(d.getUTCFullYear(), 0, 0)) / 864e5), g = 2 * Math.PI / 365 * (N - 1), R = Math.PI / 180;
+  var eq = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+  var dec = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+  var ha = Math.acos(Math.cos(90.833 * R) / (Math.cos(32.7157 * R) * Math.cos(dec)) - Math.tan(32.7157 * R) * Math.tan(dec)) / R;
+  return 720 - 4 * (-117.1611 - ha) - eq;
+};
+var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.getUTCMinutes() - window.KP_SUNSET(d)) % 1440 + 2160) % 1440 - 720; return { k: Math.max(0, 1 - Math.abs(off) / 45), done: 0 }; })();
 
 // ---------- Tab bar: sliding highlight and page progress ----------
 (function () {
@@ -959,6 +983,7 @@ var pointer = { x: -1, y: -1, active: false };
     last = current;
     var span = doc.scrollHeight - window.innerHeight;
     prog.style.setProperty('--p', span > 0 ? clamp(window.scrollY / span, 0, 1) : 0); // set on the line itself: on the root it made the browser restyle the whole page every scroll frame
+    if (sun && !gold.done) { gold.done = 1; var veil = document.querySelector('.sky b'); if (veil && gold.k > 0) veil.style.opacity = (1 - 0.55 * gold.k).toFixed(2); }
     if (sun && !REDUCE) { // dusk: down the page the view pans along the horizon and the light fades toward night
       var day = span > 0 ? clamp(window.scrollY / span, 0, 1) : 0;
       sun.style.transform = 'translate3d(' + (-0.2 * day * window.innerWidth).toFixed(0) + 'px,0,0)'; sun.style.opacity = (1 - 0.5 * day).toFixed(3);
@@ -2161,11 +2186,11 @@ import * as THREE from './vendor/three.module.min.js';
   }
 
   // A*: the real search, recorded so the page can replay the order it explored the streets in.
-  var start = (n - 2) * n + 1, goal = n + n - 2, route = [], explored = [], plannedAt = 0;
+  var start = (n - 2) * n + 1, goal = n + n - 2, route = [], explored = [], plannedAt = 0, DIJ = false;
   function astar(s, g) {
     var gs = {}, from = {}, open = [s], closed = {}, order = [];
     gs[s] = 0;
-    function h(q) { return Math.hypot(nx[q] - nx[g], nz[q] - nz[g]); } // straight-line distance never overestimates
+    function h(q) { return DIJ ? 0 : Math.hypot(nx[q] - nx[g], nz[q] - nz[g]); } // straight-line distance never overestimates. With no estimate at all (press D) this is Dijkstra: same route, far more streets searched
     while (open.length) {
       var best = 0;
       for (var q = 1; q < open.length; q++) if (gs[open[q]] + h(open[q]) < gs[open[best]] + h(open[best])) best = q;
@@ -2423,7 +2448,7 @@ import * as THREE from './vendor/three.module.min.js';
       P.cq.multiply(qL.setFromAxisAngle(LY, dir * turned * 0.0011 * 12 / teeth)); P.tint = found ? HOT : PLAIN;
     }
   }
-  function swell(x, z, t) { return 0.045 * Math.sin(x * 3.1 - t * 0.0012) + 0.028 * Math.sin(z * 4.2 + x * 1.3 - t * 0.0017); }
+  function swell(x, z, t) { return (0.045 * Math.sin(x * 3.1 - t * 0.0012) + 0.028 * Math.sin(z * 4.2 + x * 1.3 - t * 0.0017)) * (1 + 1.3 * Math.sin(Math.PI * clamp((t - setWave) / 6000, 0, 1))); } // click the water and a set comes through: bigger waves for a few seconds
   function afloat(P, t, o) { // where a floating thing sits and how it tilts on the swell
     var x = P.p.x, z = P.p.z, e = 0.05, hx = (swell(x + e, z, t) - swell(x - e, z, t)) / (2 * e), hz = (swell(x, z + e, t) - swell(x, z - e, t)) / (2 * e);
     o.setFromUnitVectors(LY, vT.set(-hx, 1, -hz).normalize()); return swell(x, z, t);
@@ -2509,6 +2534,7 @@ import * as THREE from './vendor/three.module.min.js';
   function tickTK(t, A) { // the key taps out K I A, and a spark shows at the contact each time it closes
     var u = (t / 150) % MORSE.total, down = 0, i;
     for (i = 0; i < MORSE.length; i++) if (u >= MORSE[i][2] && u < MORSE[i][2] + MORSE[i][1]) down = MORSE[i][0];
+    if (t - keyed < 2500) down = held ? 1 : 0; // press and hold on the key and you are the operator; it goes back to K I A when you stop
     A.kd = (A.kd || 0) + (down - (A.kd || 0)) * 0.5;
     A.by.lever[0].cq.multiply(qL.setFromAxisAngle(LZ, 0.05 * A.kd - 0.02)); A.by.spark[0].cs = A.kd > 0.6 ? 1 + 0.6 * Math.sin(t * 0.09) : 0.0001;
   }
@@ -2540,8 +2566,8 @@ import * as THREE from './vendor/three.module.min.js';
         if (!im) { im = ims[mi] = many(h.geo[mi], h.mat3[h.meshes[mi].mat], count[mi], A.g); A.ims.push(im); used[mi] = 0; }
         var P = { im: im, idx: used[mi]++, n: h.pname[k].split('.'), p: new THREE.Vector3(T[o], T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), s: new THREE.Vector3(T[o + 7], T[o + 8], T[o + 9]), cp: new THREE.Vector3(), cq: new THREE.Quaternion(), cs: 1, sv: null, tint: null, sp: new THREE.Vector3(), sq: new THREE.Quaternion(), key: 0 };
         // Where a part comes from: thrown outward and upward from its place, tumbled, and arriving in a sweep from left to right
-        var r1 = hashNoise(k * 3.7) + 0.5, r2 = hashNoise(k * 7.1 + 2), r3 = hashNoise(k * 1.9 + 5);
-        P.sp.copy(P.p).sub(vT.set(0, 0.25, 0)).normalize().multiplyScalar(0.7 + 0.7 * r1).add(P.p); P.sp.y += 0.35 + 0.3 * r1;
+        var j = A.parts.length, r1 = hashNoise(j * 3.7) + 0.5, r2 = hashNoise(j * 7.1 + 2), r3 = hashNoise(j * 1.9 + 5);
+        P.sp.set(r2 * 2.2, 0.3 + 0.75 * r1, r3 * 1.5); // the same cloud for every model: part j of the one leaving and part j of the one arriving share a point, so the swarm regroups rather than swaps
         P.sq.setFromEuler(eA.set(r2 * 5, r3 * 5, r1 * 4)); P.key = clamp((P.p.x + 1) / 2, 0, 1) * 0.6 + 0.4 * r1;
         im.setColorAt(P.idx, PLAIN); A.parts.push(P); (A.by[P.n[1]] = A.by[P.n[1]] || []).push(P);
       });
@@ -2550,7 +2576,9 @@ import * as THREE from './vendor/three.module.min.js';
     });
     lastKey = ''; if (REDUCE) frame(0);
   }).catch(function () {}); // no file: those scenes keep their plain blocks
+  var HIT = { x: 0, y: 0, s: 0, asm: null, turb: false, t: 0 }, poke = -1e9, pokeAsm = null, setWave = -1e9, keyed = -1e9, held = false; // what a click on the model does (see "Things to find")
   function showAsm(A, a, t, yaw) {
+    if (A === pokeAsm) a *= 1 - 0.5 * Math.sin(Math.PI * clamp((t - poke) / 1100, 0, 1)); // clicked: its parts spring apart and settle back
     A.g.visible = a > 0.001;
     if (!A.g.visible) return;
     A.g.rotation.y = yaw + 0.5; // it keeps a three-quarter front to the camera, however the camera has orbited
@@ -2599,7 +2627,8 @@ import * as THREE from './vendor/three.module.min.js';
   });
   function place(st, o) { // where the model rests at a stop, how strongly it shows, and (k) whether that spot moves with the page
     o.k = 0;
-    if (!st) { o.x = W / 2; o.y = H * 0.66; o.s = Math.min(W * 0.3, H * 0.25); o.a = 0.9; }
+    if (st && st.nav) { o.x = W / 2; o.y = H * 0.54; o.s = W > 900 ? Math.min(W * 0.26, H * 0.28) : Math.min(W * 0.35, H * 0.3); o.a = 1; } // the route map: the city alone, in the middle of the screen
+    else if (!st) { o.x = W / 2; o.y = H * 0.66; o.s = Math.min(W * 0.3, H * 0.25); o.a = 0.9; }
     else if (st.chapter) { o.x = W > 900 ? W * 0.6 : W / 2; o.y = st.head.getBoundingClientRect().bottom + lagNow - H * (W > 900 ? 0.3 : 0.25); o.s = W > 900 ? Math.min(W * 0.3, H * 0.23) : Math.min(W * 0.27, H * 0.2); o.a = 0.9; o.k = 1; } // in the open space of the chapter's title block, moving with the page: it is never behind the rows of text
     else if (W > 900) { o.x = W * (st.side === 'left' ? 0.69 : 0.31); o.y = H * 0.74; o.s = Math.min(W * 0.19, H * 0.29); o.a = 0.95; } // beside the card, under the project's name
     else { o.x = W / 2; o.y = (st.name ? st.name.getBoundingClientRect().bottom : st.top) + lagNow + W * 0.27; o.s = W * 0.3; o.a = 0.95; o.k = 1; } // phones: in the gap left under the project's name, moving with the page
@@ -2784,14 +2813,7 @@ import * as THREE from './vendor/three.module.min.js';
   function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // stand-in for the page's entrance curve
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-  // The switch beside the turbine really starts and stops it. It is built here, so without JavaScript there is no dead control.
   var running = true, spinV = 0;
-  if (!REDUCE) {
-    var sw = document.createElement('button'); sw.type = 'button'; sw.className = 'switch'; sw.setAttribute('aria-pressed', 'true');
-    sw.innerHTML = '<i aria-hidden="true"></i><span>Turbine <b>running</b></span>';
-    sw.addEventListener('click', function () { running = !running; sw.setAttribute('aria-pressed', running); sw.querySelector('b').textContent = running ? 'running' : 'stopped'; });
-    hero.appendChild(sw);
-  }
   var idle = 0, spin = 0, riding = false, rideT = -1, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
 
   // Add ?fps to the address to see how many frames a second this device draws (for chasing lag on a real phone).
@@ -2822,6 +2844,7 @@ import * as THREE from './vendor/three.module.min.js';
       var sw = REDUCE ? 0 : Math.pow(Math.sin(Math.PI * cb), 2); // squared: short and sharp, off the text quickly
       nudge = st.chapter ? 0 : sw;
     }
+    if (NAV.on) { NAV.k = Math.min(1, NAV.k + dt / 350); cur = NAVSTOP; prev = null; fA = fB = 0; m = 1; nudge = 0; en = 1; fe = fl = peak = boom = 0; d = 1; q = 0; ql = 1; lift = 0; } // the route map takes the model over: the city, flat and centred, whatever the page is doing
     lagNow = lag; place(prev || cur, pl0); place(cur, pl1);
     // The rotor has weight. Switched on it spins up over a second or so and then keeps running fast; switched off it coasts down to a stop.
     spinV += ((running ? 1 : 0) - spinV) * (1 - Math.exp(-dt / (running ? 900 : 1800)));
@@ -2830,10 +2853,11 @@ import * as THREE from './vendor/three.module.min.js';
     var far = !!cur && (cur.chapter || !!(prev && prev.chapter)), mp = far ? (m < 0.5 ? 0 : 1) : m;
     var alpha = mix(1, mix(pl0.a, pl1.a, m) * (far ? Math.abs(2 * m - 1) : 1), d);
     // The model always stays behind the page, so headings and title cards are never covered.
+    if (NAV.on) alpha = smooth(NAV.k);
     cv.style.opacity = alpha;
-    if (alpha <= 0) return;
-    if (!REDUCE && pointer.active && net.visible) pick(now);
-    if (!REDUCE && !pointer.active && now - plannedAt > 10000) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every ten seconds
+    if (alpha <= 0 && !NAV.on) return;
+    if (!REDUCE && pointer.active && net.visible && !NAV.dest) pick(now);
+    if (!REDUCE && !pointer.active && !NAV.on && now - plannedAt > 10000) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every ten seconds
     if (builtFor !== plannedAt) buildRoute();
 
     var gx = pointer.active && !REDUCE ? pointer.x / W - 0.5 : 0, gy = pointer.active && !REDUCE ? pointer.y / H - 0.5 : 0;
@@ -2847,9 +2871,12 @@ import * as THREE from './vendor/three.module.min.js';
     if (ride !== riding) { riding = ride; cv.style.position = ride ? 'absolute' : 'fixed'; }
     if (rT !== rideT) { rideT = rT; cv.style.transform = 'translate3d(0,' + rT + 'px,0)'; }
     if (ride) CY += sc - rT;
+    HIT.x = CX; HIT.y = ride ? CY - (sc - rT) : CY; HIT.s = alpha > 0.3 ? S : 0; HIT.asm = cur && m > 0.5 ? cur.asm || null : null; HIT.turb = !cur && en < 0.5; HIT.t = t; if (held && HIT.asm && HIT.asm.tick === tickTK) keyed = t;
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
     var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(mix(ELEV[1], 0.2, peak), 0.6, en), mix(ELEV[fA], ELEV[fB], m), d) - gy * 0.08 * Math.max(1 - en, d);
-    qTurn.setFromAxisAngle(UP, yaw + 0.5 + 0.9 * smooth(fl) - 0.55 * peak); // through the fly-through the turbine swings round, so the camera looks along the blades and then across them qWave.setFromAxisAngle(UP, yaw - 0.35);
+    if (NAV.on) yaw = 0.62 + 0.22 * Math.sin(now * 0.00013) + gx * 0.18; // the map sways a little so it reads as a model, and holds still enough to aim at
+    qTurn.setFromAxisAngle(UP, yaw + 0.5 + 0.9 * smooth(fl) - 0.55 * peak); // through the fly-through the turbine swings round, so the camera looks along the blades and then across them
+    qWave.setFromAxisAngle(UP, yaw - 0.35);
     qFace.setFromAxisAngle(UP, yaw - 0.14 + (REDUCE ? 0 : 0.1 * Math.sin(now * 0.0004)));
     fill.intensity = mix(0.5, 2.8, mix(UPRIGHT.indexOf(fA) < 0 ? 0 : 1, UPRIGHT.indexOf(fB) < 0 ? 0 : 1, m)); // upright charts face the camera and sway a little
     rig.rotation.y = yaw - 0.62;
@@ -2876,10 +2903,10 @@ import * as THREE from './vendor/three.module.min.js';
     var wc = (fA === 0 ? 1 - m : 0) + (fB === 0 ? m : 0); // how much of a city it is right now
     net.visible = dom === 0 || dom === 2 || dom === 7; trip.visible = dom !== 7; // every other shape stands free
     slab.visible = net.visible || (!cur && en > 0 && lift < 0.999); slab.position.y = slabY - (cur ? 0 : 0.4 * lift); // in the pinned scene the plate rises to meet the network as it settles, and the rods press into it
-    var step = 16;
+    var step = NAV.on ? 7 : 16, drive = NAV.on ? 1300 : 2400; // as navigation the trip is quick
     streets.opacity = 0.28 * (1 - lift); searched.material.opacity = 0.4 * (1 - lift); // the flat street lines wait until the network has settled
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - plannedAt) / step)), Math.floor(explored.length * clamp((ql - 0.04) / 0.42, 0, 1)));
-    var draw = REDUCE ? 1 : Math.min(clamp((now - plannedAt - explored.length * step) / 2400, 0, 1), clamp((ql - 0.5) / 0.28, 0, 1)); // the marker takes a couple of seconds to drive the route
+    var draw = REDUCE ? 1 : Math.min(clamp((now - plannedAt - explored.length * step) / drive, 0, 1), clamp((ql - 0.5) / 0.28, 0, 1)); // the marker takes a couple of seconds to drive the route
     searched.geometry.setDrawRange(0, shown * 2);
     if (markFor !== shown + ':' + plannedAt) { // which edges and corners the search has reached so far
       markFor = shown + ':' + plannedAt; mark++;
@@ -2896,12 +2923,97 @@ import * as THREE from './vendor/three.module.min.js';
       if (pin.visible) pin.position.set(mix(nx[route[ri]], nx[route[ri + 1]], rf), 0.04, mix(nz[route[ri]], nz[route[ri + 1]], rf));
     }
 
+    if (NAV.on) navFrame(now, shown, draw);
     screenNodes.length = 0;
     for (var q = 0; q < n * n; q++) { node3(q, cur ? 0 : lift, tmpV).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H + (ride ? rT - sc : 0)); }
     // Draw only when something on screen changed, so a still page costs nothing.
-    var k = [yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, draw.toFixed(3), risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1)].join();
+    var k = [NAV.on, yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, draw.toFixed(3), risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1)].join();
     if (k !== lastKey) { lastKey = k; draw3d(peak); }
   }
+
+
+  // ----- Things to find -----
+  // Click the turbine: the rotor surges and coasts back. Click a scene's model: its parts spring apart and settle. Click the surf scene: a set of bigger waves comes through.
+  // Press and hold on the telegraph key at Contact: you key it yourself. Press D while the streets are on screen: the search drops its estimate and becomes Dijkstra.
+  if (!REDUCE) {
+    window.addEventListener('pointerdown', function (e) {
+      if (NAV.on || !HIT.s || (e.target.closest && e.target.closest('a, button, input, select, textarea, canvas[data-demo], .themes'))) return;
+      if (Math.hypot(e.clientX - HIT.x, e.clientY - HIT.y) > HIT.s * 0.95) return;
+      if (HIT.turb) spinV = 4.5;
+      else if (HIT.asm && HIT.asm.tick === tickTK) { held = true; keyed = HIT.t; }
+      else if (HIT.asm && HIT.asm.tick === tickSurf) setWave = HIT.t;
+      else if (HIT.asm && HIT.t - poke > 1100) { pokeAsm = HIT.asm; poke = HIT.t; }
+    }, { passive: true });
+    ['pointerup', 'pointercancel'].forEach(function (ev) { window.addEventListener(ev, function () { held = false; }, { passive: true }); });
+  }
+
+  // ----- The route engine as navigation -----
+  // Choosing a far section in the top bar, or opening the map (the bar's Map button, or the M key), shows downtown on its own. Each section lives at a landmark.
+  // The same A* as everywhere else on the page plans the trip from the section you are in to the one you chose, the marker drives it, and the page arrives there.
+  // Any key or a click on the background skips the drive and goes straight there. Without JavaScript or with reduced motion the links are plain links.
+  var NAV = { on: false, k: 0, dest: null, arrive: 0 }, NAVSTOP = { nav: true, f: 0 }, HOME = start, HOMEGOAL = goal, navEl = null, navRead = null, navBtn = {}, navNode = {}, navFrom = null;
+  var LAND = { about: 'caltower', experience: 'midway', projects: 'library', builds: 'petco', skills: 'oap', contact: 'bridge' }; // section: the landmark it lives at
+  function navHere() { var at = ''; for (var id in LAND) { var el = document.getElementById(id); if (el && el.getBoundingClientRect().top < H * 0.5) at = id; } return at; }
+  function navBuild() {
+    var used = {};
+    for (var id in LAND) { // each landmark's nearest free street corner
+      var L = sites.filter(function (x) { return x.kit === LAND[id]; })[0], best = -1, bd = 1e9; if (!L) return false;
+      for (var i = 0; i < n * n; i++) { var dd = Math.hypot(nx[i] - L.cx, nz[i] - L.cz); if (dd < bd && !used[i] && adj[i].length) { bd = dd; best = i; } }
+      used[best] = 1; navNode[id] = best;
+    }
+    var veil = document.createElement('div'); veil.className = 'navveil'; veil.addEventListener('click', function () { navClose(true); });
+    navEl = document.createElement('div'); navEl.className = 'navmap'; navEl.setAttribute('role', 'dialog'); navEl.setAttribute('aria-label', 'Route map');
+    navRead = document.createElement('p'); navRead.className = 'navread'; navRead.setAttribute('aria-live', 'polite'); navEl.appendChild(navRead);
+    for (id in LAND) (function (id) {
+      var b = document.createElement('button'), a = document.querySelector('.tabs a[href="#' + id + '"]'); b.type = 'button'; b.textContent = a ? a.textContent : id;
+      b.addEventListener('click', function () { navGo(id); }); navEl.appendChild(b); navBtn[id] = b;
+    })(id);
+    var x = document.createElement('button'); x.type = 'button'; x.className = 'navclose'; x.textContent = 'Close'; x.addEventListener('click', function () { navClose(false); }); navEl.appendChild(x);
+    document.body.appendChild(veil); document.body.appendChild(navEl);
+    return true;
+  }
+  function navOpen(dest) {
+    if (REDUCE || NAV.on || !pin || !window.KP_AIM || (!navEl && !navBuild())) return false;
+    var at = navHere(); navFrom = document.activeElement;
+    NAV.on = true; NAV.k = 0; NAV.dest = null; NAV.arrive = 0; NAV.at = at;
+    start = at ? navNode[at] : HOME; goal = -1; route = []; explored = []; plannedAt = performance.now(); navRead.textContent = '';
+    for (var id in navBtn) { if (id === at) navBtn[id].setAttribute('aria-current', 'true'); else navBtn[id].removeAttribute('aria-current'); }
+    document.body.classList.add('nav');
+    if (dest) navGo(dest); else (navBtn[at] || navBtn.about).focus({ preventScroll: true });
+    return true;
+  }
+  function navGo(id) {
+    if (!NAV.on || NAV.dest) return;
+    NAV.dest = id; NAV.arrive = 0;
+    if (id === NAV.at) { navClose(true); return; }
+    goal = -1; plan(navNode[id], performance.now());
+  }
+  function navClose(go) { // go: arrive at the chosen section (if one was chosen); otherwise stay where the page was
+    if (!NAV.on) return;
+    var el = go && NAV.dest && document.getElementById(NAV.dest);
+    NAV.on = false; NAV.dest = null; document.body.classList.remove('nav');
+    start = HOME; goal = -1; plan(HOMEGOAL, performance.now()); sS = -1; lastKey = '';
+    if (el) { window.scrollTo(0, window.KP_AIM(el)); setTimeout(function () { window.scrollTo(0, window.KP_AIM(el)); }, 120); try { history.replaceState(null, '', '#' + el.id); } catch (err) {} }
+    else if (navFrom && navFrom.focus) navFrom.focus({ preventScroll: true });
+  }
+  function navFrame(now, shown, draw) { // labels stay pinned to their landmarks; the readout counts the real search; arriving closes the map
+    for (var id in navBtn) { node3(navNode[id], 0, tmpV); tmpV.y += 0.12; tmpV.project(camera); navBtn[id].style.transform = 'translate3d(' + ((tmpV.x + 1) / 2 * W).toFixed(1) + 'px,' + ((1 - tmpV.y) / 2 * H).toFixed(1) + 'px,0) translate(-50%,-100%)'; }
+    var txt = route.length > 1 ? (DIJ ? 'Dijkstra · ' : 'A* · ') + 'explored ' + shown + ' · path ' + (route.length - 1) + ' steps' : '';
+    if (navRead.textContent !== txt) navRead.textContent = txt;
+    if (NAV.dest && draw >= 1) { if (!NAV.arrive) NAV.arrive = now; else if (now - NAV.arrive > 260) navClose(true); }
+  }
+  window.KP_TRIP = function (el) { return !!LAND[el.id] && Math.abs(window.KP_AIM(el) - window.scrollY) > 1.5 * H && navOpen(el.id); };
+  window.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if ((e.key === 'd' || e.key === 'D') && !NAV.dest && (NAV.on || net.visible)) { DIJ = !DIJ; var g2 = goal; goal = -1; if (g2 >= 0) plan(g2, performance.now()); }
+    else if (NAV.on && (e.key === 'Escape' || NAV.dest)) { e.preventDefault(); navClose(!!NAV.dest); }
+    else if (!NAV.on && (e.key === 'm' || e.key === 'M')) navOpen(null);
+  });
+  if (!REDUCE) (function () { // the bar's Map button is built here, so without JavaScript there is no dead control
+    var b = document.createElement('button'), cta = document.querySelector('.bar-cta'); b.type = 'button'; b.className = 'bar-map'; b.setAttribute('aria-label', 'Route map');
+    b.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 15s5-4.6 5-8.6A5 5 0 0 0 3 6.400c0 4 5 8.600 5 8.600z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6.400" r="1.700" fill="currentColor"/></svg><span>Map</span>';
+    b.addEventListener('click', function () { navOpen(null); }); cta.parentNode.insertBefore(b, cta);
+  })();
   plan(goal, t0); plannedAt = t0;
   requestAnimationFrame(frame);
   if (REDUCE) { window.addEventListener('scroll', function () { frame(0); }, { passive: true }); window.addEventListener('resize', function () { frame(0); }); }

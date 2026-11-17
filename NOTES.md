@@ -4,6 +4,21 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The route engine is now how you get around; less scrolling; things to find (2026-11-16)
+
+You asked for the playable route engine, smoother hand-overs, less scrolling and easter eggs, with a second agent reading the whole site for ideas. Its report is where the scroll cuts, the two bug fixes and most of the easter eggs came from.
+
+- **Route engine as navigation.** Click a far section in the top bar and the page dims, downtown San Diego stands alone, the real A* plans a trip from the section you are in to the one you chose, the marker drives it and the page arrives there (about 2 seconds; any key or a click on the background skips it). Near sections still just glide.
+- **The map on its own:** the new Map button in the bar, or the M key. Each section is a label on a landmark: About = California Tower, Experience = USS Midway, Projects = Central Library, Side builds = Petco Park, Skills = One America Plaza, Contact = Coronado Bridge. That is one line in the code (`LAND`), so say if you want a different pairing. Labels are real buttons, so keyboard and phone work. Esc or Close leaves.
+- **New words I had to add (yours to approve):** "Map", "Close", the screen-reader label "Route map", and "A*" / "Dijkstra" in front of the existing "explored N · path N steps" readout.
+- **Turbine running button:** removed, as asked. The turbine always runs.
+- **Less scrolling:** fly-through 260 to 190 screen-heights-percent, graph scene 210 to 170, the pinned project story 290 to 230 (160 on phones), chapter title blocks 68 to 54 (86 to 70 on phones), each project scene 82 to 72. The whole page is about 13% shorter on a computer and 9% on a phone.
+- **Hand-overs:** every scene model now breaks into and forms out of the same cloud of points, so one model's parts read as regrouping into the next instead of two separate explosions.
+- **Things to find:** click the turbine (the rotor surges and coasts back); click any scene model (its parts spring apart and settle); click the surf scene (a set of bigger waves); press and hold on the telegraph key at Contact (you key it); press D while the streets are showing (the search drops its estimate and becomes real Dijkstra: same route, far more streets searched); and for 45 minutes either side of the real San Diego sunset each day, worked out from the date, the sky backdrop glows brighter.
+- **Bugs fixed (found by the second agent):** the wave scene's turn was being skipped because the line had slipped into a comment; a stray bracket was silently dropping one style rule for the "Away from the keyboard" tiles; and on phones a scrolling finger counted as "pointing at the map", which stopped the automatic new trips.
+- **Tested** in Chrome at 1440x860 and 393x659 (phone slowed 4x): no errors, no slow frames, tab trip, map, skip, Esc and Dijkstra all work; sunset function gives 4:48 pm for today (real: 4:47). Not tested: Safari, a real iPhone, JavaScript off, the click eggs by eye.
+- **Not done, from the agent's list:** running the project story on the 3D city instead of the flat drawing; removing the fade-cut at each chapter title; the turbine reassembling at the very end; a Stoer-Wagner min-cut egg. Also flagged for you: the opening still says "Software engineer" while the job title says "Developer".
+
 ## The backdrop is now a real sky: sunset over the ocean (2026-11-16)
 
 You said the two-glow backdrop was not it and asked for a nicer custom one, special but calm.
