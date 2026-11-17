@@ -315,8 +315,8 @@ footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 au
 /* Pinned scene after the hero: the page holds still while one giant word fills the screen and the city model crosses in front of it. */
 .thru { position: relative; height: 170vh; }
 .thru-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
-.thru-line { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vh; text-align: center; padding: 0 24px 28vh; opacity: 0; transition: opacity var(--t-fast) var(--ease-out); }
-.thru-line.on { opacity: 1; }
+.thru-line { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vh; text-align: center; padding: 0 24px 28vh; opacity: 0; transform: translateY(18px); transition: opacity var(--t-med) var(--ease-out), transform var(--t-med) var(--ease-out); }
+.thru-line.on { opacity: 1; transform: none; } /* the giant word hands over with a short rise, not a blink */
 .thru-line small { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--accent); }
 .thru-line b { font-family: var(--font-display); font-weight: 600; font-stretch: 86%; font-size: clamp(5rem, 27vw, 27rem); line-height: 0.86; letter-spacing: -0.04em; color: var(--bright); white-space: nowrap; }
 .thru-line span { max-width: 44ch; color: var(--text-dim); font-size: 1.08rem; }
@@ -2960,8 +2960,8 @@ import * as THREE from './vendor/three.module.min.js';
     if (NAV.on) { NAV.k = Math.min(1, NAV.k + dt / 350); cur = NAVSTOP; prev = null; fA = fB = 0; m = 1; nudge = 0; en = 1; fe = fl = peak = boom = 0; d = 1; q = 0; ql = 1; lift = 0; } // the route map takes the model over: the city, flat and centred, whatever the page is doing
     lagNow = lag; place(prev || cur, pl0); place(cur, pl1);
     // Crossing into a chapter: the model rides in on the chapter's title card, in front of it, a little larger and lower than where it will rest, and settles into the title block's open space as the card's strips slide away.
-    var cross = !!cur && cur.chapter && !NAV.on, settle = cross ? 1 - smooth((cbNow - 0.6) / 0.4) : 0, rides = !prev || pl0.k === 1;
-    if (cross) { pl1.y += 0.1 * H * settle; pl1.s *= 1 + 0.22 * settle; }
+    var cross = !!cur && cur.chapter && !NAV.on, settle = cross ? 1 - smooth((cbNow - 0.45) / 0.35) : 0, rides = !prev || pl0.k === 1;
+    if (cross) { pl1.y += 0.2 * H * settle; pl1.s *= 1 + 0.15 * settle; } // lower on the card than its resting place, so it sits under the card's big title and not over it
     // The pinned story on the city: the scroll scrubs one request on the real street graph. sp: how far through.
     var story = cur && cur.story ? cur : null, sp = 0;
     var tb = cur && cur.fin ? m : 0; // the ending: how far the parts have come back together as the turbine
@@ -2992,7 +2992,7 @@ import * as THREE from './vendor/three.module.min.js';
     heroS = mix(heroS, (wide ? Math.min(W * 0.34, H * 0.58) : W * 0.5) * (1 + 1.8 * peak), fe); // in the fly-through it takes the middle of the screen, then the camera pushes in
     var S = mix(mix(heroS, sceneS, smooth(en * 1.5)), mix(pl0.s, pl1.s, mp) * mix(FIT[fA], FIT[fB], m), d) * (1 + 0.3 * nudge);
     var CX = mix(mix(mix(wide ? W * 0.72 : W / 2, W / 2, fe), mix(W * 0.74, W * 0.26, q), en), mix(pl0.x, pl1.x, mp), d);
-    var CY = mix(mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, H * 0.5 + 0.29 * heroS, fe), wide ? H * 0.8 : H * 0.72, en), mix(pl0.y, pl1.y, mp), d);
+    var CY = mix(mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, H * 0.5 + 0.29 * heroS, fe), wide ? H * 0.87 : H * 0.72, en), mix(pl0.y, pl1.y, mp), d);
     // Phones: where the model moves with the page, the canvas is laid on the page itself, so the phone's own scrolling carries it and it cannot trail behind the text. Where it holds still on screen, or during a dive, the canvas is fixed to the screen as before.
     var ride = !REDUCE && mix(mix(wide ? 0 : 1, 0, Math.max(en, fe)), mix(pl0.k, pl1.k, mp), d) > 0.5, rT = ride ? Math.round(clamp(CY + sc - H / 2, 0, document.body.offsetHeight - H)) : 0;
     if (ride !== riding) { riding = ride; cv.style.position = ride ? 'absolute' : 'fixed'; }

@@ -4,6 +4,30 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## A live ocean, models that transform between chapters, a sharper picture (2026-11-16)
+
+You asked for someone to go through every part: drop the parts diagram on the turbine, a more realistic sunset, hand-overs "like the pictures", sharper visuals. Five passes, one commit each.
+
+- **Parts diagram: gone.** The four labels (Compressor, Combustor, Turbine, Casing), their styles and their code are removed. The fly-through itself stays and is closer: the camera now pushes in to almost three times the size, travels along the shaft at blade height from the compressor to the turbine wheels, the light sweeps across the blades as you scroll, and the background blur is stronger on computers.
+- **Backdrop: a real sunset over a sea that moves.** The sky is a new photograph, Poly Haven "The Sky Is On Fire" by Greg Zaal and Rico Cilliers (free to use, CC0). Honest note: it is a real ocean sunset, photographed in Cape Town, not San Diego. Everything under the horizon in the photo is thrown away and the sea is drawn live by a small program: eight trains of swell, reflecting that sky the way water does (mirror-like far away, darker looking down), with the glow laying a path on the water. It runs at about 30 frames a second, smaller on phones, and stops when the tab is hidden, in the other themes and while the map is open.
+- **Light changes as you read.** Golden hour for the opening and the fly-through, where there is little text; by the first chapter it is dusk, so body text always has a dark sky behind it; deep dusk by Contact. On phones the horizon sits lower and the veil is heavier, so the opening paragraph no longer crosses the glow.
+- **Fallbacks.** Reduced motion, no WebGL or scripts off: the picture has its own still sea (one frame of the live water, softened), and the sky stays at dusk.
+- **Chapters no longer cut.** Before, the model faded out and back in behind an opaque title card. Now the model rides in on the title card, in front of it, and you watch its parts fly apart and regroup into the next chapter's model as the card's strips slide away. The city's streets (which are the turbine's parts) lift off the plate into the same swarm. The model sits lower than the card's big title and is at rest in the title block's empty space before any rows of text are uncovered; chapter models now rest further right, clear of the headline.
+- **"Inside Route Engine" runs on the 3D city.** The pinned story used a separate flat drawing. Now the frame is clear and the San Diego model tells it: the raw tap drops onto the nearest corner, the page's real A* spreads, the route is drawn, then a bead on every point of the route and the real Douglas-Peucker keeps only the ones that matter. The readout uses the same wording as before with the city's own numbers. If the model cannot load, or with reduced motion, the flat drawing is still there.
+- **An ending.** After the last tiles there is open space where the parts come back together as the turbine the page opened on, above "Back to top". Click it and the rotor surges, as in the opening. This makes the page about 3% longer.
+- **Sharper on computers.** Edges are smoothed with four samples a pixel (they were not, under the blur pass), shadows are four times finer, the scanned-metal texture stays sharp at glancing angles, and the backdrop has a slight vignette. The scene models have baked soft shadows where parts meet (`blender/finish_scenes.py`). Screens already drew at up to twice their pixel density; I left that cap.
+- **Small fixes on the last lap.** The network no longer sits behind the "graphs" caption; the giant word hands over with a short rise; one line of code that had slipped into a comment (the wear texture's colour setting) is fixed.
+
+**Words:** none added. One hidden screen-reader label ("The turbine, part by part") was removed with the diagram.
+
+**Page weight:** `textures/sky.jpg` 94 KB (phones; replaces `dusk.jpg`, 72 KB) and `textures/sky-wide.jpg` 278 KB (screens 1000 px and wider only). `models/scenes.bin` unchanged at 504 KB. `index.html` 234 KB to about 250 KB. No library added. Removed: `textures/dusk.jpg`, `blender/build_dusk.py`. Added: `blender/build_sky.py`, `blender/finish_scenes.py`.
+
+**Tested** in Chrome at 1440x860 and at 393x659 slowed 4x: no errors; phone has no slow frames over the whole page (worst 29 to 31 ms, same as before); computer has one 36 ms frame the first time you reach About and none on a second pass (it was 29 ms before, and it happens with the sea switched off too). Tab trip, Map, M, D and Esc work; the other four themes hide the sky; reduced motion gives a still, readable page.
+
+**Not tested:** a real iPhone, Safari, scripts off (reasoned from the styles only), and what the sea and the finer shadows cost a graphics chip (my test measures the processor). My phone screenshots of the very last screen came out shifted by the test tool, so the ending on a phone is checked by measurement, not by eye.
+
+**Not touched:** the 2D demo screens inside the cards, the six small tiles, the look of the title cards, the map's landmark pairing, the hero wording. The city did not get the bevel and soft-shadow treatment (its pieces are stretched per lot, so baked shading would be wrong); the scene models did not get bevels.
+
 ## The route engine is now how you get around; less scrolling; things to find (2026-11-16)
 
 You asked for the playable route engine, smoother hand-overs, less scrolling and easter eggs, with a second agent reading the whole site for ideas. Its report is where the scroll cuts, the two bug fixes and most of the easter eggs came from.
