@@ -4,6 +4,16 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The backdrop: last light over the Pacific (2026-11-16)
+
+You asked for a background like the ORYZO screenshots instead of flat black, and for it to be something that fits you.
+
+- **The idea.** This is San Diego and the page's one accent is sunset amber, so the backdrop is dusk over the ocean. A warm amber glow sits low under the model, the way the sun sits on the water; a cool blue one sits high on the other side, the sky going to night.
+- **It moves with you.** As you scroll down the page the warm glow drifts across and sinks, and the cool one comes up, so the opening is golden hour and Contact is nearly night. It is two soft discs moved with transform and opacity only, so it costs nothing to animate. With reduced motion or no JavaScript it is simply still.
+- **Colours.** The page base moved from near-black ink (`#0b0d14`) to dusk slate (`#0e151e`), with panels and rules shifted to match. The top bar lets a little of the backdrop through.
+- This goes against one of the cleanup rules I applied earlier (no colour washes behind content). I kept it to two soft lights with a reason behind them, and eased the warm one so small text stays readable over it.
+- **Tested** at 1440x860 and 393x659: no errors, all six tabs, no slow frames. The four other preview themes still have not been rechecked and will look wrong with this backdrop.
+
 ## The turbine rebuilt at "ORYZO" quality, with a fly-through (2026-11-16)
 
 You sent the ORYZO screenshots again and asked how to get that look. The gap was not Blender itself: my models were plain shapes with flat colours, lit by three simple lights. This pass gives the opening turbine the things that site has.
