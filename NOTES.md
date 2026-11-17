@@ -4,6 +4,14 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The name, and the "Away from the keyboard" pictures (2026-11-16)
+
+- The name: the construction lines, handles and "cap / baseline" labels are gone (Kia did not like them). Script splits the name into letters; they fly in from depth one after another, the name leans with the pointer with each letter at its own depth, and a letter lifts when pointed at. Warm fill fading to the accent at the foot. Reduced motion or no script: plain text.
+- Six boxes now show Blender pictures instead of line drawings: `blender/build_tiles.py` models each scene and renders it with Cycles to `renders/` (sports, boards, cars, family, reading, markets; 30 to 55 KB each, loaded lazily, about 220 KB in all). Run it in a background Blender: `Blender -b --python blender/build_tiles.py [-- name]`.
+  The soccer ball is a truncated icosahedron (12 pentagons, 20 hexagons); the volleyball is 18 panels; cars shows water beading on coated paint with the clay bar, pad and coating; family is a house at dusk with no people in it.
+- The old canvas drawings for those boxes (`demos.m_*`) are no longer used and can be deleted.
+- Still Kia's call: the Family box text ("I am a family guy.") is one short line; a longer line needs his words.
+
 ## Light and data: new project animations and a fly-through camera (2026-11-16)
 
 Kia rated the chapter models 2/10 and chose: a mix of realistic objects and "light and data" animations, one continuous camera between sections, everything at once.

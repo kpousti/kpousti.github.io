@@ -290,6 +290,7 @@ body.nav #map { z-index: 31; }
 .beyond li { padding: 0 0 8px; border-top: 0; }
 
 .mini { display: block; width: 100%; height: 124px; margin: 0 0 16px; background: var(--screen); border: 1px solid var(--line); border-radius: 4px; object-fit: cover; }
+.beyond li:not(.wide) img.mini { height: auto; aspect-ratio: 2 / 1; } /* the rendered pictures are 2:1: show all of them at every width */
 .beyond li { font-size: 0.94rem; text-align: left; }
 .beyond i { color: var(--bright); }
 .beyond b { display: block; text-align: left; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
@@ -379,14 +380,14 @@ footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 au
 html.intro .hero > :not(h1) { animation-delay: 1.1s; }
 /* The hero model: a small city tile, built in canvas, with A* planning a route across it. */
 #map { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-/* Construction lines on the name, like a type drawing. They draw in once, then sit quietly. */
-.guides { position: absolute; left: 0; top: 0; width: 100%; height: 0; pointer-events: none; }
-.guides i { position: absolute; height: 1px; background: rgba(var(--accent-rgb), 0.38); transform-origin: left center; transform: scaleX(0); transition: transform var(--t-slow) var(--ease-out); }
-.guides b { position: absolute; width: 7px; height: 7px; margin: -3px 0 0 -3px; border: 1px solid var(--accent); background: var(--ink); opacity: 0; transition: opacity var(--t-med) var(--ease-out); }
-.guides span { position: absolute; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.02em; color: var(--text-dim); opacity: 0; transition: opacity var(--t-med) var(--ease-out); white-space: nowrap; }
-.guides.on i { transform: scaleX(1); }
-.guides.on b, .guides.on span { opacity: 1; }
-@media (max-width: 700px) { .guides span { display: none; } }
+/* The name, split into letters by script: they fly in from depth, then lean together with the pointer. Without script or with reduced motion it is plain text. */
+.hero h1.split { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: preserve-3d; transition: transform 0.6s var(--ease-out); }
+.nw { display: block; white-space: nowrap; transform-style: preserve-3d; }
+.nl { display: inline-block; opacity: 0; transform: translate3d(0, 0.4em, -500px) rotateX(-75deg); transform-origin: 50% 85%; transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s linear;
+  background: linear-gradient(180deg, var(--bright) 52%, var(--accent) 118%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.split.in .nl { opacity: 1; transform: translate3d(0, 0, calc(var(--d, 0) * 1px)); }
+.split.set .nl { transition-delay: 0s !important; transition-duration: 0.35s; }
+.split.set .nl:hover { transform: translate3d(0, -0.05em, 90px); }
 /* Narrow screens: the model gets its own space under the words. */
 @media (max-width: 999px) { .hero { padding-bottom: calc(40px + 62vw); } .hero .cue { display: none; } }
 /* Wide screens: words on the left, the model on the right. */
@@ -814,27 +815,27 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
           <b>Mechanically inclined</b>Helped design and integrate an ESC, the speed controller, for an electric skateboard to raise its top speed and efficiency. I also sourced and mounted a replacement motor in my car myself, a job that runs thousands at a shop.
         </li>
         <li class="glass" data-reveal>
-          <canvas role="img" class="mini" data-demo="m_sports" aria-label="A basketball, a soccer ball and a volleyball bouncing"></canvas>
+          <img class="mini" src="renders/sports.jpg" width="1000" height="500" loading="lazy" decoding="async" alt="A basketball, a soccer ball and a volleyball, modelled in Blender">
           <b>Sports</b>Basketball, soccer and volleyball.
         </li>
         <li class="glass" data-reveal>
-          <canvas role="img" class="mini" data-demo="m_boards" aria-label="A surfboard riding a wave above a rolling skateboard"></canvas>
+          <img class="mini" src="renders/boards.jpg" width="1000" height="500" loading="lazy" decoding="async" alt="A surfboard and a skateboard, modelled in Blender">
           <b>Boards</b>Surfing and skating.
         </li>
         <li class="glass" data-reveal>
-          <canvas role="img" class="mini" data-demo="m_car" aria-label="A motor lowered into a car, then a polish shine sweeping across it"></canvas>
+          <img class="mini" src="renders/cars.jpg" width="1000" height="500" loading="lazy" decoding="async" alt="Water beading on ceramic-coated car paint beside a clay bar, an applicator pad and a bottle of coating, modelled in Blender">
           <b>Cars</b>Detailing by hand: clay bar, polish and ceramic coating.
         </li>
         <li class="glass" data-reveal>
-          <canvas role="img" class="mini" data-demo="m_family" aria-label="A house with lit windows, four figures holding hands and a heart rising"></canvas>
+          <img class="mini" src="renders/family.jpg" width="1000" height="500" loading="lazy" decoding="async" alt="A small house at dusk with its windows lit, modelled in Blender">
           <b>Family</b>I am a family guy.
         </li>
         <li class="glass" data-reveal>
-          <canvas role="img" class="mini" data-demo="m_books" aria-label="Two stacked books with an open book turning a page on top"></canvas>
+          <img class="mini" src="renders/reading.jpg" width="1000" height="500" loading="lazy" decoding="async" alt="Two stacked books, Future Proofing You and Man&#39;s Search for Meaning, with an open book on top, modelled in Blender">
           <b>Reading</b>Self-improvement books, such as <i>Future Proofing You</i> by Jay Samit and <i>Man's Search for Meaning</i> by Viktor E. Frankl.
         </li>
         <li class="glass" data-reveal>
-          <canvas role="img" class="mini" data-demo="m_market" aria-label="A line chart climbing across a grid"></canvas>
+          <img class="mini" src="renders/markets.jpg" width="1000" height="500" loading="lazy" decoding="async" alt="A candlestick chart as a 3D object with a moving average line, modelled in Blender from synthetic prices">
           <b>Markets</b>I invest in the market, with positive returns so far, and I am working toward a career in the quant field.
         </li>
       </ul>
@@ -2193,35 +2194,26 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   });
 })();
 
-// ---------- Construction lines on the name: baseline, cap height, and a handle at each letter ----------
+// ---------- The name: every letter is a part. They arrive from depth one after another, then the whole name leans with the pointer like one solid object, each letter at its own depth. ----------
 (function () {
-  var h1 = document.querySelector('.hero h1'), hero = document.querySelector('.hero');
-  if (!h1 || !hero || !h1.firstChild) return;
-  var g = document.createElement('div'); g.className = 'guides'; g.setAttribute('aria-hidden', 'true');
-  hero.appendChild(g);
-  function draw() {
-    var hr = hero.getBoundingClientRect(), r = h1.getBoundingClientRect(), fs = parseFloat(getComputedStyle(h1).fontSize);
-    var text = h1.firstChild, range = document.createRange(), xs = [];
-    for (var c = 0; c < text.length; c++) {
-      if (!text.data[c].trim()) continue;
-      range.setStart(text, c); range.setEnd(text, c + 1);
-      var cr = range.getBoundingClientRect(); xs.push(cr.left - hr.left, cr.right - hr.left);
-    }
-    var left = Math.min.apply(null, xs), right = Math.max.apply(null, xs), over = Math.min(64, fs * 0.5);
-    var top = r.top - hr.top, base = top + fs * 0.86, cap = top + fs * 0.17; // the display face's cap height and baseline, in em
-    var html = '';
-    [cap, base].forEach(function (y, k) {
-      html += '<i style="left:' + (left - over) + 'px;top:' + y + 'px;width:' + (right - left + over * 2) + 'px;transition-delay:' + (k * 120) + 'ms"></i>';
-    });
-    for (var q = 0; q < xs.length; q += 2) html += '<b style="left:' + xs[q] + 'px;top:' + base + 'px;transition-delay:' + (400 + q * 25) + 'ms"></b>';
-    html += '<span style="left:' + (right + over + 8) + 'px;top:' + (base - 7) + 'px;transition-delay:700ms">baseline</span>';
-    html += '<span style="left:' + (right + over + 8) + 'px;top:' + (cap - 7) + 'px;transition-delay:600ms">cap</span>';
-    g.innerHTML = html;
-  }
-  function show() { draw(); requestAnimationFrame(function () { requestAnimationFrame(function () { g.classList.add('on'); }); }); }
+  var h1 = document.querySelector('.hero h1');
+  if (!h1 || REDUCE || !h1.firstChild) return;
+  var text = h1.textContent, hero = document.querySelector('.hero');
+  h1.setAttribute('aria-label', text); h1.textContent = '';
+  var row = document.createElement('span'); row.className = 'nw'; row.setAttribute('aria-hidden', 'true'); h1.appendChild(row); // one row: the heading itself is a grid, so the letters need their own line box
+  text.split('').forEach(function (ch, i) {
+    var s = document.createElement('span'); s.className = 'nl'; s.setAttribute('aria-hidden', 'true'); s.textContent = ch === ' ' ? '\u00a0' : ch;
+    s.style.transitionDelay = (150 + i * 60) + 'ms'; s.style.setProperty('--d', Math.round(18 + 16 * Math.sin(i * 1.9))); row.appendChild(s);
+  });
+  h1.classList.add('split');
   var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  ready.then(function () { if (REDUCE || !getComputedStyle(h1).animationName || getComputedStyle(h1).animationName === 'none') show(); else h1.addEventListener('animationend', show, { once: true }); });
-  window.addEventListener('resize', draw);
+  ready.then(function () { requestAnimationFrame(function () { requestAnimationFrame(function () { h1.classList.add('in'); setTimeout(function () { h1.classList.add('set'); }, 1900); }); }); });
+  hero.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    var r = h1.getBoundingClientRect(), dx = clamp((e.clientX - r.left - r.width / 2) / r.width, -1, 1), dy = clamp((e.clientY - r.top - r.height / 2) / r.height, -1.5, 1.5);
+    h1.style.setProperty('--ry', (dx * 14).toFixed(2) + 'deg'); h1.style.setProperty('--rx', (-dy * 7).toFixed(2) + 'deg');
+  });
+  hero.addEventListener('pointerleave', function () { h1.style.setProperty('--ry', '0deg'); h1.style.setProperty('--rx', '0deg'); });
 })();
 </script>
 <script type="module">
