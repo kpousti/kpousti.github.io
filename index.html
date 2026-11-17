@@ -297,17 +297,9 @@ footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 au
 .pre.in { opacity: 1; transform: none; transition: opacity var(--t-med) var(--ease-out), transform var(--t-med) var(--ease-out); }
 .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0.1em 0 0.16em; margin: -0.1em 0 -0.16em; }
 .w > span { display: inline-block; }
-/* The fly-through: the page holds still while the camera goes in close on the turbine, the parts ease apart, and each main part gets a callout like on a drawing. Script turns this on; without it the four parts are a plain row of labels. */
-.fly { padding: 0 24px 48px; }
-.calls { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 auto; padding: 16px 0 0; max-width: 1080px; list-style: none; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 12.5px; color: var(--bright); }
-.calls span { color: var(--text-dim); margin-left: 8px; }
-.fly.live { height: 190vh; padding: 0; }
+/* The fly-through: the page holds still while the camera goes in close on the turbine and tracks along its blades. Script turns this on; without it the section takes no room. */
+.fly.live { height: 190vh; }
 .fly.live .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; pointer-events: none; }
-.fly.live .calls { display: block; max-width: none; padding: 0; border: 0; opacity: var(--o, 0); }
-.fly.live .calls li { position: absolute; left: 0; top: 0; padding: 3px 8px 3px 80px; margin-top: -1em; white-space: nowrap; will-change: transform; background: linear-gradient(to right, transparent 72px, var(--ink) 72px); } /* the words sit on a small ink tag, so they read over the metal */
-.fly.live .calls li::before { content: ""; position: absolute; left: 6px; top: 50%; width: 58px; height: 1px; background: var(--accent); }
-.fly.live .calls li::after { content: ""; position: absolute; left: 0; top: 50%; width: 7px; height: 7px; margin: -3px 0 0 -3px; border: 1px solid var(--accent); background: var(--ink); }
-@media (max-width: 700px) { .fly.live .calls li { padding-left: 44px; background: linear-gradient(to right, transparent 36px, var(--ink) 36px); } .fly.live .calls li::before { width: 24px; } .fly.live .calls span { display: none; } } /* phones: shorter leaders, the part's name only */
 /* Pinned scene after the hero: the page holds still while one giant word fills the screen and the city model crosses in front of it. */
 .thru { position: relative; height: 170vh; }
 .thru-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
@@ -500,16 +492,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
     <a class="cue" href="#about">Scroll</a>
   </section>
 
-  <section class="fly" id="fly" aria-label="The turbine, part by part">
-    <div class="fly-stage">
-      <ul class="calls">
-        <li>Compressor <span>9 stages</span></li>
-        <li>Combustor <span>10 cans</span></li>
-        <li>Turbine <span>3 stages</span></li>
-        <li>Casing <span>cut away</span></li>
-      </ul>
-    </div>
-  </section>
+  <section class="fly" id="fly" aria-hidden="true"><div class="fly-stage"></div></section>
   <section class="thru" id="thru" aria-label="How I think and what I build">
     <div class="thru-stage">
       <p class="thru-line on"><small>How I think</small><b data-text="graphs">graphs</b><span>Nodes, edges and costs. Most problems I enjoy turn into one.</span></p>
@@ -2747,23 +2730,9 @@ import * as THREE from './vendor/three.module.min.js';
     routeMeshes[2].geometry = new THREE.TubeGeometry(path, segs, 0.014, RADIAL, false);
   }
 
-  // ----- The fly-through's callouts: four labels that stay pinned to their parts as the turbine turns and comes apart -----
-  var FLY = !!flyEl && !REDUCE, boom = 0, CALLS = [];
-  if (FLY) {
-    flyEl.classList.add('live');
-    [[-0.38, 0.33, 0, 0, 0.36, 0], [0.26, 0.3, 0.12, 0, 0.45, 0.1], [0.66, 0.36, 0, 0.33, 0.36, 0], [-0.1, -0.36, 0.2, 0, -0.55, 0]].forEach(function (q, i) { // where on the turbine each label points, and which way that part moves when the parts ease apart
-      CALLS.push({ el: flyEl.querySelectorAll('.calls li')[i], p: new THREE.Vector3(q[0], q[1], q[2]), ex: new THREE.Vector3(q[3], q[4], q[5]) });
-    });
-  }
-  function callouts(show) {
-    if (!FLY) return;
-    flyEl.style.setProperty('--o', show.toFixed(3));
-    if (show < 0.01) return;
-    CALLS.forEach(function (c) {
-      tmpV.copy(c.p).addScaledVector(c.ex, boom * 0.5).multiplyScalar(K).applyQuaternion(qTurn); tmpV.y += AXIS; tmpV.project(camera);
-      c.el.style.transform = 'translate3d(' + ((tmpV.x + 1) / 2 * W).toFixed(1) + 'px,' + ((1 - tmpV.y) / 2 * H).toFixed(1) + 'px,0)';
-    });
-  }
+  // ----- The fly-through: a pinned stretch after the opening where the camera goes in close on the turbine -----
+  var FLY = !!flyEl && !REDUCE, boom = 0;
+  if (FLY) flyEl.classList.add('live');
   // ----- Camera effects, on computers only: the picture is drawn off screen first, then passed through one pass that blurs what is out of focus (more as the camera goes in close), lets the brightest highlights glow, and grades it for the screen -----
   var post = null;
   if (window.innerWidth >= 1000 && !REDUCE) (function () {
@@ -2912,7 +2881,7 @@ import * as THREE from './vendor/three.module.min.js';
       markFor = shown + ':' + plannedAt; mark++;
       for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
-    fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? wc : 1); callouts(peak * (1 - en)); fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
+    fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? wc : 1); fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
     for (var ai = 0; ai < ASM.length; ai++) if (ASM[ai].g) showAsm(ASM[ai], (prev && prev.asm === ASM[ai] ? 1 - m : 0) + (cur && cur.asm === ASM[ai] ? m : 0), t, yaw);
     var tubeSegs = Math.round((route.length - 1) * PER * smooth(draw));
     routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
