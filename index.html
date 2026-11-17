@@ -79,7 +79,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-
 .sky canvas { position: absolute; left: 0; top: 66vh; width: 100%; height: 34vh; opacity: 0; transition: opacity 1.4s; } /* the live sea, from the horizon down; it fades in over the still one once it is running */
 .sky canvas.on { opacity: 1; }
 .sky u { position: absolute; inset: 0; background: #060a13; opacity: 0.5; will-change: opacity; } /* night: comes on as you go down the page. Without scripts it stays at dusk, so body text always has a dark sky behind it */
-.sky b { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14, 21, 30, 0.62) 0%, rgba(14, 21, 30, 0.42) 40%, rgba(14, 21, 30, 0.2) 63%, rgba(14, 21, 30, 0.26) 70%, rgba(14, 21, 30, 0.55) 100%), linear-gradient(90deg, rgba(14, 21, 30, 0.6) 0%, rgba(14, 21, 30, 0.42) 30%, rgba(14, 21, 30, 0) 62%); } /* the veil that keeps words readable: darkest up top and down low, and on the left, where the opening's words are; lightest at the horizon on the right, where the model is */
+.sky b { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14, 21, 30, 0.62) 0%, rgba(14, 21, 30, 0.42) 40%, rgba(14, 21, 30, 0.2) 63%, rgba(14, 21, 30, 0.26) 70%, rgba(14, 21, 30, 0.55) 100%), linear-gradient(90deg, rgba(14, 21, 30, 0.6) 0%, rgba(14, 21, 30, 0.42) 30%, rgba(14, 21, 30, 0) 62%), radial-gradient(120% 95% at 62% 58%, rgba(6, 10, 19, 0) 58%, rgba(6, 10, 19, 0.42) 100%); } /* the veil that keeps words readable: darkest up top and down low, and on the left, where the opening's words are; lightest at the horizon on the right, where the model is */
 @media (max-width: 999px) { /* narrow screens: words run the full width, so the horizon and its glow sit lower, under the opening's paragraph, and the veil is heavier */
   .sky i { top: calc(76vh - 0.66 * var(--h)); } .sky canvas { top: 76vh; height: 24vh; }
   .sky b { background: linear-gradient(180deg, rgba(14, 21, 30, 0.64) 0%, rgba(14, 21, 30, 0.58) 55%, rgba(14, 21, 30, 0.46) 70%, rgba(14, 21, 30, 0.36) 76%, rgba(14, 21, 30, 0.62) 82%, rgba(14, 21, 30, 0.62) 100%); }
@@ -2308,7 +2308,7 @@ import * as THREE from './vendor/three.module.min.js';
   scene.add(new THREE.HemisphereLight(0x9fb8e0, 0x0a1220, 0.55));
   var key = new THREE.DirectionalLight(0xffc58a, 4.2);
   key.position.set(-3.2, 1.5, 1.4); key.castShadow = true; // low and warm, like late sun: long shadows across the streets
-  key.shadow.mapSize.set(window.innerWidth < 700 ? 1024 : 2048, window.innerWidth < 700 ? 1024 : 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.01;
+  var SHM = window.innerWidth < 700 ? 1024 : window.innerWidth < 1000 ? 2048 : Math.min(4096, renderer.capabilities.maxTextureSize); key.shadow.mapSize.set(SHM, SHM); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.01; // computers get a shadow map four times finer, so shadow edges stay crisp when the camera goes in close
   Object.assign(key.shadow.camera, { left: -1.7, right: 1.7, top: 1.7, bottom: -1.7, near: 0.5, far: 8 });
   var rig = new THREE.Group(); rig.add(key); scene.add(rig); // the lights turn with the camera, so the lit side always faces the viewer
   var rim = new THREE.DirectionalLight(0x6298ff, 0.7); rim.position.set(2.2, 1.2, -2.6); rig.add(rim);
@@ -2363,7 +2363,8 @@ import * as THREE from './vendor/three.module.min.js';
   // Every part also knows a second shape: a blade or vane rounds into a rod, anything else rounds into a ball. So the turbine can become a network of balls and rods with nothing added and nothing thrown away.
   var turbine = new THREE.Group(), parts = [], partsAt = 0, K = 0.8, mark = 0, markFor = '', seenNode = []; turbine.visible = false; city.add(turbine);
   // A scanned steel plate from Poly Haven (metal_plate_02, CC0), shrunk to one small image: its roughness in red, its height in green. It is wrapped onto every part from three sides, so no part needs its own texture layout.
-  var wear = new THREE.TextureLoader().load('./textures/wear.jpg', function () { lastKey = ''; }); wear.wrapS = wear.wrapT = THREE.MirroredRepeatWrapping; // mirrored, so the patch joins itself without a visible edge wear.colorSpace = THREE.NoColorSpace;
+  var wear = new THREE.TextureLoader().load('./textures/wear.jpg', function () { lastKey = ''; }); wear.wrapS = wear.wrapT = THREE.MirroredRepeatWrapping; // mirrored, so the patch joins itself without a visible edge
+  wear.colorSpace = THREE.NoColorSpace; wear.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); // stays sharp on surfaces seen at a glancing angle, as along the blades in the fly-through
   function reshape(shader) { // per part: blend every vertex from its own shape to its rod or ball shape; per pixel: real metal's uneven shine, scuffs and fine relief
     shader.uniforms.uWear = { value: wear };
     shader.vertexShader = 'attribute vec3 aTo; attribute vec3 aToN; attribute float aMix; varying vec3 vLp; varying vec3 vLn;\n' + shader.vertexShader
@@ -2877,7 +2878,7 @@ import * as THREE from './vendor/three.module.min.js';
   // ----- Camera effects, on computers only: the picture is drawn off screen first, then passed through one pass that blurs what is out of focus (more as the camera goes in close), lets the brightest highlights glow, and grades it for the screen -----
   var post = null;
   if (window.innerWidth >= 1000 && !REDUCE) (function () {
-    var rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(2, 2) });
+    var rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(2, 2), samples: renderer.capabilities.isWebGL2 ? 4 : 0 }); // four samples a pixel: edges drawn off screen are as smooth as ones drawn straight to the screen
     var u = { tC: { value: rt.texture }, tD: { value: rt.depthTexture }, px: { value: new THREE.Vector2(1, 1) }, coc: { value: 2 }, focus: { value: 6 }, exposure: { value: 1.2 } };
     var mat3 = new THREE.ShaderMaterial({ uniforms: u, depthTest: false, depthWrite: false, toneMapped: false, transparent: true, blending: THREE.NoBlending,
       vertexShader: 'varying vec2 u; void main() { u = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
