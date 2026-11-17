@@ -4,7 +4,18 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
-## The backdrop: last light over the Pacific (2026-11-16)
+## The backdrop is now a real sky: sunset over the ocean (2026-11-16)
+
+You said the two-glow backdrop was not it and asked for a nicer custom one, special but calm.
+
+- **What it is.** A real photographed sky, not a gradient: the Poly Haven panorama "Umhlanga Sunrise" by Greg Zaal (free to use for anything, CC0). Honest note: it is a real ocean horizon, but it was not photographed in San Diego.
+- **What Blender did to it** (`blender/build_dusk.py`): kept only the stretch of horizon that is open sea, turned the exposure down so the sunrise reads as last light, cooled and darkened the upper sky, made the sun a warm white, then built a still sea under it by mirroring and softening the sky. The top and bottom melt into the page colour.
+- **On the page.** The sun sits on the horizon under the turbine. As you scroll, the view pans slowly along the horizon and the light fades to half by Contact. One picture and one dark veil, moved with transform and opacity only; still with reduced motion or JavaScript off. The veil keeps text readable.
+- **Page weight:** `textures/dusk.jpg` is 72 KB (2068 x 1036). No library added.
+- **Other themes:** the sky shows only in Pacific Dusk; Studio Black, Gallery Light, Volt and Aurora hide it and keep a flat page colour.
+- **Tested** at 1440x860 and 393x659 in Chrome: no errors, picture covers the screen at every scroll position. Not tested: Safari, a real iPhone, JavaScript off.
+
+## The backdrop: last light over the Pacific (2026-11-16, replaced by the sky above)
 
 You asked for a background like the ORYZO screenshots instead of flat black, and for it to be something that fits you.
 
