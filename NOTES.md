@@ -4,6 +4,26 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The turbine rebuilt at "ORYZO" quality, with a fly-through (2026-11-16)
+
+You sent the ORYZO screenshots again and asked how to get that look. The gap was not Blender itself: my models were plain shapes with flat colours, lit by three simple lights. This pass gives the opening turbine the things that site has.
+
+- **Real studio light.** A photographed studio from Poly Haven (`studio_small_08`, CC0). It is stored as a 42KB JPG with its brightness squeezed; the page undoes the squeeze, so the softboxes are properly brighter than the walls and show as crisp highlights on the metal.
+- **A scanned metal surface.** A patch of a scanned steel plate from Poly Haven (`metal_plate_02`, CC0), 25KB. Its roughness and its height are wrapped onto every part from three sides, so the shine is uneven and there are scuffs and fine relief, without any part needing its own texture layout. I cropped a patch with no panel seam in it and mirror-tile it.
+- **Rounded edges.** In Blender, every hard edge except on the blades is now bevelled, so edges catch a highlight the way real machined parts do.
+- **Baked soft shadows.** Blender works out how shadowed each point is by the parts around it and stores that in the model, so the crevices are dark at no cost on the page.
+- **A fly-through.** New section between the opening and "How I think", 2.6 screens tall. The page holds still, the turbine takes the middle of the screen, the camera pushes in to twice the size and swings to look along the blades, the parts ease apart, and four callouts stay pinned to their parts: Compressor (9 stages), Combustor (10 cans), Turbine (3 stages), Casing (cut away). Those are the counts in the model.
+- **Camera effects, on computers only.** The picture is drawn off screen and passed through one pass that blurs what is out of focus (more as the camera goes in), lets the brightest highlights glow a little, and grades it. Phones skip this and draw directly.
+- **Title change you asked for:** "Software Developer" is now "Developer" for the Solar Turbines role, in About, Experience and the page's hidden job-title data. The line above your name still says "Software engineer", and so do the search description and share title; say the word if you want those changed too.
+
+**Text I added:** the four callout labels above.
+
+**Cost:** turbine model 421KB (was 191KB), textures 67KB, and the page is 2.6 screens longer. The camera-effects pass roughly doubles the drawing work on computers.
+
+**Not done:** only the turbine got this treatment. The city and the thirteen scene models still have flat colours, though they now reflect the real studio too. No photographs of you.
+
+**Tested** at 1440x860 and 393x659: no errors, no sideways scroll, all six tabs, nothing left hidden, no slow frames in the slowed-down test. That test measures the processor, not the graphics chip, and this pass adds graphics work, so check it on your own machines. Not tested in Safari or on a real iPhone.
+
 ## Every scene now has its own Blender model; turbine runs fast (2026-11-15)
 
 You said "keep building", asked for the turbine to stay fast when it is on, and then "ship it".
