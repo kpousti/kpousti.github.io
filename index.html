@@ -308,6 +308,10 @@ footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 au
 /* The fly-through: the page holds still while the camera goes in close on the turbine and tracks along its blades. Script turns this on; without it the section takes no room. */
 .fly.live { height: 190vh; }
 .fly.live .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; pointer-events: none; }
+/* The ending: open space after the last rows, where the parts come back together as the turbine the page opened on. Script gives it its height; without it there is no gap. */
+.finale.live { height: 78vh; }
+/* The pinned story runs on the 3D city when it can: the frame goes clear so the model shows through, and the flat drawing only writes the readout and labels. */
+.pin.pin3d .pin-screen { background: none; }
 /* Pinned scene after the hero: the page holds still while one giant word fills the screen and the city model crosses in front of it. */
 .thru { position: relative; height: 170vh; }
 .thru-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
@@ -832,6 +836,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
           <b>Markets</b>I invest in the market, with positive returns so far, and I am working toward a career in the quant field.
         </li>
       </ul>
+      <div class="finale" aria-hidden="true"></div>
     </div>
   </section>
 </main>
@@ -1920,6 +1925,17 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
     if (!w) return;
     var i, snap = seg(p, 0.02, 0.2), search = seg(p, 0.24, 0.52), route = seg(p, 0.56, 0.74), slim = seg(p, 0.79, 0.96);
     ctx.clearRect(0, 0, w, h); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    var S3 = window.KP_STORY;
+    if (S3 && S3.on) { // the 3D city is showing this request (see "The pinned story on the city"): the same four stages on the real street graph, with the numbers from its own search
+      var rc = canvas.getBoundingClientRect();
+      label('start', S3.sx - rc.left, S3.sy - rc.top + 18, rgba(WHITE, 0.85), 'center');
+      label('raw lat, lon', S3.tx - rc.left, S3.ty - rc.top - 16, rgba(WHITE, 0.85 * (1 - slim)), 'center');
+      label(slim > 0 ? 'points ' + S3.pts + ' → ' + Math.round(S3.pts - (S3.pts - S3.kept) * slim)
+        : route > 0 ? 'route ' + Math.max(1, Math.round(S3.pts * route)) + ' points'
+        : search > 0 ? 'explored ' + Math.round(S3.seen * search) + ' of ' + S3.nodes + ' nodes'
+        : snap > 0 ? 'snapping to nearest road node' : 'request received', 14, 20, rgba(AMBER, 1));
+      return;
+    }
     // roads
     ctx.strokeStyle = rgba(GLOW, 0.2); ctx.lineWidth = 1; ctx.beginPath();
     for (i = 0; i < edges.length; i++) { ctx.moveTo(nodes[edges[i][0]].x, nodes[edges[i][0]].y); ctx.lineTo(nodes[edges[i][1]].x, nodes[edges[i][1]].y); }
@@ -1980,7 +1996,7 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   function frame() {
     if (visible) {
       var next = p + (target - p) * 0.14; // ease toward the scroll position
-      if (Math.abs(next - p) > 0.0004 || lastStep < 0) { p = next; draw(); setStep(); }
+      if (Math.abs(next - p) > 0.0004 || lastStep < 0 || (window.KP_STORY && window.KP_STORY.on)) { p = next; draw(); setStep(); } // with the 3D city on, the labels follow the model every frame
     }
     requestAnimationFrame(frame);
   }
@@ -2394,6 +2410,7 @@ import * as THREE from './vendor/three.module.min.js';
       else if (c === 3 || c === 4) part.ex.set(px * 0.5 - (c === 4 ? 0.22 : 0), part.p.y / rad * 0.45, part.p.z / rad * 0.45);
       else if (c === 1 || c === 5 || c === 6) part.ex.set(px * 0.5, -0.55, 0);
       else part.ex.set(px * (c === 2 ? 0.5 : 0.7), 0, 0);
+      var c1 = hashNoise(k * 3.7) + 0.5, c2 = hashNoise(k * 7.1 + 2), c3 = hashNoise(k * 1.9 + 5); part.sp = new THREE.Vector3(c2 * 2.2, 0.3 + 0.75 * c1, c3 * 1.5); part.sq = new THREE.Quaternion().setFromEuler(new THREE.Euler(c2 * 5, c3 * 5, c1 * 4)); part.bk = c1; // its point in the shared cloud (the same spread the scene models use)
       if (ball) part.node = (nAt++ * 37 + 11) % (n * n);
       else { part.e = edges[sAt % edges.length]; part.slot = Math.floor(sAt / edges.length); part.on = Math.floor((rods - 1 - sAt % edges.length) / edges.length) + 1; sAt++; }
       parts.push(part);
@@ -2404,8 +2421,8 @@ import * as THREE from './vendor/three.module.min.js';
   var QUIET = new THREE.Color(0x2b3346), DIM = new THREE.Color(0.22, 0.24, 0.3); // streets and rivets in the city: there, but not competing with the route
   var HUB_R = 0.034; // the node fitting's radius while the network floats
   function node3(i, lift, o) { var s = mix(1, 0.86, lift); return o.set(nx[i] * s, lift * (0.5 + 0.26 * Math.sin(nx[i] * 2.6 + 0.8) * Math.cos(nz[i] * 2.2) + 0.3 * hashNoise(i * 9.1)), nz[i] * s); } // lifted, every street corner floats at its own height: the street graph as a network in space. At lift 0 it is the flat map again.
-  function fly(lw, lift, t, show) { // lw: 0 the turbine assembled, 1 the network; lift: 1 floating in space, 0 pressed flat into the plate as the streets; show: 1 fully there, 0 gone
-    turbine.visible = show > 0.001 && parts.length > 0;
+  function fly(lw, lift, t, show, burst) { // lw: 0 the turbine assembled, 1 the network; lift: 1 floating in space, 0 pressed flat into the plate as the streets; show: 1 fully there, 0 gone; burst: 0 in place, 1 flown apart into the cloud of points every scene model forms out of
+    turbine.visible = show > 0.001 && burst < 0.999 && parts.length > 0;
     if (!turbine.visible) return;
     var up = mix(0.004, HUB_R, lift), squash = mix(0.4, 1, lift); // flat, a rod lies half sunk in the plate like a groove, and a ball is a low rivet head
     qSpin.setFromAxisAngle(vX.set(1, 0, 0), spin);
@@ -2425,6 +2442,7 @@ import * as THREE from './vendor/three.module.min.js';
         }
         pa.p.lerp(pb.p, land); pa.q.slerp(pb.q, land); pa.s.lerp(pb.s.multiplyScalar(show), land);
       }
+      if (burst > 0) { var bu = smooth(burst * 1.5 - 0.5 * P.bk); pa.p.lerp(pb.p.copy(P.sp).applyQuaternion(qCloud), bu); pa.q.slerp(P.sq, bu); pa.s.multiplyScalar(1 - smooth((bu - 0.55) / 0.45)); } // each part lifts off toward its own point in the cloud, tumbling, and is gone by the time it gets there: the next model's parts are arriving at those same points
       P.im.setMatrixAt(P.idx, mat.compose(pa.p, pa.q, pa.s)); P.mix[P.idx] = land;
       P.im.setColorAt(P.idx, tint.setRGB(mix(1, cT.r / P.c.r, land), mix(1, cT.g / P.c.g, land), mix(1, cT.b / P.c.b, land))); // the tint multiplies the part's own colour, so this carries it over to its colour in the network
     }
@@ -2627,7 +2645,7 @@ import * as THREE from './vendor/three.module.min.js';
     ASM.forEach(function (A) {
       var idxs = [], count = {}, used = {}, ims = {};
       h.pname.forEach(function (nm, k) { if (nm.split('.')[0] === A.name) { idxs.push(k); count[h.mesh[k]] = (count[h.mesh[k]] || 0) + 1; } });
-      var sts = A.at.map(function (w) { return typeof w === 'string' ? stops.filter(function (q) { return q.chapter && q.el.id === w; })[0] : stops.filter(function (q) { return !q.chapter; })[w]; }).filter(Boolean);
+      var sts = A.at.map(function (w) { return typeof w === 'string' ? stops.filter(function (q) { return q.chapter && q.el.id === w; })[0] : stops.filter(function (q) { return q.scene; })[w]; }).filter(Boolean);
       if (!idxs.length || !sts.length) return;
       A.g = new THREE.Group(); A.g.visible = false; city.add(A.g); A.parts = []; A.by = {}; A.ims = [];
       idxs.forEach(function (k) {
@@ -2690,15 +2708,19 @@ import * as THREE from './vendor/three.module.min.js';
   // Per shape: the camera height that shows it best, and which shapes stand still (the rest keep moving, so they keep drawing).
   var ELEV = [0.78, 0.45, 0.85, 0.7, 0, 0.45, 0.3, 0.8, 0.95, 0.22, 0.5, 0.42, 0.25, 0.26, 0.26, 0.28], STILL = [0, 2, 3], UPRIGHT = [6, 9, 10, 11, 12, 13, 14, 15], FIT = [1, 1, 0.8, 0.95, 1, 1, 1, 0.8, 0.92, 1, 1, 0.88, 1, 1, 1, 1.4]; // FIT: flat, wide shapes are drawn a little smaller so they stay on screen
   var stops = [], sceneNo = 0, pl0 = {}, pl1 = {}, lagNow = 0;
-  document.querySelectorAll('main > .chapter, main .scene').forEach(function (el) { // in page order
+  document.querySelectorAll(REDUCE ? 'main > .chapter, main .scene' : 'main > .chapter, main .scene, main .pin, main .finale').forEach(function (el) { // in page order
     if (el.classList.contains('chapter')) stops.push({ el: el, chapter: true, f: CHAPTER_FORM[el.id] || 0, top: 0, head: el.querySelector('.head') });
-    else stops.push({ el: el, chapter: false, f: SCENE_FORM[sceneNo++] || 0, side: el.getAttribute('data-side'), top: 0, name: el.querySelector('.sname') });
+    else if (el.classList.contains('pin')) stops.push({ el: el, chapter: false, story: true, f: 0, top: 0, box: el.querySelector('.pin-screen') }); // the pinned story: the city, inside the story's frame
+    else if (el.classList.contains('finale')) { el.classList.add('live'); stops.push({ el: el, chapter: false, fin: true, f: 1, top: 0 }); } // the ending: the turbine again
+    else stops.push({ el: el, chapter: false, scene: true, f: SCENE_FORM[sceneNo++] || 0, side: el.getAttribute('data-side'), top: 0, name: el.querySelector('.sname') });
   });
   function place(st, o) { // where the model rests at a stop, how strongly it shows, and (k) whether that spot moves with the page
     o.k = 0;
     if (st && st.nav) { o.x = W / 2; o.y = H * 0.54; o.s = W > 900 ? Math.min(W * 0.26, H * 0.28) : Math.min(W * 0.35, H * 0.3); o.a = 1; } // the route map: the city alone, in the middle of the screen
     else if (!st) { o.x = W / 2; o.y = H * 0.66; o.s = Math.min(W * 0.3, H * 0.25); o.a = 0.9; }
-    else if (st.chapter) { o.x = W > 900 ? W * 0.6 : W / 2; o.y = st.head.getBoundingClientRect().bottom + lagNow - H * (W > 900 ? 0.3 : 0.25); o.s = W > 900 ? Math.min(W * 0.3, H * 0.23) : Math.min(W * 0.27, H * 0.2); o.a = 0.9; o.k = 1; } // in the open space of the chapter's title block, moving with the page: it is never behind the rows of text
+    else if (st.story) { var sb = st.box.getBoundingClientRect(), sp2 = st.el.getBoundingClientRect(); o.x = sb.left + sb.width / 2; o.y = sb.top + lagNow + sb.height * 0.54; o.s = Math.min(sb.width * 0.25, sb.height * 0.33); o.a = 1; o.k = sp2.top <= 90 && sp2.bottom >= H - 12 ? 0 : 1; } // inside the story's frame: held still while the story is pinned, carried by the page on the way in and out
+    else if (st.fin) { var fb = st.el.getBoundingClientRect(); o.x = W / 2; o.s = Math.min(W * (W > 900 ? 0.3 : 0.44), fb.height * 0.42); o.y = fb.top + lagNow + fb.height * 0.56 + 0.3 * o.s; o.a = 1; o.k = 1; } // the ending: centred in its own open space
+    else if (st.chapter) { o.x = W > 900 ? W * 0.73 : W / 2; o.y = st.head.getBoundingClientRect().bottom + lagNow - H * (W > 900 ? 0.3 : 0.25); o.s = W > 900 ? Math.min(W * 0.3, H * 0.21) : Math.min(W * 0.27, H * 0.2); o.a = 0.9; o.k = 1; } // in the open space of the chapter's title block, moving with the page: it is never behind the rows of text
     else if (W > 900) { o.x = W * (st.side === 'left' ? 0.69 : 0.31); o.y = H * 0.74; o.s = Math.min(W * 0.19, H * 0.29); o.a = 0.95; } // beside the card, under the project's name
     else { o.x = W / 2; o.y = (st.name ? st.name.getBoundingClientRect().bottom : st.top) + lagNow + W * 0.27; o.s = W * 0.3; o.a = 0.95; o.k = 1; } // phones: in the gap left under the project's name, moving with the page
   }
@@ -2710,7 +2732,7 @@ import * as THREE from './vendor/three.module.min.js';
   var STEEL = new THREE.Color(0x5d7096), AMBER = new THREE.Color(0xf2b56b), tint = new THREE.Color();
   var pa = new Pose(), pb = new Pose(), vR = new THREE.Vector3(), vT = new THREE.Vector3(), vZ = new THREE.Vector3(), vX = new THREE.Vector3(), m4 = new THREE.Matrix4();
   var eA = new THREE.Euler(), qI = new THREE.Quaternion();
-  var qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qWave = new THREE.Quaternion(), qFace = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
+  var qCloud = new THREE.Quaternion(), qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qWave = new THREE.Quaternion(), qFace = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
   function pose(f, L, i, t, rise, o) {
     var a, rad;
     o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d); o.c = 0;
@@ -2816,6 +2838,39 @@ import * as THREE from './vendor/three.module.min.js';
     routeMeshes[2].geometry = new THREE.TubeGeometry(path, segs, 0.014, RADIAL, false);
   }
 
+  // ----- The pinned story on the city ("Inside Route Engine"): one request, scrubbed by the scroll, on the real street graph instead of a flat drawing -----
+  // Snap: the raw tap floats just off the road and a line drops it onto the nearest corner. Search and Route: the page's own A* (above). Simplify: a bead sits on every point of the route;
+  // Douglas-Peucker (the real one, on the route's own corners) keeps the points that matter, and the rest shrink away.
+  var tap = new THREE.Mesh(pinGeo, new THREE.MeshBasicMaterial({ color: 0xeef3fa, toneMapped: false })), tapLine = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3)), new THREE.LineBasicMaterial({ color: 0xf2b56b, toneMapped: false }));
+  var beads = new THREE.InstancedMesh(pinGeo, new THREE.MeshBasicMaterial({ toneMapped: false }), 48), keepFor = -1, keepPt = [], keptN = 0, WHITEC = new THREE.Color(0xeef3fa);
+  tap.scale.setScalar(0.55); tap.visible = tapLine.visible = beads.visible = false; tapLine.frustumCulled = beads.frustumCulled = false; trip.add(tap, tapLine, beads);
+  function tell(story, sp, draw) {
+    var on = !!story && !!kit && route.length > 1; tap.visible = tapLine.visible = beads.visible = on;
+    if (story && !story.el.classList.contains('pin3d') && kit) story.el.classList.add('pin3d');
+    if (!on) { if (window.KP_STORY) window.KP_STORY.on = false; return; }
+    if (keepFor !== plannedAt) { // Douglas-Peucker on the route's corners: keep a point only if it sits further than a tolerance from the simplified line
+      keepFor = plannedAt; keepPt = route.map(function () { return false; }); keepPt[0] = keepPt[route.length - 1] = true;
+      (function simplify(lo, hi) {
+        var far = -1, farD = 0.035, lx = nx[route[hi]] - nx[route[lo]], lz = nz[route[hi]] - nz[route[lo]], ll = Math.hypot(lx, lz) || 1;
+        for (var q = lo + 1; q < hi; q++) { var off = Math.abs((nx[route[q]] - nx[route[lo]]) * lz - (nz[route[q]] - nz[route[lo]]) * lx) / ll; if (off > farD) { farD = off; far = q; } }
+        if (far > 0) { keepPt[far] = true; simplify(lo, far); simplify(far, hi); }
+      })(0, route.length - 1);
+      keptN = keepPt.filter(Boolean).length;
+    }
+    var snap = clamp((sp - 0.02) / 0.18, 0, 1), slim = clamp((sp - 0.79) / 0.17, 0, 1), gx2 = nx[goal], gz2 = nz[goal], arr = tapLine.geometry.attributes.position.array;
+    tap.position.set(gx2 + 0.1, 0.12, gz2 - 0.09); tap.scale.setScalar(0.55 * (1 - smooth(slim)));
+    arr[0] = tap.position.x; arr[1] = tap.position.y; arr[2] = tap.position.z; arr[3] = mix(tap.position.x, gx2, snap); arr[4] = mix(tap.position.y, 0.03, snap); arr[5] = mix(tap.position.z, gz2, snap);
+    tapLine.geometry.attributes.position.needsUpdate = true; tapLine.visible = snap > 0 && slim < 1;
+    for (var q = 0; q < 48; q++) {
+      var has = q < route.length, at = has && draw > 0 ? smooth(draw * (route.length - 1) - q + 1) : 0, k2 = has && keepPt[q]; // a bead appears as the route reaches its point
+      pa.p.set(has ? nx[route[q]] : 0, 0.062, has ? nz[route[q]] : 0); pa.s.setScalar(at * (k2 ? mix(0.5, 0.8, slim) : 0.5 * (1 - smooth(slim))));
+      beads.setMatrixAt(q, mat.compose(pa.p, qI, pa.s)); beads.setColorAt(q, k2 ? tint.copy(WHITEC).lerp(AMBER, slim) : WHITEC);
+    }
+    beads.instanceMatrix.needsUpdate = true; beads.instanceColor.needsUpdate = true;
+    var K3 = window.KP_STORY || (window.KP_STORY = {}), dy = riding ? rideT - window.scrollY : 0; K3.on = true; K3.pts = route.length; K3.kept = keptN; K3.seen = explored.length + 1; K3.nodes = n * n;
+    tmpV.set(nx[start], 0.03, nz[start]).applyMatrix4(city.matrixWorld).project(camera); K3.sx = (tmpV.x + 1) / 2 * W; K3.sy = (1 - tmpV.y) / 2 * H + dy;
+    tmpV.copy(tap.position).applyMatrix4(city.matrixWorld).project(camera); K3.tx = (tmpV.x + 1) / 2 * W; K3.ty = (1 - tmpV.y) / 2 * H + dy;
+  }
   // ----- The fly-through: a pinned stretch after the opening where the camera goes in close on the turbine -----
   var FLY = !!flyEl && !REDUCE, boom = 0;
   if (FLY) flyEl.classList.add('live');
@@ -2845,7 +2900,7 @@ import * as THREE from './vendor/three.module.min.js';
   })();
   function draw3d(close) { // close: 0 to 1, how far the camera has pushed in; closer means a shallower focus
     if (!post) { renderer.render(scene, camera); return; }
-    post.u.coc.value = 1.6 + 9 * close;
+    post.u.coc.value = 1.6 + 15 * close;
     renderer.setRenderTarget(post.rt); renderer.clear(); renderer.render(scene, camera); renderer.setRenderTarget(null); renderer.render(post.scene, post.cam);
   }
   // ----- Camera and layout -----
@@ -2868,7 +2923,7 @@ import * as THREE from './vendor/three.module.min.js';
   function ease(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 4); } // stand-in for the page's entrance curve
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-  var running = true, spinV = 0;
+  var running = true, spinV = 0, zNow = '';
   var idle = 0, spin = 0, riding = false, rideT = -1, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
 
   // Add ?fps to the address to see how many frames a second this device draws (for chasing lag on a real phone).
@@ -2884,40 +2939,56 @@ import * as THREE from './vendor/three.module.min.js';
     var lag = sc - sS, heroBottom = hero.getBoundingClientRect().bottom, rr = thru.getBoundingClientRect(), r = { top: rr.top + lag, bottom: rr.bottom + lag, height: rr.height };
     // The fly-through between the opening and "How I think": fe is how far it has arrived, fl how far through it, and peak is 0 at both ends and 1 in the middle, where the camera is closest.
     var fr = FLY ? flyEl.getBoundingClientRect() : null, fe = FLY ? smooth((H - fr.top - lag) / H) : 0, fl = FLY ? clamp(-(fr.top + lag) / Math.max(1, fr.height - H), 0, 1) : 0, peak = Math.pow(Math.sin(Math.PI * smooth(fl)), 2);
-    boom = 0.5 * peak;
+    boom = 0.42 * peak;
     // Poses blended by scroll: beside the hero words, crossing the giant word in the pinned scene, then centred behind each chapter.
     var en = smooth((H - r.top) / H), q = smooth(-r.top / Math.max(1, r.height - H)), out = clamp((H - r.bottom) / H, 0, 1), d = smooth(out);
     // Every chapter and every project is a stop with its own shape. Entering a chapter, the model fades in at its place in the title block, already rebuilding; entering a project, the model slides across to the free side as it changes.
     var ql = clamp(-r.top / Math.max(1, r.height - H), 0, 1), lift = 1 - smooth((ql - 0.4) / 0.25); // how far through the pinned scene, unsmoothed; and how high the network floats
     // The page opens on the turbine. Arriving at "How I think" its parts become a network of balls and rods floating in space, and the search spreads across it. At "routes" the network settles flat as the streets, the city rises between them and the route is drawn.
-    var fA = 1, fB = 0, m = 1 - lift, nudge = 0, cur = null, prev = null;
+    var fA = 1, fB = 0, m = 1 - lift, nudge = 0, cur = null, prev = null, cbNow = 0;
     for (var ci = 0; ci < stops.length; ci++) {
       var st = stops[ci], cb; st.top = st.el.getBoundingClientRect().top + lag;
       cb = st.chapter ? clamp((H - st.top) / H, 0, 1) : clamp((H * 0.9 - st.top) / (H * 0.55), 0, 1);
+      if (!st.chapter && ci && stops[ci - 1].chapter) cb = Math.min(cb, clamp(-stops[ci - 1].top / (H * 0.3), 0, 1)); // the first stop inside a chapter waits until the chapter's own arrival has finished
       if (cb <= 0) continue;
-      cur = st; prev = ci ? stops[ci - 1] : null; fA = prev ? prev.f : 0; fB = st.f; m = smooth(cb);
+      cur = st; prev = ci ? stops[ci - 1] : null; fA = prev ? prev.f : 0; fB = st.f; cbNow = cb;
+      m = st.chapter ? smooth((cb - 0.4) / 0.5) : smooth(cb); // a chapter's title card first carries the model it is leaving up into view, then the parts regroup into the new one
       var sw = REDUCE ? 0 : Math.pow(Math.sin(Math.PI * cb), 2); // squared: short and sharp, off the text quickly
       nudge = st.chapter ? 0 : sw;
     }
     if (NAV.on) { NAV.k = Math.min(1, NAV.k + dt / 350); cur = NAVSTOP; prev = null; fA = fB = 0; m = 1; nudge = 0; en = 1; fe = fl = peak = boom = 0; d = 1; q = 0; ql = 1; lift = 0; } // the route map takes the model over: the city, flat and centred, whatever the page is doing
     lagNow = lag; place(prev || cur, pl0); place(cur, pl1);
+    // Crossing into a chapter: the model rides in on the chapter's title card, in front of it, a little larger and lower than where it will rest, and settles into the title block's open space as the card's strips slide away.
+    var cross = !!cur && cur.chapter && !NAV.on, settle = cross ? 1 - smooth((cbNow - 0.6) / 0.4) : 0, rides = !prev || pl0.k === 1;
+    if (cross) { pl1.y += 0.1 * H * settle; pl1.s *= 1 + 0.22 * settle; }
+    // The pinned story on the city: the scroll scrubs one request on the real street graph. sp: how far through.
+    var story = cur && cur.story ? cur : null, sp = 0;
+    var tb = cur && cur.fin ? m : 0; // the ending: how far the parts have come back together as the turbine
+    if (story) {
+      var sr = story.el.getBoundingClientRect(); sp = clamp(-(sr.top + lag) / Math.max(1, sr.height - H), 0, 1);
+      if (start !== HOME || goal !== HOMEGOAL) { start = HOME; goal = -1; plan(HOMEGOAL, now); }
+    }
     // The rotor has weight. Switched on it spins up over a second or so and then keeps running fast; switched off it coasts down to a stop.
     spinV += ((running ? 1 : 0) - spinV) * (1 - Math.exp(-dt / (running ? 900 : 1800)));
     spin += dt * spinV * 0.0085; // about 80 turns a minute: fast, but below the speed where the blades start to strobe on a 60Hz screen
     // Into or out of a chapter's title block the model does not travel across the text: it fades out where it was and fades in at its new place, already rebuilding. Between two projects it slides across as before.
-    var far = !!cur && (cur.chapter || !!(prev && prev.chapter)), mp = far ? (m < 0.5 ? 0 : 1) : m;
-    var alpha = mix(1, mix(pl0.a, pl1.a, m) * (far ? Math.abs(2 * m - 1) : 1), d);
+    // Where the model is between two stops. Between projects it slides across. Into a chapter: a model that was fixed beside a card eases down onto the rising title card;
+    // one that was riding the page has already scrolled away with its own section, so it fades there and comes up with the card. It never crosses the rows of text.
+    var mp = !cross ? m : !prev ? 1 : rides ? (cbNow < 0.3 ? 0 : 1) : smooth((cbNow - 0.08) / 0.5);
+    var fade = cross && prev && rides ? (cbNow < 0.3 ? 1 - smooth(cbNow / 0.3) : smooth((cbNow - 0.3) / 0.12)) : 1;
+    var alpha = mix(1, mix(pl0.a, pl1.a, m) * fade, d);
+    var zUp = cross && cbNow > 0.02 && cbNow < 0.985 ? '2' : ''; if (zUp !== zNow) cv.style.zIndex = zNow = zUp; // in front of the title card while the card is on screen; behind the page the rest of the time
     // The model always stays behind the page, so headings and title cards are never covered.
     if (NAV.on) alpha = smooth(NAV.k);
     cv.style.opacity = alpha;
     if (alpha <= 0 && !NAV.on) return;
-    if (!REDUCE && pointer.active && net.visible && !NAV.dest) pick(now);
-    if (!REDUCE && !pointer.active && !NAV.on && now - plannedAt > 10000) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every ten seconds
+    if (!REDUCE && pointer.active && net.visible && !NAV.dest && !story) pick(now);
+    if (!REDUCE && !pointer.active && !NAV.on && !story && now - plannedAt > 10000) plan(Math.floor(rnd() * n * n), now); // touch screens: a new trip every ten seconds
     if (builtFor !== plannedAt) buildRoute();
 
     var gx = pointer.active && !REDUCE ? pointer.x / W - 0.5 : 0, gy = pointer.active && !REDUCE ? pointer.y / H - 0.5 : 0;
     var heroS = wide ? Math.min(W * 0.27, H * 0.5) : W * 0.42, sceneS = wide ? Math.min(W * 0.13, H * 0.22) : W * 0.24;
-    heroS = mix(heroS, (wide ? Math.min(W * 0.34, H * 0.58) : W * 0.5) * (1 + 1.0 * peak), fe); // in the fly-through it takes the middle of the screen, then the camera pushes in
+    heroS = mix(heroS, (wide ? Math.min(W * 0.34, H * 0.58) : W * 0.5) * (1 + 1.8 * peak), fe); // in the fly-through it takes the middle of the screen, then the camera pushes in
     var S = mix(mix(heroS, sceneS, smooth(en * 1.5)), mix(pl0.s, pl1.s, mp) * mix(FIT[fA], FIT[fB], m), d) * (1 + 0.3 * nudge);
     var CX = mix(mix(mix(wide ? W * 0.72 : W / 2, W / 2, fe), mix(W * 0.74, W * 0.26, q), en), mix(pl0.x, pl1.x, mp), d);
     var CY = mix(mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, H * 0.5 + 0.29 * heroS, fe), wide ? H * 0.8 : H * 0.72, en), mix(pl0.y, pl1.y, mp), d);
@@ -2926,18 +2997,19 @@ import * as THREE from './vendor/three.module.min.js';
     if (ride !== riding) { riding = ride; cv.style.position = ride ? 'absolute' : 'fixed'; }
     if (rT !== rideT) { rideT = rT; cv.style.transform = 'translate3d(0,' + rT + 'px,0)'; }
     if (ride) CY += sc - rT;
-    HIT.x = CX; HIT.y = ride ? CY - (sc - rT) : CY; HIT.s = alpha > 0.3 ? S : 0; HIT.asm = cur && m > 0.5 ? cur.asm || null : null; HIT.turb = !cur && en < 0.5; HIT.t = t; if (held && HIT.asm && HIT.asm.tick === tickTK) keyed = t;
+    HIT.x = CX; HIT.y = ride ? CY - (sc - rT) : CY; HIT.s = alpha > 0.3 ? S : 0; HIT.asm = cur && m > 0.5 ? cur.asm || null : null; HIT.turb = (!cur && en < 0.5) || (!!cur && !!cur.fin && m > 0.5); HIT.t = t; if (held && HIT.asm && HIT.asm.tick === tickTK) keyed = t;
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
-    var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(mix(ELEV[1], 0.2, peak), 0.6, en), mix(ELEV[fA], ELEV[fB], m), d) - gy * 0.08 * Math.max(1 - en, d);
+    var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(mix(ELEV[1], 0.1, peak), 0.6, en), mix(ELEV[fA], ELEV[fB], m), d) - gy * 0.08 * Math.max(1 - en, d);
     if (NAV.on) yaw = 0.62 + 0.22 * Math.sin(now * 0.00013) + gx * 0.18; // the map sways a little so it reads as a model, and holds still enough to aim at
-    qTurn.setFromAxisAngle(UP, yaw + 0.5 + 0.9 * smooth(fl) - 0.55 * peak); // through the fly-through the turbine swings round, so the camera looks along the blades and then across them
-    qWave.setFromAxisAngle(UP, yaw - 0.35);
+    qTurn.setFromAxisAngle(UP, yaw + 0.5 + 0.9 * smooth(fl) * (1 - tb) - 0.55 * peak); // at the ending it shows the same face as in the opening // through the fly-through the turbine swings round, so the camera looks along the blades and then across them
+    qWave.setFromAxisAngle(UP, yaw - 0.35); qCloud.setFromAxisAngle(UP, yaw + 0.5);
     qFace.setFromAxisAngle(UP, yaw - 0.14 + (REDUCE ? 0 : 0.1 * Math.sin(now * 0.0004)));
     fill.intensity = mix(0.5, 2.8, mix(UPRIGHT.indexOf(fA) < 0 ? 0 : 1, UPRIGHT.indexOf(fB) < 0 ? 0 : 1, m)); // upright charts face the camera and sway a little
-    rig.rotation.y = yaw - 0.62;
+    rig.rotation.y = yaw - 0.62 + 1.7 * (smooth(fl) - 0.5) * Math.sqrt(peak); // through the fly-through the key light sweeps across the blades
     var dist = 6, target = 0.05;
-    camera.position.set(Math.sin(yaw) * Math.cos(elev) * dist, target + Math.sin(elev) * dist, Math.cos(yaw) * Math.cos(elev) * dist);
-    camera.lookAt(0, target, 0);
+    vT.set(mix(-0.5, 0.62, smooth(fl)) * K * peak, 0.3 * peak, 0).applyQuaternion(qTurn); // and the camera tracks along the shaft, from the compressor's first rows to the turbine wheels, at blade height
+    camera.position.set(vT.x + Math.sin(yaw) * Math.cos(elev) * dist, vT.y + target + Math.sin(elev) * dist, vT.z + Math.cos(yaw) * Math.cos(elev) * dist);
+    camera.lookAt(vT.x, vT.y + target, vT.z);
     camera.zoom = (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / (H / S); // one model unit is S pixels
     camera.setViewOffset(W, H, W / 2 - CX, H / 2 - CY, W, H); // put the model's centre at (CX, CY)
     camera.updateProjectionMatrix();
@@ -2957,21 +3029,25 @@ import * as THREE from './vendor/three.module.min.js';
     var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (STILL.indexOf(dom) < 0 || (m > 0 && m < 1));
     var wc = (fA === 0 ? 1 - m : 0) + (fB === 0 ? m : 0); // how much of a city it is right now
     net.visible = dom === 0 || dom === 2 || dom === 7; trip.visible = dom !== 7; // every other shape stands free
-    slab.visible = net.visible || (!cur && en > 0 && lift < 0.999); slab.position.y = slabY - (cur ? 0 : 0.4 * lift); // in the pinned scene the plate rises to meet the network as it settles, and the rods press into it
+    var cs = cur ? Math.max(0.001, smooth(wc * 1.5)) : 1; slab.scale.setScalar(cs); net.scale.setScalar(cs); // leaving the city, the plate and its route draw in to nothing instead of blinking off
+    net.visible = net.visible || (!!cur && wc > 0.001); slab.visible = net.visible || (!cur && en > 0 && lift < 0.999); slab.position.y = slabY - (cur ? 0 : 0.4 * lift); // in the pinned scene the plate rises to meet the network as it settles, and the rods press into it
     var step = NAV.on ? 7 : 16, drive = NAV.on ? 1300 : 2400; // as navigation the trip is quick
     streets.opacity = 0.28 * (1 - lift); searched.material.opacity = 0.4 * (1 - lift); // the flat street lines wait until the network has settled
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - plannedAt) / step)), Math.floor(explored.length * clamp((ql - 0.04) / 0.42, 0, 1)));
     var draw = REDUCE ? 1 : Math.min(clamp((now - plannedAt - explored.length * step) / drive, 0, 1), clamp((ql - 0.5) / 0.28, 0, 1)); // the marker takes a couple of seconds to drive the route
+    if (story) { shown = Math.floor(explored.length * clamp((sp - 0.24) / 0.28, 0, 1)); draw = clamp((sp - 0.56) / 0.18, 0, 1); } // in the pinned story the scroll is the clock: search, then route
     searched.geometry.setDrawRange(0, shown * 2);
     if (markFor !== shown + ':' + plannedAt) { // which edges and corners the search has reached so far
       markFor = shown + ':' + plannedAt; mark++;
       for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
-    fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? wc : 1); fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
+    if (tb > 0) fly(0, 1, t, 1, 1 - tb); else fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? (wc > 0.001 ? 1 : 0) : 1, cur ? 1 - wc : 0);
+    fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
     for (var ai = 0; ai < ASM.length; ai++) if (ASM[ai].g) showAsm(ASM[ai], (prev && prev.asm === ASM[ai] ? 1 - m : 0) + (cur && cur.asm === ASM[ai] ? m : 0), t, yaw);
     var tubeSegs = Math.round((route.length - 1) * PER * smooth(draw));
     routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
-    pinB.visible = draw >= 1;
+    pinB.visible = story ? sp >= 0.2 : draw >= 1;
+    tell(story, sp, draw);
     if (pin) { // the marker drives the route as it is drawn
       var along = smooth(draw) * (route.length - 1), ri = Math.max(0, Math.min(route.length - 2, Math.floor(along))), rf = along - ri;
       pin.visible = route.length > 1 && draw > 0;
@@ -2982,7 +3058,7 @@ import * as THREE from './vendor/three.module.min.js';
     screenNodes.length = 0;
     for (var q = 0; q < n * n; q++) { node3(q, cur ? 0 : lift, tmpV).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H + (ride ? rT - sc : 0)); }
     // Draw only when something on screen changed, so a still page costs nothing.
-    var k = [NAV.on, yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, draw.toFixed(3), risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1)].join();
+    var k = [NAV.on, yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, draw.toFixed(3), risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1), !cur || tb > 0 ? spin.toFixed(2) : 0, story ? sp.toFixed(3) : 0].join(); // spin: the rotor keeps turning even when nothing else moves
     if (k !== lastKey) { lastKey = k; draw3d(peak); }
   }
 
