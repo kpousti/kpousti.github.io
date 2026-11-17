@@ -2652,20 +2652,228 @@ import * as THREE from './vendor/three.module.min.js';
     A.kd = (A.kd || 0) + (down - (A.kd || 0)) * 0.5;
     A.by.lever[0].cq.multiply(qL.setFromAxisAngle(LZ, 0.05 * A.kd - 0.02)); A.by.spark[0].cs = A.kd > 0.6 ? 1 + 0.6 * Math.sin(t * 0.09) : 0.0001;
   }
+  // ----- Light and data: most projects are drawn in points and lines of light that act out what the project does. One shared buffer; the scene on screen fills it every frame. -----
+  var DQ = window.innerWidth < 700 ? 0.35 : 1, DN = Math.round(5600 * DQ), DL = 3000, dn = 0, ln = 0; // phones draw half as many points
+  var dP = new Float32Array(DN * 3), dC = new Float32Array(DN * 3), dS = new Float32Array(DN), lP = new Float32Array(DL * 6), lC = new Float32Array(DL * 6);
+  var dGeo = new THREE.BufferGeometry(), lGeo = new THREE.BufferGeometry();
+  dGeo.setAttribute('position', new THREE.BufferAttribute(dP, 3)); dGeo.setAttribute('tint', new THREE.BufferAttribute(dC, 3)); dGeo.setAttribute('size', new THREE.BufferAttribute(dS, 1));
+  lGeo.setAttribute('position', new THREE.BufferAttribute(lP, 3)); lGeo.setAttribute('tint', new THREE.BufferAttribute(lC, 3));
+  var ADD = { transparent: true, depthWrite: false, toneMapped: false, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor }; // light adds up; a dim point is also a see-through one
+  var dMat = new THREE.ShaderMaterial(Object.assign({ uniforms: { uS: { value: 1 } },
+    vertexShader: 'attribute float size; attribute vec3 tint; uniform float uS; varying vec3 vC; void main() { vC = tint; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = max(1.5, size * uS / -mv.z); gl_Position = projectionMatrix * mv; }',
+    fragmentShader: 'varying vec3 vC; void main() { float a = smoothstep(1.0, 0.3, length(gl_PointCoord - 0.5) * 2.0); gl_FragColor = vec4(vC * a, a * min(1.0, max(vC.r, max(vC.g, vC.b)))); }' }, ADD));
+  var lMat = new THREE.ShaderMaterial(Object.assign({
+    vertexShader: 'attribute vec3 tint; varying vec3 vC; void main() { vC = tint; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'varying vec3 vC; void main() { gl_FragColor = vec4(vC, min(1.0, max(vC.r, max(vC.g, vC.b)))); }' }, ADD));
+  var BL = [0.3, 0.55, 1.45], AM = [2.0, 0.95, 0.3], WH = [0.85, 0.9, 1.05], TAU = Math.PI * 2;
+  function P(x, y, z, c, s, k) { if (dn >= DN) return; var o = dn * 3; dP[o] = x; dP[o + 1] = y; dP[o + 2] = z; dC[o] = c[0] * k; dC[o + 1] = c[1] * k; dC[o + 2] = c[2] * k; dS[dn++] = s; }
+  function L(x0, y0, z0, x1, y1, z1, c, k) { if (ln >= DL) return; var o = ln * 6; lP[o] = x0; lP[o + 1] = y0; lP[o + 2] = z0; lP[o + 3] = x1; lP[o + 4] = y1; lP[o + 5] = z1; lC[o] = lC[o + 3] = c[0] * k; lC[o + 1] = lC[o + 4] = c[1] * k; lC[o + 2] = lC[o + 5] = c[2] * k; ln++; }
+  function ball(cx, cy, cz, r, n, c, s, k, turn) { for (var i = 0; i < n; i++) { var y = 1 - 2 * (i + 0.5) / n, rr = Math.sqrt(1 - y * y), a = i * 2.39996 + turn; P(cx + r * rr * Math.cos(a), cy + r * y, cz + r * rr * Math.sin(a), c, s, k); } }
+  function hoop(cx, cy, cz, r, n, c, s, k) { for (var i = 0; i < n; i++) { var a = i / n * TAU; P(cx + r * Math.cos(a), cy, cz + r * Math.sin(a), c, s, k); } }
+
+  function dsSignal(t) { // Industrial AI Notebook: the sensor signal as a live ribbon, lane behind lane; what the Isolation Forest flags lifts out of it in amber
+    var k0 = t * 0.004, nx = Math.round(110 * DQ), lanes = 9, i, j, px = 0, py = 0;
+    for (j = 0; j < lanes; j++) for (i = 0; i < nx; i++) {
+      var u = i / (nx - 1), v = sig(k0 - (1 - u) * 60 - j * 7), x = -1 + 2 * u, z = -0.6 + 1.2 * j / (lanes - 1), y = 0.35 + clamp(v, -0.5, 1.2) * 0.42, hot = v > 0.6, front = j === lanes - 1;
+      P(x, y, z, hot ? AM : BL, hot ? 0.05 : 0.022, (0.35 + 0.65 * u) * (front ? 1.6 : 0.8));
+      if (hot && i % 2 === 0) L(x, y, z, x, 1.02, z, AM, 0.5 * u);
+      if (front) { if (i) L(px, py, z, x, y, z, WH, 0.9); px = x; py = y; }
+    }
+    for (j = 0; j < 2; j++) { var yb = 0.35 + (j ? 0.6 : -0.3) * 0.42; L(-1, yb, 0.6, 1, yb, 0.6, BL, 0.5); L(-1, yb, -0.6, 1, yb, -0.6, BL, 0.25); L(-1, yb, -0.6, -1, yb, 0.6, BL, 0.25); L(1, yb, -0.6, 1, yb, 0.6, BL, 0.25); } // the band the plain baseline trusts
+  }
+
+  var DJ = (function () { // a small weighted graph and a real run of Dijkstra's algorithm over it: every node's distance from the source, and the tree of shortest paths
+    var r = rng(11), n = 64, x = [], z = [], adj = [], E = [], i, j;
+    for (i = 0; i < n; i++) { var a = i * 2.39996, rad = 0.12 + 0.88 * Math.sqrt((i + 0.5) / n); x.push(rad * Math.cos(a) + (r() - 0.5) * 0.08); z.push(rad * Math.sin(a) + (r() - 0.5) * 0.08); adj.push([]); }
+    for (i = 0; i < n; i++) {
+      var near = []; for (j = 0; j < n; j++) if (j !== i) near.push([Math.hypot(x[i] - x[j], z[i] - z[j]), j]);
+      near.sort(function (p, q) { return p[0] - q[0]; });
+      for (j = 0; j < 3; j++) (function (k, w) { if (!adj[i].some(function (e) { return e[0] === k; })) { adj[i].push([k, w]); adj[k].push([i, w]); E.push([i, k]); } })(near[j][1], near[j][0] * (1 + r() * 0.6));
+    }
+    var dist = [], prev = [], done = [], far = 0;
+    for (i = 0; i < n; i++) { dist.push(Infinity); prev.push(-1); done.push(false); }
+    dist[0] = 0;
+    for (;;) {
+      var best = -1; for (i = 0; i < n; i++) if (!done[i] && (best < 0 || dist[i] < dist[best])) best = i;
+      if (best < 0 || dist[best] === Infinity) break;
+      done[best] = true; far = dist[best];
+      for (j = 0; j < adj[best].length; j++) { var e = adj[best][j]; if (dist[best] + e[1] < dist[e[0]]) { dist[e[0]] = dist[best] + e[1]; prev[e[0]] = best; } }
+    }
+    return { n: n, x: x, z: z, E: E, dist: dist, prev: prev, far: far };
+  })();
+  function dsDijkstra(t) { // Mini Maps: Dijkstra settles nodes in order of distance; each settled node rises to its own distance, so the tree of shortest paths lifts into a cone
+    var T = 9000, ph = (t % T) / T, front = DJ.far * 1.15 * smooth(ph / 0.7), keep = 1 - smooth((ph - 0.9) / 0.1), i;
+    function h(q) { var d = Math.min(DJ.dist[q], DJ.far); return 0.08 + 0.75 * (d / DJ.far) * smooth((front - d) / (DJ.far * 0.12)) * keep; }
+    for (i = 0; i < DJ.E.length; i++) {
+      var a = DJ.E[i][0], b = DJ.E[i][1], tree = DJ.prev[a] === b || DJ.prev[b] === a, lit = tree && Math.max(DJ.dist[a], DJ.dist[b]) <= front;
+      L(DJ.x[a], h(a), DJ.z[a], DJ.x[b], h(b), DJ.z[b], lit ? AM : BL, lit ? 0.1 + 0.8 * keep : 0.22);
+      if (lit) { var u = (t * 0.0006 + i * 0.37) % 1, s0 = DJ.prev[b] === a ? a : b, s1 = s0 === a ? b : a; P(mix(DJ.x[s0], DJ.x[s1], u), mix(h(s0), h(s1), u), mix(DJ.z[s0], DJ.z[s1], u), WH, 0.024, keep); }
+    }
+    for (i = 0; i < DJ.n; i++) {
+      var d = DJ.dist[i], set = d <= front, edge = set ? 1 - smooth((front - d) / (DJ.far * 0.15)) : 0;
+      P(DJ.x[i], h(i), DJ.z[i], set ? AM : BL, i ? 0.045 + 0.05 * edge : 0.1, set ? 0.7 + 1.2 * edge : 0.5);
+      if (set) L(DJ.x[i], 0.08, DJ.z[i], DJ.x[i], h(i), DJ.z[i], AM, 0.18);
+    }
+    var R = front / DJ.far; if (R < 1.1) hoop(DJ.x[0], 0.08, DJ.z[0], R, 90, WH, 0.014, 0.6 * keep); // the wave of the search going out
+  }
+
+  var TJ = (function () { // a directed graph of five cycles joined by one-way links, and a real run of Tarjan's algorithm over it: when each node is first visited and when its component is found
+    var sizes = [5, 4, 6, 3, 5], n = 0, comp = [], slot = [], adj = [], first = [], E = [], c, k;
+    for (c = 0; c < 5; c++) { first.push(n); for (k = 0; k < sizes[c]; k++) { comp.push(c); slot.push(k); adj.push([]); n++; } }
+    for (c = 0; c < 5; c++) for (k = 0; k < sizes[c]; k++) { adj[first[c] + k].push(first[c] + (k + 1) % sizes[c]); E.push([first[c] + k, first[c] + (k + 1) % sizes[c], 1]); }
+    [[0, 1], [1, 2], [0, 3], [3, 4], [1, 4]].forEach(function (l) { adj[first[l[0]] + 1].push(first[l[1]]); E.push([first[l[0]] + 1, first[l[1]], 0]); });
+    var idx = 0, index = [], low = [], on = [], stack = [], clock = 0, vis = [], found = [];
+    function go(v) {
+      index[v] = low[v] = idx++; vis[v] = clock++; stack.push(v); on[v] = true;
+      adj[v].forEach(function (w) { if (index[w] === undefined) { go(w); low[v] = Math.min(low[v], low[w]); } else if (on[w]) low[v] = Math.min(low[v], index[w]); });
+      if (low[v] === index[v]) { var w; do { w = stack.pop(); on[w] = false; found[w] = clock; } while (w !== v); clock++; }
+    }
+    for (k = 0; k < n; k++) if (index[k] === undefined) go(k);
+    return { n: n, sizes: sizes, comp: comp, slot: slot, E: E, vis: vis, found: found, clock: clock, cx: [-0.62, 0.02, 0.64, -0.34, 0.36], cz: [-0.32, -0.58, -0.12, 0.5, 0.52], cr: [0.25, 0.2, 0.29, 0.16, 0.24] };
+  })();
+  function dsTarjan(t) { // TheAlgorithms/C++: Tarjan walks the graph depth first; when a strongly connected component is found its cycle lifts, lights and starts to turn
+    var T = 11000, ph = (t % T) / T, now = ph * (TJ.clock + 4), i, X = [], Y = [], Z = [], st = [];
+    for (i = 0; i < TJ.n; i++) {
+      var c = TJ.comp[i], got = smooth((now - TJ.found[i]) / 1.2), a = TJ.slot[i] / TJ.sizes[c] * TAU + Math.max(0, now - TJ.found[i]) * 0.35 * (c % 2 ? -1 : 1);
+      X[i] = TJ.cx[c] + TJ.cr[c] * Math.cos(a); Z[i] = TJ.cz[c] + TJ.cr[c] * Math.sin(a); Y[i] = 0.2 + 0.4 * got + 0.05 * c * got; st[i] = now < TJ.vis[i] ? 0 : got > 0 ? 2 : 1;
+      var fresh = 1 - smooth((now - TJ.vis[i]) / 1.5);
+      P(X[i], Y[i], Z[i], st[i] === 2 ? AM : st[i] ? WH : BL, 0.075 + 0.07 * (st[i] ? fresh : 0), st[i] === 2 ? 1.4 : st[i] ? 0.9 + fresh : 0.6);
+      if (st[i] === 2) L(X[i], 0.2, Z[i], X[i], Y[i], Z[i], AM, 0.25);
+    }
+    for (i = 0; i < TJ.E.length; i++) {
+      var p = TJ.E[i][0], q = TJ.E[i][1], ring = TJ.E[i][2], hot = ring && st[p] === 2 && st[q] === 2, u = (t * (hot ? 0.0012 : 0.0005) + i * 0.31) % 1;
+      L(X[p], Y[p], Z[p], X[q], Y[q], Z[q], hot ? AM : BL, hot ? 1 : ring ? 0.6 : 0.35);
+      P(mix(X[p], X[q], u), mix(Y[p], Y[q], u), mix(Z[p], Z[q], u), hot ? AM : WH, 0.02, hot ? 1.4 : 0.5); // edges are one-way: the dot shows which way
+    }
+  }
+
+  function dsAgents(t) { // Agent City: a hub that schedules six agents; each goes out on its own arc to do its job and comes back to report
+    var i, j;
+    ball(0, 0.5, 0, 0.22, Math.round(260 * DQ), WH, 0.02, 0.8, t * 0.0003);
+    for (i = 0; i < 48; i++) { var a = i / 48 * TAU + t * 0.0002; P(0.36 * Math.cos(a), 0.5, 0.36 * Math.sin(a), i % 4 ? BL : AM, i % 4 ? 0.014 : 0.03, 1); } // the schedule: a ring of ticks turning round the hub
+    for (j = 0; j < 6; j++) {
+      var b = j / 6 * TAU + 0.4, ax = 0.88 * Math.cos(b), az = 0.88 * Math.sin(b), ay = 0.3 + 0.12 * Math.sin(t * 0.001 + j * 1.7), ph = (t * 0.00022 + j / 6) % 1, out = ph < 0.5, px = 0, py = 0.5, pz = 0;
+      ball(ax, ay, az, 0.09, Math.round(70 * DQ), out ? BL : AM, 0.018, out ? 0.7 : 1.2, -t * 0.0006);
+      for (i = 1; i <= 16; i++) { var u = i / 16, x = ax * u, z = az * u, y = mix(0.5, ay, u) + 0.35 * Math.sin(Math.PI * u); L(px, py, pz, x, y, z, BL, 0.3); px = x; py = y; pz = z; }
+      for (i = 0; i < 3; i++) { var w = clamp((ph % 0.5) * 2 - i * 0.06, 0, 1), v = out ? w : 1 - w; P(ax * v, mix(0.5, ay, v) + 0.35 * Math.sin(Math.PI * v), az * v, out ? WH : AM, 0.042 - i * 0.009, 1.5); }
+    }
+  }
+
+  function dsSurf(t) { // Surf Alert: the swell as a field of light with a set rolling through, and the buoy that reports it
+    var nx = Math.round(64 * Math.sqrt(DQ)), nz = Math.round(34 * Math.sqrt(DQ)), i, j;
+    for (j = 0; j < nz; j++) for (i = 0; i < nx; i++) {
+      var x = -1 + 2 * i / (nx - 1), z = -0.7 + 1.4 * j / (nz - 1), h = swell(x, z, t) * 2.2, crest = clamp(h * 6 + 0.35, 0, 1);
+      P(x, 0.3 + h, z, crest > 0.75 ? WH : BL, 0.016 + 0.02 * crest, 0.25 + 1.1 * crest * crest);
+    }
+    var by = 0.3 + swell(0.35, 0.1, t) * 2.2, bl = (t % 1600) / 1600;
+    L(0.35, by, 0.1, 0.35, by + 0.42, 0.1, WH, 0.8); hoop(0.35, by + 0.02, 0.1, 0.07, 24, AM, 0.022, 1);
+    P(0.35, by + 0.44, 0.1, AM, 0.05 + 0.1 * (1 - bl), 2 * (1 - bl)); hoop(0.35, by + 0.44, 0.1, 0.1 + 0.5 * bl, 40, AM, 0.014, 0.8 * (1 - bl)); // each report goes out as a ring
+  }
+
+  function dsVoice(t) { // Kia-bot: the voice as a breathing sphere with its level meter round it; when it calls a tool a beam goes out to it and the answer comes back
+    var n = Math.round(900 * DQ), i, k, call = Math.floor(t / 2600) % 3, ph = (t % 2600) / 2600, on = pulse(ph, 0.1, 0.8), talk = 0.5 + 0.5 * Math.sin(t * 0.004) * Math.sin(t * 0.0013);
+    for (i = 0; i < n; i++) {
+      var y = 1 - 2 * (i + 0.5) / n, rr = Math.sqrt(1 - y * y), a = i * 2.39996 + t * 0.0002, d = 0.3 + 0.07 * talk * Math.sin(y * 9 + t * 0.006) + 0.03 * Math.sin(a * 5 + t * 0.003);
+      P(d * rr * Math.cos(a), 0.6 + d * y, d * rr * Math.sin(a), Math.abs(y) < 0.08 ? AM : WH, 0.016, 0.5 + 0.6 * talk);
+    }
+    for (i = 0; i < 96; i++) { var a2 = i / 96 * TAU, lv = Math.abs(Math.sin(t * 0.004 + i * 0.9) * Math.sin(t * 0.0013 + i * 0.37)), cx = 0.5 * Math.cos(a2), cz = 0.5 * Math.sin(a2); L(cx, 0.6 - 0.1 * lv, cz, cx, 0.6 + 0.1 * lv, cz, BL, 0.5 + 0.5 * lv); }
+    for (k = 0; k < 3; k++) {
+      var b = k / 3 * TAU + 0.5, tx = 0.95 * Math.cos(b), tz = 0.95 * Math.sin(b), ty = 0.25 + 0.3 * k, act = k === call ? on : 0;
+      for (i = 0; i < 40; i++) { var a3 = i / 40 * TAU + t * 0.001 * (1 + 3 * act), r3 = 0.09 + 0.02 * k; P(tx + r3 * Math.cos(a3), ty + r3 * Math.sin(a3) * (k === 1 ? 1 : 0.3), tz + r3 * Math.sin(a3) * (k === 1 ? 0 : 1), act ? AM : BL, i % 10 ? 0.018 : 0.04, 0.6 + 1.2 * act); }
+      L(0, 0.6, 0, tx, ty, tz, act ? AM : BL, 0.12 + 0.7 * act);
+      if (act) for (i = 0; i < 6; i++) { var u = clamp((ph - 0.1) / 0.7 * 2 % 1 - i * 0.04, 0, 1), v = ph < 0.45 ? u : 1 - u; P(tx * v, mix(0.6, ty, v), tz * v, ph < 0.45 ? WH : AM, 0.036, 1.6); }
+    }
+  }
+
+  function dsQuant(t) { // Quant Backtest Lab: synthetic prices; a window steps forward along them, fitting on the white stretch and testing on the amber one that follows
+    var n = Math.round(150 * DQ), T2 = 2200, step = Math.floor(t / T2) % 6, f = smooth(((t % T2) / T2 - 0.7) / 0.3), wx = -0.72 + 0.25 * (step + f), i, j, px = 0, py = 0;
+    for (i = 0; i < n; i++) {
+      var u = i / (n - 1), x = -1 + 2 * u, y = 0.15 + price(u * 40) * 1.1, dx = x - wx, c = dx < -0.25 || dx > 0.25 ? BL : dx < 0.1 ? WH : AM, k = c === BL ? 0.5 : 1.3;
+      P(x, y, 0, c, c === BL ? 0.02 : 0.034, k); L(x, 0.1, 0, x, y, 0, c, 0.12 * k);
+      if (i) L(px, py, 0, x, y, 0, c, 0.7 * k);
+      px = x; py = y;
+      for (j = 1; j < 4; j++) if (x < wx - 0.25 * j) P(x, y, -0.16 * j, AM, 0.014, 0.35 / j); // the stretches already tested, left behind as it walks on
+    }
+    for (j = 0; j < 2; j++) { var z = j ? 0.1 : -0.1; L(wx - 0.25, 0.1, z, wx - 0.25, 1.0, z, WH, 0.6); L(wx + 0.25, 0.1, z, wx + 0.25, 1.0, z, AM, 0.6); L(wx - 0.25, 1.0, z, wx + 0.25, 1.0, z, WH, 0.6); L(wx - 0.25, 0.1, z, wx + 0.25, 0.1, z, WH, 0.6); L(wx + 0.1, 0.1, z, wx + 0.1, 1.0, z, AM, 0.35); }
+    for (j = 0; j < 2; j++) { var y2 = j ? 1.0 : 0.1; L(wx - 0.25, y2, -0.1, wx - 0.25, y2, 0.1, WH, 0.6); L(wx + 0.25, y2, -0.1, wx + 0.25, y2, 0.1, AM, 0.6); }
+  }
+
+  function dsLeads(t) { // Lead Autoresponder: messages stream in, are read at one point, and leave on three paths: answered, scheduled, or handed to a person
+    var n = Math.round(110 * DQ), i, k, lanes = [[0.95, 0.74, -0.45, BL], [1.0, 0.42, 0, WH], [0.95, 0.1, 0.45, AM]];
+    for (i = 0; i < 48; i++) { var a = i / 48 * TAU + t * 0.0012; P(0, 0.5 + 0.15 * Math.sin(a), 0.15 * Math.cos(a), WH, i % 6 ? 0.016 : 0.034, 1); }
+    for (i = 0; i < n; i++) {
+      var u = (t * 0.00016 + i / n) % 1, q = lanes[i % 5 === 0 ? 2 : i % 2], j1 = hashNoise(i * 3.3), j2 = hashNoise(i * 7.7 + 1);
+      if (u < 0.45) { var v = u / 0.45, sp = 1 - v * v; P(-1 + v, 0.5 + j1 * 0.9 * sp, j2 * 1.1 * sp, BL, 0.03, 0.4 + 0.6 * v); }
+      else { var w = (u - 0.45) / 0.55, s = smooth(w); P(q[0] * w, mix(0.5, q[1], s), q[2] * s, q[3], 0.036, 1.3 * (1 - smooth((w - 0.9) / 0.1))); }
+    }
+    for (k = 0; k < 3; k++) {
+      var g = lanes[k], px = 0, py = 0.5, pz = 0, stack = Math.floor((t * 0.0016 + k * 4) % 8);
+      for (i = 1; i <= 14; i++) { var w2 = i / 14, s2 = smooth(w2), x = g[0] * w2, y = mix(0.5, g[1], s2), z = g[2] * s2; L(px, py, pz, x, y, z, g[3], 0.3); px = x; py = y; pz = z; }
+      for (i = 0; i < stack; i++) P(g[0] + 0.06, g[1] - 0.06 + 0.028 * i, g[2], g[3], 0.03, 0.9); // what each path has handled so far
+    }
+  }
+
+  function dsMarket(t) { // Market Debrief: a year of synthetic prices drawn round a dial; the rings are the pullback tiers under the 52-week high, and a ring lights when the price falls through it
+    var n = Math.round(220 * DQ), m = Math.floor(((t * 0.00007) % 1) * n), hi = 0, top = 0, i, k, px = 0, py = 0, hx = 0, hy = 0, v = 0, now = 0;
+    for (i = 0; i < n; i++) top = Math.max(top, price(i / n * 40));
+    for (i = 0; i < n; i++) {
+      v = price(i / n * 40); if (i <= m) { hi = Math.max(hi, v); now = v; }
+      var a = Math.PI / 2 - i / n * TAU, r = 0.12 + v / top * 0.78, x = r * Math.cos(a), y = 0.95 + r * Math.sin(a), past = i <= m, head = i === m;
+      P(x, y, 0, head ? AM : BL, head ? 0.09 : past ? 0.024 : 0.012, head ? 1.8 : past ? 0.9 : 0.3);
+      if (i && past) L(px, py, 0, x, y, 0, WH, 0.7);
+      px = x; py = y; if (head) { hx = x; hy = y; }
+    }
+    var drop = 1 - now / hi, tiers = [0, 0.05, 0.1, 0.2];
+    for (k = 0; k < 4; k++) { var rk = 0.12 + hi * (1 - tiers[k]) / top * 0.78, on = k && drop >= tiers[k]; for (i = 0; i < 140; i++) { var a2 = i / 140 * TAU; if (k === 0 || i % 2) P(rk * Math.cos(a2), 0.95 + rk * Math.sin(a2), 0, on ? AM : k ? BL : WH, on ? 0.024 : 0.013, on ? 1.4 : 0.55); } }
+    L(0, 0.95, 0, hx, hy, 0, AM, 0.6);
+  }
+
+  function dsSeeds(t) { // Math 163 Study Game: a seed head grown one seed at a time at the golden angle; the arms that appear come in Fibonacci numbers, 21 one way and 34 the other
+    var n = Math.round(720 * DQ), T = 10000, ph = (t % T) / T, grown = n * smooth(ph / 0.55), fam = Math.floor(t / T) % 2 ? 21 : 34, i, px = 0, py = 0, pz = 0;
+    for (i = 0; i < n && i < grown; i++) {
+      var r = Math.sqrt((i + 0.5) / n), a = i * 2.39996 + t * 0.00006, arm = i % fam < 3 && ph > 0.6, fresh = 1 - smooth((grown - i) / 40);
+      P(r * Math.cos(a), 0.2 + 0.6 * (1 - r * r), r * Math.sin(a), arm ? AM : fresh > 0 ? WH : BL, 0.018 + 0.03 * r + 0.04 * fresh, arm ? 1.5 : 0.5 + fresh);
+    }
+    for (i = 0; i <= 70; i++) { var th = i / 70 * 4.6 * Math.PI, r2 = 0.012 * Math.pow(1.618034, th * 2 / Math.PI); if (r2 > 1) break; var x = r2 * Math.cos(th + t * 0.00006), z = r2 * Math.sin(th + t * 0.00006), y = 0.24 + 0.6 * (1 - r2 * r2); if (i) L(px, py, pz, x, y, z, AM, 0.7); px = x; py = y; pz = z; } // the golden spiral through it
+  }
+
+  var SK = Array.prototype.map.call(document.querySelectorAll('#skills .skill-grid li'), function (li) { return li.textContent.split(',').length; }); if (!SK.length) SK = [3, 6, 5, 5, 3, 3, 7, 6];
+  function dsStack(t) { // Skills: one ring for each row of the table under it, carrying one bead for each thing in that row; the rings take turns to light
+    var k, i, T = 1500, act = Math.floor(t / T) % SK.length, e = pulse((t % T) / T, 0.05, 0.8);
+    ball(0, 0.85, 0, 0.08, Math.round(90 * DQ), WH, 0.016, 0.9, t * 0.0004);
+    for (k = 0; k < SK.length; k++) {
+      var R = 0.2 + 0.09 * k, tilt = k * 0.42 + 0.35 * Math.sin(t * 0.00025 + k * 0.8), tw = k * 0.785 + t * 0.00012, on = k === act ? e : 0, m = Math.round((36 + 12 * k) * DQ), ct = Math.cos(tilt), sn = Math.sin(tilt), cw = Math.cos(tw), sw2 = Math.sin(tw);
+      for (i = 0; i < m + SK[k]; i++) {
+        var bead = i >= m, a = bead ? (i - m) / SK[k] * TAU + t * 0.0005 * (k % 2 ? 1 : -1) * (1 + on) : i / m * TAU, x1 = R * Math.cos(a), z1 = R * Math.sin(a) * ct;
+        P(x1 * cw + z1 * sw2, 0.85 - R * Math.sin(a) * sn, -x1 * sw2 + z1 * cw, bead ? (on ? AM : WH) : on ? AM : BL, bead ? 0.05 : 0.012, bead ? 1 + on : 0.35 + on);
+      }
+    }
+  }
+
+  function dsBeacon(t) { // Contact: K I A in Morse, sent up a mast and out as rings: a dot is a thin ring, a dash a heavy one. Press and hold on it and you are the operator
+    var u = (t / 150) % MORSE.total, down = 0, i;
+    for (i = 0; i < MORSE.length; i++) if (u >= MORSE[i][2] && u < MORSE[i][2] + MORSE[i][1]) down = MORSE[i][0];
+    if (t - keyed < 2500) down = held ? 1 : 0;
+    L(0, 0.1, 0, 0, 0.9, 0, WH, 0.7); hoop(0, 0.1, 0, 0.3, 48, BL, 0.016, 0.7); hoop(0, 0.1, 0, 0.6, 72, BL, 0.012, 0.4);
+    for (i = 0; i < 80; i++) { var a = i * 0.5 + t * 0.002, r = 0.02 + 0.07 * (1 - i / 80); P(r * Math.cos(a), 0.1 + 0.8 * i / 80, r * Math.sin(a), down ? AM : BL, 0.016, 0.5 + down); }
+    for (i = 0; i < MORSE.length; i++) if (MORSE[i][0]) { var R = ((u - MORSE[i][2] + MORSE.total) % MORSE.total) * 0.085; if (R < 1) hoop(0, 0.9 - R * 0.35, 0, R, 64, AM, MORSE[i][1] > 1 ? 0.04 : 0.02, 1.5 * (1 - R)); }
+    P(0, 0.9, 0, AM, 0.06 + 0.14 * down, 1 + 2 * down);
+  }
+
   var ASM = [ // the model's name in the file; the stops it belongs to (a chapter's id, or a project's number in page order); camera height; size; its motion; lit: it faces the camera, so it gets the front light
     { name: 'line', at: ['experience'], elev: 0.36, fit: 1.2, tick: tickLine },
-    { name: 'rec', at: [1], elev: 0.5, fit: 0.9, tick: tickRec, lit: true },
-    { name: 'mm', at: [2], elev: 0.2, fit: 0.8, tick: tickMM, lit: true },
-    { name: 'gears', at: [3], elev: 0.2, fit: 0.85, tick: tickGears, lit: true },
-    { name: 'ac', at: ['builds', 4], elev: 0.5, fit: 1.1, tick: tickAC },
-    { name: 'surf', at: [5], elev: 0.42, fit: 1.1, tick: tickSurf },
-    { name: 'kb', at: [6], elev: 0.5, fit: 1.25, tick: tickKB },
-    { name: 'qb', at: [7], elev: 0.34, fit: 0.9, tick: tickQB },
-    { name: 'la', at: [8], elev: 0.26, fit: 0.78, tick: tickLA, lit: true },
-    { name: 'md', at: [9], elev: 0.2, fit: 0.78, tick: tickMD, lit: true },
-    { name: 'mg', at: [10], elev: 0.44, fit: 1.25, tick: tickMG },
-    { name: 'tools', at: ['skills'], elev: 0.18, fit: 1.0, tick: tickTools, lit: true },
-    { name: 'tk', at: ['contact'], elev: 0.42, fit: 1.4, tick: tickTK }
+    { name: 'rec', draw: dsSignal, at: [1], elev: 0.42, fit: 1.0, tick: tickRec },
+    { name: 'mm', draw: dsDijkstra, at: [2], elev: 0.5, fit: 1.0, tick: tickMM, lit: true },
+    { name: 'gears', draw: dsTarjan, at: [3], elev: 0.5, fit: 1.1, tick: tickGears, lit: true },
+    { name: 'ac', draw: dsAgents, at: ['builds', 4], elev: 0.45, fit: 1.0, tick: tickAC },
+    { name: 'surf', draw: dsSurf, at: [5], elev: 0.38, fit: 1.05, tick: tickSurf },
+    { name: 'kb', draw: dsVoice, at: [6], elev: 0.3, fit: 1.05, tick: tickKB },
+    { name: 'qb', draw: dsQuant, at: [7], elev: 0.25, fit: 1.0, tick: tickQB },
+    { name: 'la', draw: dsLeads, at: [8], elev: 0.3, fit: 0.95, tick: tickLA, lit: true },
+    { name: 'md', draw: dsMarket, at: [9], elev: 0.12, fit: 0.95, tick: tickMD, lit: true },
+    { name: 'mg', draw: dsSeeds, at: [10], elev: 0.6, fit: 1.0, tick: tickMG },
+    { name: 'tools', draw: dsStack, at: ['skills'], elev: 0.3, fit: 1.3, tick: tickTools, lit: true },
+    { name: 'tk', draw: dsBeacon, at: ['contact'], elev: 0.3, fit: 1.35, tick: tickTK }
   ];
   fetch('./models/scenes.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
     var h = readModel(buf), T = h.T;
@@ -2674,8 +2882,9 @@ import * as THREE from './vendor/three.module.min.js';
       var idxs = [], count = {}, used = {}, ims = {};
       h.pname.forEach(function (nm, k) { if (nm.split('.')[0] === A.name) { idxs.push(k); count[h.mesh[k]] = (count[h.mesh[k]] || 0) + 1; } });
       var sts = A.at.map(function (w) { return typeof w === 'string' ? stops.filter(function (q) { return q.chapter && q.el.id === w; })[0] : stops.filter(function (q) { return q.scene; })[w]; }).filter(Boolean);
-      if (!idxs.length || !sts.length) return;
+      if (!sts.length || (!A.draw && !idxs.length)) return;
       A.g = new THREE.Group(); A.g.visible = false; city.add(A.g); A.parts = []; A.by = {}; A.ims = [];
+      if (A.draw) { [new THREE.Points(dGeo, dMat), new THREE.LineSegments(lGeo, lMat)].forEach(function (o) { o.frustumCulled = false; A.g.add(o); }); idxs = []; } // drawn in light: no parts from the file
       idxs.forEach(function (k) {
         var mi = h.mesh[k], o = k * 10, im = ims[mi];
         if (!im) { im = ims[mi] = many(h.geo[mi], h.mat3[h.meshes[mi].mat], count[mi], A.g); A.ims.push(im); used[mi] = 0; }
@@ -2692,16 +2901,22 @@ import * as THREE from './vendor/three.module.min.js';
     lastKey = ''; if (REDUCE) frame(0);
   }).catch(function () {}); // no file: those scenes keep their plain blocks
   var HIT = { x: 0, y: 0, s: 0, asm: null, turb: false, t: 0 }, poke = -1e9, pokeAsm = null, setWave = -1e9, keyed = -1e9, held = false; // what a click on the model does (see "Things to find")
-  function showAsm(A, a, t, yaw) {
-    if (A === pokeAsm) a *= 1 - 0.5 * Math.sin(Math.PI * clamp((t - poke) / 1100, 0, 1)); // clicked: its parts spring apart and settle back
-    A.g.visible = a > 0.001;
-    if (!A.g.visible) return;
+  var camL = new THREE.Vector3();
+  function showAsm(A, a, t, yaw, leaving) {
+    // One continuous camera: the model being left comes straight at the camera and passes it; the next one is already far off down the same line and arrives. Reduced motion: it is simply there or not.
+    var k = 0, vis = a > 0.001, sc = REDUCE ? a : 1;
+    if (!REDUCE && a < 1) { vis = a > 0.5; var u = (1 - a) * 2; k = leaving ? 1.05 * u * u : -7 * u * u * u; }
+    if (A === pokeAsm) sc *= 1 - 0.5 * Math.sin(Math.PI * clamp((t - poke) / 1100, 0, 1)); // clicked: its parts spring apart and settle back
+    A.g.visible = vis;
+    if (!vis) return;
+    A.g.position.copy(camL).multiplyScalar(k);
     A.g.rotation.y = yaw + 0.5; // it keeps a three-quarter front to the camera, however the camera has orbited
     var i, P;
     for (i = 0; i < A.parts.length; i++) { P = A.parts[i]; P.cp.copy(P.p); P.cq.copy(P.q); P.cs = 1; }
+    if (A.draw) { dn = ln = 0; A.draw(t); dGeo.setDrawRange(0, dn); lGeo.setDrawRange(0, ln * 2); dGeo.attributes.position.needsUpdate = dGeo.attributes.tint.needsUpdate = dGeo.attributes.size.needsUpdate = lGeo.attributes.position.needsUpdate = lGeo.attributes.tint.needsUpdate = true; return; }
     A.tick(t, A);
     for (i = 0; i < A.parts.length; i++) {
-      P = A.parts[i]; var u = smooth(a * 1.5 - 0.5 * P.key);
+      P = A.parts[i]; var u = smooth(sc * 1.5 - 0.5 * P.key);
       P.im.setMatrixAt(P.idx, mat.compose(pa.p.copy(P.sp).lerp(P.cp, u), pa.q.copy(P.sq).slerp(P.cq, u), pa.s.copy(P.s).multiplyScalar(Math.max(0.0001, u * P.cs))));
       if (P.sv) { pa.s.multiply(P.sv); P.im.setMatrixAt(P.idx, mat.compose(pa.p, pa.q, pa.s)); }
       if (P.tint) P.im.setColorAt(P.idx, P.tint);
@@ -3071,7 +3286,8 @@ import * as THREE from './vendor/three.module.min.js';
     }
     if (tb > 0) fly(0, 1, t, 1, 1 - tb); else fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? (wc > 0.001 ? 1 : 0) : 1, cur ? 1 - wc : 0);
     fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
-    for (var ai = 0; ai < ASM.length; ai++) if (ASM[ai].g) showAsm(ASM[ai], (prev && prev.asm === ASM[ai] ? 1 - m : 0) + (cur && cur.asm === ASM[ai] ? m : 0), t, yaw);
+    camL.copy(camera.position); city.worldToLocal(camL); dMat.uniforms.uS.value = S * 6 * renderer.getPixelRatio(); // points are sized in the model's own units
+    for (var ai = 0; ai < ASM.length; ai++) if (ASM[ai].g) showAsm(ASM[ai], (prev && prev.asm === ASM[ai] ? 1 - m : 0) + (cur && cur.asm === ASM[ai] ? m : 0), t, yaw, !(cur && cur.asm === ASM[ai]));
     var tubeSegs = Math.round((route.length - 1) * PER * smooth(draw));
     routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
     pinB.visible = story ? sp >= 0.2 : draw >= 1;

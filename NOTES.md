@@ -4,6 +4,19 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Light and data: new project animations and a fly-through camera (2026-11-16)
+
+Kia rated the chapter models 2/10 and chose: a mix of realistic objects and "light and data" animations, one continuous camera between sections, everything at once.
+
+- Realistic and kept: the turbine, the San Diego city, the Experience approval line.
+- New, drawn in points and lines of light (one shared buffer, `P()` points and `L()` lines, filled every frame by the scene on screen; `draw:` in the `ASM` list):
+  `dsSignal` (Industrial AI: the sensor signal as a ribbon, flagged points lift out), `dsDijkstra` (Mini Maps: a real Dijkstra run; settled nodes rise to their distance, so the shortest-path tree becomes a cone),
+  `dsTarjan` (a real Tarjan run; each component lifts, lights and turns when found), `dsAgents` (hub, schedule ring, six agents on arcs), `dsSurf` (the swell as a field of light, buoy reports as rings),
+  `dsVoice` (Kia-bot: breathing voice sphere, beams to three tools), `dsQuant` (walk-forward window stepping along synthetic prices), `dsLeads` (messages read at one point, leaving on three paths),
+  `dsMarket` (a year of synthetic prices round a dial with pullback-tier rings), `dsSeeds` (Math 163: golden-angle seed head, 21 and 34 arms, golden spiral), `dsStack` (Skills: one ring per table row, one bead per item, counted from the page), `dsBeacon` (Contact: K I A in Morse as rings from a mast).
+- Hand-over (`showAsm`): the model being left flies straight at the camera and past it; the next arrives from far down the same line. Reduced motion: no flight, it is there or not.
+- Phones draw 35% of the points. The Blender scene models for these stops are still in `models/scenes.bin` but no longer shown (could be removed from the file to save about 400 KB).
+
 ## Chapter models pass: Kia-bot and the tools board rebuilt (2026-11-16)
 
 - Kia-bot is now a small desk robot (`kb.*` in `blender/build_scenes.py`): torso with speaker grille, head on a neck joint, two eyes, antenna. `tickKB` turns the head to the tool being called, blinks the eyes, lights them and the antenna tip during a call. Still the same story: one voice agent calling three tools.
