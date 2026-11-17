@@ -4,6 +4,15 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Review pass: three faults fixed, sharper zoom (2026-11-16)
+
+- Opening line says "Developer" (Kia's call), matching the Experience section.
+- Title-card strips now finish sliding off by the time a chapter sits under the tab bar. Before, a tab click landed with two strips still on screen (seen on Contact).
+- Models no longer rest on words: beside a project the model drops with the project's name when the name is low on screen; on phones a chapter's model always sits under the last line of the headline text.
+- Phones: the theme picker slides away after half a screen of scrolling, so it no longer covers content.
+- Fly-through clarity (computers): the blur's sharp zone now widens as the camera pushes in (it was fixed, so nearly the whole model was out of focus), the base blur is halved, blades keep 80% of their width to the tip, and the metal texture is 1024 px (`textures/wear-wide.jpg`, 150 KB, computers only; phones keep the 25 KB one). Made by `blender/sharpen_turbine.py`.
+- Not done yet: chapter models still flat-coloured, flat demo panels and the "Away from the keyboard" tiles, empty space under the pinned story.
+
 ## A live ocean, models that transform between chapters, a sharper picture (2026-11-16)
 
 You asked for someone to go through every part: drop the parts diagram on the turbine, a more realistic sunset, hand-overs "like the pictures", sharper visuals. Five passes, one commit each.
