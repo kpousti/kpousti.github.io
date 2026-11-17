@@ -70,12 +70,20 @@ a { color: inherit; text-decoration: none; }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
 ::selection { background: var(--accent); color: var(--on-accent); }
 
-/* The backdrop: last light over the ocean, since this is San Diego and the page's one accent is sunset amber. It is a real photographed sky (Poly Haven "Umhlanga Sunrise", free to use),
-   graded down to dusk in Blender with a still sea mirrored under it (blender/build_dusk.py). The sun sits on the horizon under the model. As you scroll, the view pans slowly along the horizon
-   and the light fades toward night. One picture and one dark veil, moved with transform and opacity only. Without scripts or with reduced motion it simply stays still. */
+/* The backdrop: sunset over the ocean, since this is San Diego and the page's one accent is sunset amber. The sky is a real photograph (Poly Haven "The Sky Is On Fire", free to use),
+   graded in Blender (blender/build_sky.py). The sea under it is drawn live by a small script ("The backdrop", below): real swell, reflecting that sky. As you scroll, the view pans slowly
+   along the horizon and night comes on. Layers move with transform and opacity only. Without scripts, without WebGL or with reduced motion the picture's own still sea shows instead. */
 .sky { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: #0e151e; }
-.sky i { --h: max(80vw, 106vh); position: absolute; height: var(--h); width: calc(var(--h) * 1.996); left: calc(70vw - 0.68 * 1.996 * var(--h)); top: calc(68vh - 0.646 * var(--h)); background: url(textures/dusk.jpg) center / 100% 100% no-repeat; will-change: transform, opacity; }
-.sky b { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14, 21, 30, 0.66) 0%, rgba(14, 21, 30, 0.46) 45%, rgba(14, 21, 30, 0.2) 68%, rgba(14, 21, 30, 0.4) 100%); }
+.sky i { --h: max(80vw, 106vh); position: absolute; height: var(--h); width: calc(var(--h) * 2); left: calc(70vw - 1.36 * var(--h)); top: calc(66vh - 0.66 * var(--h)); background: url(textures/sky.jpg) center / 100% 100% no-repeat; will-change: transform; }
+@media (min-width: 1000px) { .sky i { background-image: url(textures/sky-wide.jpg); } } /* wide screens get the sharper file */
+.sky canvas { position: absolute; left: 0; top: 66vh; width: 100%; height: 34vh; opacity: 0; transition: opacity 1.4s; } /* the live sea, from the horizon down; it fades in over the still one once it is running */
+.sky canvas.on { opacity: 1; }
+.sky u { position: absolute; inset: 0; background: #060a13; opacity: 0.5; will-change: opacity; } /* night: comes on as you go down the page. Without scripts it stays at dusk, so body text always has a dark sky behind it */
+.sky b { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14, 21, 30, 0.62) 0%, rgba(14, 21, 30, 0.42) 40%, rgba(14, 21, 30, 0.2) 63%, rgba(14, 21, 30, 0.26) 70%, rgba(14, 21, 30, 0.55) 100%), linear-gradient(90deg, rgba(14, 21, 30, 0.6) 0%, rgba(14, 21, 30, 0.42) 30%, rgba(14, 21, 30, 0) 62%); } /* the veil that keeps words readable: darkest up top and down low, and on the left, where the opening's words are; lightest at the horizon on the right, where the model is */
+@media (max-width: 999px) { /* narrow screens: words run the full width, so the horizon and its glow sit lower, under the opening's paragraph, and the veil is heavier */
+  .sky i { top: calc(76vh - 0.66 * var(--h)); } .sky canvas { top: 76vh; height: 24vh; }
+  .sky b { background: linear-gradient(180deg, rgba(14, 21, 30, 0.64) 0%, rgba(14, 21, 30, 0.58) 55%, rgba(14, 21, 30, 0.46) 70%, rgba(14, 21, 30, 0.36) 76%, rgba(14, 21, 30, 0.62) 82%, rgba(14, 21, 30, 0.62) 100%); }
+}
 /* ---------- Top bar: a flat strip ruled off from the sheet; a short amber line sits under the current tab ---------- */
 .bar {
   position: fixed; top: 0; left: 0; z-index: 10; width: 100%; height: 56px;
@@ -454,7 +462,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
 </script>
 </head>
 <body>
-<div class="sky" aria-hidden="true"><i></i><b></b></div>
+<div class="sky" aria-hidden="true"><i></i><canvas></canvas><u></u><b></b></div>
 <canvas id="map" aria-hidden="true"></canvas>
 <div class="themes" id="themes" role="group" aria-label="Color theme" hidden></div>
 
@@ -939,9 +947,92 @@ window.KP_SUNSET = function (d) {
 };
 var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.getUTCMinutes() - window.KP_SUNSET(d)) % 1440 + 2160) % 1440 - 720; return { k: Math.max(0, 1 - Math.abs(off) / 45), done: 0 }; })();
 
+// ---------- The backdrop: a real photographed sunset sky, and a live sea under it ----------
+// The sea is one small full-width strip from the horizon down, drawn by a single shader about thirty times a second. For every pixel it finds the spot on the water that pixel looks at,
+// adds up eight trains of swell there (long ones and short ones, each travelling its own way), tilts the surface by their slopes and reflects the sky photograph off it,
+// more strongly at a glancing angle than looking down, the way real water does. Far waves that are smaller than a pixel are left out, so the horizon stays calm instead of shimmering.
+// It stops when the tab is hidden, when another theme hides the sky and while the route map is open. No WebGL, reduced motion or no scripts: the still sea in the picture stays.
+(function () {
+  var sky = document.querySelector('.sky'), img = sky && sky.querySelector('i'), cv = sky && sky.querySelector('canvas'), night = sky && sky.querySelector('u'), veil = sky && sky.querySelector('b');
+  if (!sky || !img || !cv) return;
+  if (veil && gold.k > 0) veil.style.opacity = (1 - 0.55 * gold.k).toFixed(2); // around the real sunset the veil lifts (see KP_SUNSET)
+  var day = 0, dusk = 0, pan = 0, geo = null, gl = null, U = {}, live = false, last = 0, t0 = performance.now(), lastPan = '', lastNight = '';
+  function measure() {
+    var first = document.querySelector('main > .chapter'); // the first chapter of reading: by then it is dusk
+    geo = { w: img.offsetWidth, left: img.offsetLeft, cw: cv.offsetWidth, ch: cv.offsetHeight, vw: window.innerWidth, read: first ? first.getBoundingClientRect().top + window.scrollY : 0 };
+    if (!gl) return;
+    var k = geo.vw < 1000 ? 0.75 : 1; // drawn at three quarters size on phones, and at one pixel per CSS pixel on computers: water is soft, it does not need more
+    cv.width = Math.max(2, Math.round(geo.cw * k)); cv.height = Math.max(2, Math.round(geo.ch * k));
+    gl.viewport(0, 0, cv.width, cv.height); gl.uniform2f(U.res, cv.width, cv.height); gl.uniform1f(U.ppr, geo.w * k / 2.2689);
+  }
+  function scrolled() { var doc = document.documentElement, span = doc.scrollHeight - window.innerHeight; day = span > 0 ? clamp(window.scrollY / span, 0, 1) : 0;
+    var u = clamp((window.scrollY - geo.read + 1.4 * window.innerHeight) / window.innerHeight, 0, 1); dusk = 0.56 * u * u * (3 - 2 * u) + 0.2 * day; // golden hour for the opening and the fly-through, where there is little to read; dusk from the first chapter on, so body text always has a dark sky behind it; deep dusk by Contact
+    if (!live) place(0); }
+  function place(t) { // down the page the view pans along the horizon and night comes on; the clouds also drift, very slowly
+    pan = REDUCE ? 0 : -0.2 * day * geo.vw + (live ? 0.012 * geo.w * Math.sin(t * 0.00005) : 0); // reduced motion: the light still changes down the page, but nothing moves
+    var a = 'translate3d(' + pan.toFixed(2) + 'px,0,0)', b = dusk.toFixed(3);
+    if (a !== lastPan) img.style.transform = lastPan = a;
+    if (b !== lastNight && night) night.style.opacity = lastNight = b;
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (now - last < 30 || sky.hidden || document.body.classList.contains('nav')) return; // about thirty frames a second is plenty for water
+    last = now; var t = now - t0; place(t);
+    gl.uniform1f(U.t, t * 0.001); gl.uniform1f(U.x0, (-geo.left - pan - geo.w / 2) / geo.w * 2.2689); gl.uniform1f(U.night, dusk);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  measure(); scrolled();
+  window.addEventListener('scroll', scrolled, { passive: true });
+  window.addEventListener('resize', function () { measure(); scrolled(); });
+  // The picture the page chose (small on phones, sharper on wide screens) is also what the water reflects.
+  var url = (getComputedStyle(img).backgroundImage.match(/url\(["']?([^"')]+)/) || [])[1], pic = new Image();
+  if (!url || REDUCE) return;
+  pic.onload = function () {
+    try { gl = cv.getContext('webgl', { alpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' }); } catch (e) { gl = null; }
+    if (!gl) return;
+    var FS = [
+      '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
+      'uniform sampler2D sky; uniform vec2 res; uniform float ppr, x0, t, night;', // ppr: pixels per radian of view; x0: the compass direction at the strip's left edge, from the middle of the picture
+      'const float AZ = 2.2689, HZ = 0.66, VS = 1.13446;', // the picture spans 130 degrees across and 65 down, with the horizon 66% of the way down
+      'vec3 skyAt(float az, float el) { return texture2D(sky, vec2(0.5 + az / AZ, HZ - clamp(el, 0.003, 0.72) / VS)).rgb; }',
+      'vec2 g; vec2 P; float fp;',
+      'void wave(vec2 d, float len, float slope, float w) { float a = clamp(len / (fp * 7.0) - 0.4, 0.0, 1.0); g += d * (slope * a * cos(dot(P, d) * 6.2832 / len + t * w)); }', // a: waves smaller than a pixel fade out
+      'void main() {',
+      '  float y = res.y - gl_FragCoord.y, el = -(y + 0.5) / ppr, az = x0 + gl_FragCoord.x / ppr;',
+      '  vec3 v = vec3(sin(az) * cos(el), sin(el), cos(az) * cos(el));',
+      '  float d = -1.0 / v.y; P = v.xz * d; fp = d * d / ppr; g = vec2(0.0);', // the eye is one unit above the water
+      '  P += 0.7 * vec2(sin(P.y * 0.23 + t * 0.05), cos(P.x * 0.19 - t * 0.04));', // bend the trains a little, so they never line up into a pattern
+      '  wave(vec2(0.2, 0.98), 9.0, 0.05, 0.45); wave(vec2(-0.5, 0.866), 5.5, 0.05, 0.57); wave(vec2(0.707, 0.707), 3.1, 0.045, 0.76); wave(vec2(-0.25, 0.968), 1.9, 0.05, 0.96);',
+      '  wave(vec2(0.916, -0.4), 1.1, 0.04, 1.26); wave(vec2(-0.8, 0.6), 0.62, 0.036, 1.68); wave(vec2(0.35, 0.937), 0.37, 0.03, 2.2); wave(vec2(-0.1, 0.995), 0.21, 0.024, 2.9);',
+      '  vec3 n = normalize(vec3(-g.x, 1.0, -g.y)), r = reflect(v, n); r.y = abs(r.y);',
+      '  vec3 rf = skyAt(atan(r.x, r.z), asin(min(r.y, 1.0)));',
+      '  float lum = dot(rf, vec3(0.2126, 0.7152, 0.0722)); rf *= 0.85 + 2.0 * lum * lum * clamp((rf.r - rf.b) * 2.5, 0.0, 1.0) * (1.0 - night);', // the brightest sky was far brighter than a photo can hold: give that back, so the glow lays a path on the water
+      '  float F = 0.03 + 0.97 * pow(1.0 - max(dot(-v, n), 0.0), 5.0);', // Fresnel: water mirrors at a glancing angle and goes dark looking down into it
+      '  vec3 col = mix(vec3(0.010, 0.026, 0.045) + 0.05 * skyAt(az, 0.45), rf, F);',
+      '  col = mix(col, skyAt(az, 0.004), 0.75 * exp(-y / (res.y * 0.012)));', // sea haze: right at the horizon the water takes the colour of the sky above it
+      '  float al = smoothstep(0.0, 1.5, y); gl_FragColor = vec4(col * al, al);',
+      '}'].join('\n');
+    function sh(type, src) { var o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; }
+    var vs = sh(gl.VERTEX_SHADER, 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }'), fs = sh(gl.FRAGMENT_SHADER, FS), pr = gl.createProgram();
+    if (!vs || !fs) { gl = null; return; }
+    gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { gl = null; return; }
+    gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); // one triangle that covers the strip
+    var loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture()); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, pic);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    ['res', 'ppr', 'x0', 't', 'night'].forEach(function (k) { U[k] = gl.getUniformLocation(pr, k); });
+    cv.addEventListener('webglcontextlost', function (e) { e.preventDefault(); cv.classList.remove('on'); gl = null; live = false; }); // the still sea shows again
+    live = true; measure(); requestAnimationFrame(frame); cv.classList.add('on');
+    window.KP_SEA = { still: function (w, h, at) { cv.width = w; cv.height = h; gl.viewport(0, 0, w, h); gl.uniform2f(U.res, w, h); gl.uniform1f(U.ppr, w / 2.2689); gl.uniform1f(U.t, at); gl.uniform1f(U.x0, -1.13446); gl.uniform1f(U.night, 0); gl.drawArrays(gl.TRIANGLES, 0, 3); return cv.toDataURL('image/png'); } }; // one frame of the whole sea, for the picture's still version (blender/build_sky.py)
+  };
+  pic.src = url;
+})();
+
 // ---------- Tab bar: sliding highlight and page progress ----------
 (function () {
-  var tabs = document.querySelector('.tabs'), prog = document.querySelector('.progress'), sun = document.querySelector('.sky i');
+  var tabs = document.querySelector('.tabs'), prog = document.querySelector('.progress');
   var links = Array.prototype.slice.call(tabs.querySelectorAll('a'));
   // Pair each tab with the section it points to.
   var pairs = links.map(function (a) {
@@ -966,11 +1057,6 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
     last = current;
     var span = doc.scrollHeight - window.innerHeight;
     prog.style.setProperty('--p', span > 0 ? clamp(window.scrollY / span, 0, 1) : 0); // set on the line itself: on the root it made the browser restyle the whole page every scroll frame
-    if (sun && !gold.done) { gold.done = 1; var veil = document.querySelector('.sky b'); if (veil && gold.k > 0) veil.style.opacity = (1 - 0.55 * gold.k).toFixed(2); }
-    if (sun && !REDUCE) { // dusk: down the page the view pans along the horizon and the light fades toward night
-      var day = span > 0 ? clamp(window.scrollY / span, 0, 1) : 0;
-      sun.style.transform = 'translate3d(' + (-0.2 * day * window.innerWidth).toFixed(0) + 'px,0,0)'; sun.style.opacity = (1 - 0.5 * day).toFixed(3);
-    }
   }
   window.addEventListener('scroll', update, { passive: true });
   window.addEventListener('resize', update);
