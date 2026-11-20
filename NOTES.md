@@ -4,6 +4,17 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Borrowed from myminutes.ai: the flow, not the look (2026-11-20)
+
+Kia liked how myminutes.ai reads (a Framer page: one idea per screen, proof up top, a click-through feature list beside a phone, a questions list). He chose to borrow the flow and keep the 3D opening and live algorithms.
+
+- Side builds: beside each phone is a list of its three screens with one line each (`feat:` in `APPS`); picking a row turns the phone to that screen, and the phone's own tabs keep the list in step. The card is wider (610 px) and the big name beside it smaller; the 3D animation now centres itself under that name.
+- Opening: a proof row under the links with three facts already stated elsewhere on the page (UC San Diego degree, Solar Turbines role, TheAlgorithms/C++).
+- Contact: "Before you ask.", five disclosure rows (`<details>`, no script needed). Every answer restates something already on the page.
+- Less per screen: the technology list in each project card is kept for screen readers only, since the same list is set under the project's big name; side-build scenes have more space above and below.
+- New words that are mine and Kia's to change: the 21 one-line screen descriptions, the "Quick answers" label, the "Before you ask." heading and the five questions.
+- Cost: the page is about 4% taller on computers and 9% on phones than before this change.
+
 ## Side builds as working iPhone apps (2026-11-20)
 
 Kia asked for realistic, usable iPhone interfaces for the side builds, each its own app with a name and a logo.

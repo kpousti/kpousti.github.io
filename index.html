@@ -155,6 +155,18 @@ h1 {
 .links { display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; margin-top: 32px; }
 .links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
 .links a:hover { color: var(--accent); border-color: var(--accent); }
+/* Proof under the name: three facts that are stated elsewhere on the page, where a skimming reader sees them first. */
+.proof { list-style: none; display: flex; flex-wrap: wrap; gap: 14px 34px; margin: 30px 0 0; padding: 18px 0 0; border-top: 1px solid var(--line); max-width: 640px; font-size: 13px; color: var(--text-dim); }
+.proof b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--bright); margin-bottom: 2px; }
+/* Quick answers: plain disclosure rows, open and close without script. */
+.faq { border-bottom: 1px solid var(--line); }
+.faq details { border-top: 1px solid var(--line); }
+.faq summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 2px; cursor: pointer; list-style: none; font-family: var(--font-display); font-weight: 600; font-size: 1.14rem; color: var(--bright); }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: ""; flex: none; width: 9px; height: 9px; border-right: 1.5px solid var(--text-dim); border-bottom: 1.5px solid var(--text-dim); transform: rotate(45deg); transition: transform 0.2s; }
+.faq details[open] summary::after { transform: rotate(-135deg); }
+.faq p { margin: 0 2px 22px; max-width: 62ch; color: var(--text); }
+.faq a { color: var(--accent); border-bottom: 1px solid currentColor; }
 .cue { margin-top: 56px; display: inline-flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--text-dim); }
 .cue::after { content: ""; width: 1px; height: 32px; background: var(--line); }
 
@@ -470,6 +482,21 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
 /* One project per screen: the card on one side, its name set large on the other, like a magazine spread. */
 .scene { position: relative; display: flex; align-items: center; min-height: 72vh; padding: 40px 0; }
 .scene > article { width: min(480px, 100%); }
+.scene .chips { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } /* the same list is set under the project's big name: here it stays for screen readers only */
+/* Side builds: what the app does on the left, the phone on the right; picking a row turns the phone to that screen. */
+#builds .scene { padding: 72px 0; }
+#builds .scene > article { width: min(610px, 100%); }
+#builds .sname { width: calc(100% - 660px); }
+#builds .sname b { font-size: clamp(2.4rem, 4.4vw, 4.3rem); }
+.ios-stage { display: flex; align-items: center; gap: 6px; padding: 0 0 0 18px; }
+.ios-feats { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.ios-feat { display: block; width: 100%; text-align: left; padding: 14px 14px 14px 16px; border: 0; border-left: 2px solid var(--line); background: none; color: var(--text-dim); font: inherit; font-size: 0.9rem; line-height: 1.45; cursor: pointer; }
+.ios-feat b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 1.02rem; color: var(--text); margin-bottom: 3px; }
+.ios-feat[aria-pressed="true"] { border-left-color: var(--accent); background: rgba(var(--edge), 0.05); color: var(--text); }
+.ios-feat[aria-pressed="true"] b { color: var(--bright); }
+.ios-feat:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+#builds .ios-stage .screen.ios { flex: none; margin: 26px 22px 22px 8px; }
+@media (max-width: 900px) { #builds .sname { width: auto; } .ios-stage { display: block; padding: 14px 12px 0; } #builds .ios-stage .screen.ios { margin: 22px auto; } }
 .scene[data-side="right"] { justify-content: flex-end; }
 .scene .screen canvas, .scene .build.wide .screen canvas { height: 250px; }
 .sname { position: absolute; top: 13vh; width: calc(100% - 540px); pointer-events: none; will-change: transform, opacity; }
@@ -556,6 +583,11 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
       <a href="https://www.linkedin.com/in/kiapousti">LinkedIn</a>
       <a href="mailto:kiapousti@gmail.com">Email</a>
     </div>
+    <ul class="proof" aria-label="Background">
+      <li><b>UC San Diego</b>B.S. Mathematics–Computer Science</li>
+      <li><b>Solar Turbines</b>Developer, IT Rotational Program</li>
+      <li><b>TheAlgorithms/C++</b>Open-source contributor</li>
+    </ul>
     <a class="cue" href="#about">Scroll</a>
   </section>
 
@@ -857,6 +889,17 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
         <li data-reveal><a class="glass" href="https://www.linkedin.com/in/kiapousti"><span>LinkedIn</span><strong>linkedin.com/in/kiapousti</strong></a></li>
         <li data-reveal><a class="glass" href="https://github.com/kpousti"><span>GitHub</span><strong>github.com/kpousti</strong></a></li>
       </ul>
+      <header class="head" data-reveal style="margin-top:112px;margin-bottom:24px">
+        <p class="eyebrow">Quick answers</p>
+        <h2>Before you ask.</h2>
+      </header>
+      <div class="faq" data-reveal>
+        <details open><summary>Where are you based?</summary><p>San Diego, CA.</p></details>
+        <details><summary>What do you do now?</summary><p>I am a developer at Solar Turbines, a Caterpillar company, in its IT rotational program.</p></details>
+        <details><summary>What work do you enjoy most?</summary><p>Graph algorithms, routing and data layouts.</p></details>
+        <details><summary>Are the demos on this page real?</summary><p>The A*, Dijkstra and Tarjan demos run the real algorithms in your browser. The side build screens show sample data.</p></details>
+        <details><summary>How do I reach you?</summary><p><a href="mailto:kiapousti@gmail.com">Email is the fastest way to reach me.</a></p></details>
+      </div>
       <header class="head" data-reveal style="margin-top:112px;margin-bottom:40px">
         <p class="eyebrow">Off the clock</p>
         <h2>Away from the keyboard.</h2>
@@ -2256,32 +2299,32 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   function step(v, unit, by) { return '<span class="ios-step"><button data-step="-' + by + '" aria-label="Less">−</button><b data-val="' + v + '" data-unit="' + unit + '">' + (unit === 'time' ? '6:30 AM' : v + ' ' + unit) + '</b><button data-step="' + by + '" aria-label="More">+</button></span>'; }
   var CV = '<div data-cv></div>';
   var APPS = {
-    city: { name: 'Agent City', tint: '#f2b56b', ico: ico('#f2b56b', '<path d="M4 14l4.5-4.5L13 14zM13 14l4.5-4.5L22 14zM8.5 20.5L13 16l4.5 4.5z"/>'), tabs: ['Agents', 'Needs you', 'Log'], views: [
+    city: { feat: ["Six agents, one job each. Switch any of them off.", "Only what needs a decision reaches me.", "What each agent did, in order."], name: 'Agent City', tint: '#f2b56b', ico: ico('#f2b56b', '<path d="M4 14l4.5-4.5L13 14zM13 14l4.5-4.5L22 14zM8.5 20.5L13 16l4.5 4.5z"/>'), tabs: ['Agents', 'Needs you', 'Log'], views: [
       CV + card(['inbox', 'jobs', 'ideas', 'coach', 'markets', 'builder'].map(function (n, k) { return row(n, k % 3 === 2 ? 'idle' : 'ran this morning', sw(k !== 2)); }).join('')),
       '<p class="ios-sub" data-empty style="padding:14px 4px">Nothing needs you right now.</p>' + ['<b>jobs</b><small class="ios-sub">One listing matches your filters.</small>', '<b>inbox</b><small class="ios-sub">A reply is drafted and waiting.</small>', '<b>markets</b><small class="ios-sub">A pullback crossed a tier.</small>'].map(function (t) { return card(t + '<div class="ios-btns"><button class="ios-btn" data-dismiss>Open</button><button class="ios-btn ghost" data-dismiss>Later</button></div>', true); }).join(''),
       card(['markets filed its report', 'inbox sorted new mail', 'jobs checked listings', 'coach planned the day', 'builder ran its checks'].map(function (t, k) { return row(t, 'sample · ' + (6 + k) + ':30 AM'); }).join(''))] },
-    wave: { name: 'Dawn Patrol', tint: '#4aa3ff', ico: ico('#4aa3ff', '<circle cx="18" cy="8" r="3.2"/><path d="M3 17c3-4.5 6-4.5 9 0s6 4 11-1v7H3z"/>'), tabs: ['Today', 'Week', 'Alerts'], views: [
+    wave: { feat: ["The morning report: height, period and wind.", "The swell for the days ahead.", "One notification, and only above the height I set."], name: 'Dawn Patrol', tint: '#4aa3ff', ico: ico('#4aa3ff', '<circle cx="18" cy="8" r="3.2"/><path d="M3 17c3-4.5 6-4.5 9 0s6 4 11-1v7H3z"/>'), tabs: ['Today', 'Week', 'Alerts'], views: [
       CV + card('<span class="ios-big">3 to 4 ft</span><small class="ios-sub">14 s · offshore wind · sample report</small><div class="ios-btns">' + chip('Worth the paddle') + '</div>', true) + card(row('Best window', '', '<b>6:30 to 8</b>') + row('Tide', 'sample', '<b>Rising</b>')),
       card(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d, k) { var w = [55, 70, 40, 30, 62, 85, 48][k]; return row('<b>' + d + '</b>', '', '<span class="ios-bar" style="max-width:120px"><i style="width:' + w + '%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Sample swell heights.</p>',
       card(row('Morning alert', 'One notification, only if it is worth it', sw(true)) + row('Send at', '', step(390, 'time', 15)) + row('Only above', '', step(3, 'ft', 1)))] },
-    voice: { name: 'Kia-bot', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="5" y="10" width="2.6" height="6" rx="1.3"/><rect x="9.4" y="6" width="2.6" height="14" rx="1.3"/><rect x="13.8" y="8.5" width="2.6" height="9" rx="1.3"/><rect x="18.2" y="11" width="2.6" height="4" rx="1.3"/>'), tabs: ['Talk', 'Tools', 'History'], views: [
+    voice: { feat: ["Ask out loud; it answers out loud.", "The tools it can call to answer.", "What was asked before."], name: 'Kia-bot', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="5" y="10" width="2.6" height="6" rx="1.3"/><rect x="9.4" y="6" width="2.6" height="14" rx="1.3"/><rect x="13.8" y="8.5" width="2.6" height="9" rx="1.3"/><rect x="18.2" y="11" width="2.6" height="4" rx="1.3"/>'), tabs: ['Talk', 'Tools', 'History'], views: [
       CV + '<button class="ios-mic" data-mic aria-label="Talk" aria-pressed="false"><svg width="20" height="22" viewBox="0 0 20 22" fill="none" stroke="#0b0d14" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="6.5" y="1" width="7" height="12" rx="3.5" fill="#0b0d14"/><path d="M3 10a7 7 0 0 0 14 0M10 17v4"/></svg></button><p class="ios-sub" data-mic-label style="text-align:center">Tap to talk</p>',
       card(row('surf_forecast', 'Called when you ask about waves', sw(true)) + row('tides', 'Called when you ask about waves', sw(true))),
       card(row('How is the surf tomorrow morning?', 'sample · answered out loud'))] },
-    histogram: { name: 'Walkforward', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="4" y="15" width="3" height="6"/><rect x="8.5" y="11" width="3" height="10"/><rect x="13" y="13" width="3" height="8"/><rect x="17.5" y="7" width="3" height="14"/><path d="M7 5h9v2H9v3H7z"/>'), tabs: ['Chart', 'Folds', 'Costs'], views: [
+    histogram: { feat: ["Train and test stretches on synthetic prices.", "Fit on one stretch, test on the next, six times.", "Fees and slippage come off every trade."], name: 'Walkforward', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="4" y="15" width="3" height="6"/><rect x="8.5" y="11" width="3" height="10"/><rect x="13" y="13" width="3" height="8"/><rect x="17.5" y="7" width="3" height="14"/><path d="M7 5h9v2H9v3H7z"/>'), tabs: ['Chart', 'Folds', 'Costs'], views: [
       CV + card(row('Mode', '', chip('Paper trading')) + row('Prices', '', chip('Synthetic')) + row('Validation', '', '<b>Walk-forward</b>')),
       card([1, 2, 3, 4, 5, 6].map(function (k) { return row('<b>Fold ' + k + '</b>', '', '<span class="ios-bar two" style="max-width:130px"><i style="width:' + (52 + k * 4) + '%"></i><i style="width:22%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Blue is the stretch it fits on, amber the stretch it is tested on.</p>',
       card('<label>Fee <b data-out>2 bps</b><input type="range" min="0" max="20" value="2" data-unit="bps"></label>', true) + card('<label>Slippage <b data-out>5 bps</b><input type="range" min="0" max="20" value="5" data-unit="bps"></label>', true) + '<p class="ios-sub" style="padding:8px 4px">Costs come off every trade before results are reported.</p>'] },
-    funnel: { name: 'Firstreply', tint: '#6aa5ff', ico: ico('#6aa5ff', '<path d="M11 5.5L4.5 12l6.5 6.5V14c5 0 8 1.2 10 5 0-7.5-4-10.5-10-10.5z"/>'), tabs: ['Inbox', 'Flow', 'Rules'], views: [
+    funnel: { feat: ["Each inquiry with its drafted reply.", "Read once, then sent down one path.", "Complaints always go to a person."], name: 'Firstreply', tint: '#6aa5ff', ico: ico('#6aa5ff', '<path d="M11 5.5L4.5 12l6.5 6.5V14c5 0 8 1.2 10 5 0-7.5-4-10.5-10-10.5z"/>'), tabs: ['Inbox', 'Flow', 'Rules'], views: [
       [['Do you open on Sundays?', 'auto-reply', 'Yes, we are open 9 to 3 on Sundays.', 'Send'], ['Can I get a quote for two rooms?', 'auto-reply', 'Happy to. Could you share the room sizes?', 'Send'], ['My order arrived damaged.', 'to a person', 'Complaints always go to a person.', 'Hand off']].map(function (m) {
         return card('<b>' + m[0] + '</b><div class="ios-btns">' + chip(m[1], m[1] !== 'auto-reply') + '</div><small class="ios-sub" style="margin-top:7px">' + m[2] + '</small><button class="ios-btn wide" data-done="' + (m[3] === 'Send' ? 'Sent' : 'Handed off') + '">' + m[3] + '</button>', true); }).join('') + '<p class="ios-sub" style="padding:8px 4px">Sample inquiries.</p>',
       CV + '<p class="ios-sub" style="padding:8px 4px">Each inquiry is read once, then leaves on one path.</p>',
       card(row('Reply right away', '', sw(true)) + row('Complaints go to a person', 'Always on', sw(true, true)) + row('Quiet hours', 'Hold replies overnight', sw(false)))] },
-    candles: { name: 'Debrief', tint: '#5b8cff', ico: ico('#5b8cff', '<rect x="6" y="9" width="4" height="9" rx="1"/><rect x="7.5" y="5" width="1" height="16"/><rect x="15" y="7" width="4" height="7" rx="1"/><rect x="16.5" y="4" width="1" height="14"/>'), tabs: ['Today', 'Events', 'Signals'], views: [
+    candles: { feat: ["How far each holding sits under its high.", "What is coming up for each holding.", "A signal when a pullback crosses a tier."], name: 'Debrief', tint: '#5b8cff', ico: ico('#5b8cff', '<rect x="6" y="9" width="4" height="9" rx="1"/><rect x="7.5" y="5" width="1" height="16"/><rect x="15" y="7" width="4" height="7" rx="1"/><rect x="16.5" y="4" width="1" height="14"/>'), tabs: ['Today', 'Events', 'Signals'], views: [
       CV + card(row('Sample holding A', 'under its 52-week high', chip('no signal')) + row('Sample holding B', 'under its 52-week high', chip('tier 1', true)) + row('Sample holding C', 'under its 52-week high', chip('tier 2', true))),
       card(row('Earnings', 'Sample holding B · Thursday') + row('Dividend date', 'Sample holding A · Monday') + row('Rate decision', 'Wednesday')) + '<p class="ios-sub" style="padding:8px 4px">Sample events.</p>',
       card(row('Tier 1', 'Pullback of 5%', sw(true)) + row('Tier 2', 'Pullback of 10%', sw(true)) + row('Tier 3', 'Pullback of 20%', sw(true)))] },
-    spiral: { name: 'Math 163', tint: '#f2b56b', ico: ico('#f2b56b', '<path fill="none" stroke-width="2" stroke-linecap="round" d="M13 13.5a1.5 1.5 0 1 1 1.5 1.5a3.5 3.5 0 1 1-3.5-3.5a6 6 0 1 1 6 6"/>'), tabs: ['Cards', 'Quiz', 'Progress'], views: [
+    spiral: { feat: ["Flashcards that flip from question to answer.", "Questions that earn XP.", "From Greek geometry to Renaissance algebra."], name: 'Math 163', tint: '#f2b56b', ico: ico('#f2b56b', '<path fill="none" stroke-width="2" stroke-linecap="round" d="M13 13.5a1.5 1.5 0 1 1 1.5 1.5a3.5 3.5 0 1 1-3.5-3.5a6 6 0 1 1 6 6"/>'), tabs: ['Cards', 'Quiz', 'Progress'], views: [
       CV + '<p class="ios-sub" style="padding:8px 4px">Flashcards flip from question to answer.</p>',
       card('<b>Base of Babylonian numerals?</b><div class="ios-btns" style="flex-wrap:wrap">' + [10, 12, 20, 60].map(function (n) { return '<button class="ios-btn ghost" data-ans="' + (n === 60 ? 1 : 0) + '">' + n + '</button>'; }).join('') + '</div><small class="ios-sub" data-result style="margin-top:8px">Pick one.</small>', true),
       card(row('Greek geometry', '', '<span class="ios-bar" style="max-width:110px"><i style="width:70%"></i></span>') + row('Renaissance algebra', '', '<span class="ios-bar" style="max-width:110px"><i style="width:35%"></i></span>')) + '<p class="ios-sub" style="padding:8px 4px">Sample progress.</p>'] }
@@ -2296,6 +2339,12 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
     wrap.innerHTML = '<div class="ios-status"><span>9:41</span>' + SIG + '</div><div class="ios-head">' + A.ico + '<b>' + A.name + '</b></div><div class="ios-views">' + views + '</div><nav class="ios-tabs" aria-label="' + A.name + ' sections">' + tabs + '</nav>';
     var slot = wrap.querySelector('[data-cv]'); slot.appendChild(cv); if (chat) slot.appendChild(chat);
     screen.appendChild(wrap); screen.classList.add('ios'); screen.style.setProperty('--tint', A.tint);
+    var stage = document.createElement('div'), list = document.createElement('ul'); stage.className = 'ios-stage'; list.className = 'ios-feats'; // beside the phone: one row per screen; picking a row turns the phone to it
+    list.innerHTML = A.tabs.map(function (t, k) { return '<li><button class="ios-feat" aria-pressed="' + (k ? 'false' : 'true') + '"><b>' + t + '</b>' + A.feat[k] + '</button></li>'; }).join('');
+    screen.parentNode.insertBefore(stage, screen); stage.appendChild(list); stage.appendChild(screen);
+    var fb = list.querySelectorAll('.ios-feat');
+    list.addEventListener('click', function (e) { var b = e.target.closest('.ios-feat'); if (b) show(Array.prototype.indexOf.call(fb, b)); });
+    function show(k) { for (var q = 0; q < tb.length; q++) { tb[q].setAttribute('aria-pressed', q === k ? 'true' : 'false'); fb[q].setAttribute('aria-pressed', q === k ? 'true' : 'false'); vs[q].classList.toggle('off', q !== k); } }
     if (h3) h3.insertAdjacentHTML('afterbegin', A.ico);
     var vs = wrap.querySelectorAll('.ios-view'), tb = wrap.querySelectorAll('.ios-tabs button');
     function empty() { var e = wrap.querySelector('[data-empty]'); if (e) e.style.display = wrap.querySelectorAll('[data-dismiss]').length ? 'none' : ''; }
@@ -2304,7 +2353,7 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
     screen.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
       var k = Array.prototype.indexOf.call(tb, b);
-      if (k >= 0) { for (var q = 0; q < tb.length; q++) { tb[q].setAttribute('aria-pressed', q === k ? 'true' : 'false'); vs[q].classList.toggle('off', q !== k); } return; }
+      if (k >= 0) { show(k); return; }
       if (b.classList.contains('ios-sw')) b.setAttribute('aria-checked', b.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
       else if (b.hasAttribute('data-dismiss')) { b.closest('.ios-card').remove(); empty(); }
       else if (b.hasAttribute('data-done')) { b.textContent = b.getAttribute('data-done') + ' ✓'; b.classList.add('ghost'); b.disabled = true; }
@@ -3081,7 +3130,7 @@ import * as THREE from './vendor/three.module.min.js';
     else if (st.story) { var sb = st.box.getBoundingClientRect(), sp2 = st.el.getBoundingClientRect(); o.x = sb.left + sb.width / 2; o.y = sb.top + lagNow + sb.height * 0.54; o.s = Math.min(sb.width * 0.25, sb.height * 0.33); o.a = 1; o.k = sp2.top <= 90 && sp2.bottom >= H - 12 ? 0 : 1; } // inside the story's frame: held still while the story is pinned, carried by the page on the way in and out
     else if (st.fin) { var fb = st.el.getBoundingClientRect(); o.x = W / 2; o.s = Math.min(W * (W > 900 ? 0.3 : 0.44), fb.height * 0.42); o.y = fb.top + lagNow + fb.height * 0.56 + 0.3 * o.s; o.a = 1; o.k = 1; } // the ending: centred in its own open space
     else if (st.chapter) { o.x = W > 900 ? W * 0.73 : W / 2; o.y = st.head.getBoundingClientRect().bottom + lagNow - H * (W > 900 ? 0.24 : 0.25); o.s = W > 900 ? Math.min(W * 0.3, H * 0.21) : Math.min(W * 0.27, H * 0.2); o.a = 0.9; o.k = 1; if (W <= 900) o.y = Math.max(o.y, st.head.lastElementChild.getBoundingClientRect().bottom + lagNow + o.s * 1.25); } // in the open space of the chapter's title block (phones: always under the last line of the headline text), moving with the page: it is never behind the rows of text
-    else if (W > 900) { o.x = W * (st.side === 'left' ? 0.69 : 0.31); o.s = Math.min(W * 0.19, H * 0.29); o.y = Math.max(H * 0.74, st.name ? st.name.getBoundingClientRect().bottom + lagNow + o.s : 0); o.a = 0.95; } // beside the card, under the project's name: it drops with the name when the name is low on the screen, so it never sits on the words
+    else if (W > 900) { var nr = st.name ? st.name.getBoundingClientRect() : null; o.x = nr ? nr.left + nr.width / 2 : W * (st.side === 'left' ? 0.69 : 0.31); o.s = Math.min(W * 0.19, H * 0.29, nr ? nr.width * 0.62 : 1e9); o.y = Math.max(H * 0.74, st.name ? st.name.getBoundingClientRect().bottom + lagNow + o.s : 0); o.a = 0.95; } // beside the card, under the project's name: it drops with the name when the name is low on the screen, so it never sits on the words
     else { o.x = W / 2; o.y = (st.name ? st.name.getBoundingClientRect().bottom : st.top) + lagNow + W * 0.27; o.s = W * 0.3; o.a = 0.95; o.k = 1; } // phones: in the gap left under the project's name, moving with the page
   }
   var RING = [[-0.55, -0.35, 0.34, 0.25], [0.5, -0.45, 0.28, 0.456], [0.05, 0.1, 0.2, 0.603], [-0.5, 0.5, 0.24, 0.779], [0.55, 0.45, 0.3, 1]]; // Tarjan's five cycles: x, z, radius, share of the blocks so far
