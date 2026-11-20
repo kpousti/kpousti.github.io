@@ -4,6 +4,15 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Side builds: the live demos run inside phones (2026-11-20)
+
+Kia compared the page with seanwirkus.com (app screenshots in phone frames) and chose to put the live demos in the frames rather than send screenshots.
+
+- CSS only (`#builds .build .screen`): each side build's live canvas sits in a phone frame, 250 px wide, with an island and a home bar; padding keeps the demo clear of both. The demo is the same sample-data canvas as before, so nothing is presented as a real screenshot.
+- Kia-bot's sample exchange moved inside its phone, under the voice bars (markup moved, words unchanged).
+- Cost: the page is about 6% taller on computers and 7.5% on phones, because a portrait phone is taller than the old wide screen.
+- Not done: a row of numbers per build, like the reference has. The side builds have no real numbers on the page, and none were invented.
+
 ## The name, and the "Away from the keyboard" pictures (2026-11-16)
 
 - The name: the construction lines, handles and "cap / baseline" labels are gone (Kia did not like them). Script splits the name into letters; they fly in from depth one after another, the name leans with the pointer with each letter at its own depth, and a letter lifts when pointed at. Warm fill fading to the accent at the foot. Reduced motion or no script: plain text.
