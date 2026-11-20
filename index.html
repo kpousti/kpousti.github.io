@@ -155,6 +155,11 @@ h1 {
 .links { display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; margin-top: 32px; }
 .links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
 .links a:hover { color: var(--accent); border-color: var(--accent); }
+/* The readout under the Galton board: script places it, and it is hidden from assistive tech (the numbers change many times a second). */
+.hud { position: fixed; left: 0; top: 0; z-index: 1; margin: 0; padding: 9px 14px; border-radius: 12px; background: rgba(var(--ink-rgb), 0.62); display: grid; gap: 2px; justify-items: center; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; letter-spacing: 0.01em; color: var(--text-dim); white-space: nowrap; pointer-events: none; opacity: 0; will-change: transform, opacity; }
+.hud b { font-weight: 500; color: var(--bright); } .hud i { font-style: normal; color: var(--accent); }
+.hud .lit { color: var(--bright); } .hud .lit i { font-weight: 600; }
+@media (max-width: 700px) { .hud { font-size: 10px; } .hud span:first-child { display: none; } }
 /* Proof under the name: three facts that are stated elsewhere on the page, where a skimming reader sees them first. */
 .proof { list-style: none; display: flex; flex-wrap: wrap; gap: 14px 34px; margin: 30px 0 0; padding: 18px 0 0; border-top: 1px solid var(--line); max-width: 640px; font-size: 13px; color: var(--text-dim); }
 .proof b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--bright); margin-bottom: 2px; }
@@ -464,7 +469,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
 .split.set .nl { transition-delay: 0s !important; transition-duration: 0.35s; }
 .split.set .nl:hover { transform: translate3d(0, -0.05em, 90px); }
 /* Narrow screens: the model gets its own space under the words. */
-@media (max-width: 999px) { .hero { padding-bottom: calc(40px + 62vw); } .hero .cue { display: none; } }
+@media (max-width: 999px) { .hero { padding-bottom: calc(40px + 104vw); } .hero .cue { display: none; } }
 /* Wide screens: words on the left, the model on the right. */
 @media (min-width: 1000px) {
   .hero { padding-left: max(48px, calc((100vw - 1240px) / 2)); }
@@ -584,7 +589,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
     <p class="eyebrow">Developer · San Diego, CA</p>
     <h1>Kia Pousti</h1>
     <p class="hero-role" id="hook">Fast graph systems. <em>Practical AI.</em></p>
-    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">Scroll: the skateboard rebuilds into a street map. Point at any corner of it and A* plans the route there, live.</span><span class="has-touch">Scroll: the turbine rebuilds into a street map, and A* plans a route across it, live.</span></p>
+    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">Scroll: the Galton board becomes a pricing tree, then a street map. Point at any corner of it and A* plans the route there, live.</span><span class="has-touch">Scroll: the Galton board becomes a pricing tree, then a street map, and A* plans a route across it, live.</span></p>
     <div class="actions">
       <a class="btn primary" href="#projects">See the work</a>
       <a class="btn" href="#contact">Get in touch</a>
@@ -2553,15 +2558,15 @@ import * as THREE from './vendor/three.module.min.js';
 
   // The turbine (blender/turbine.blend): 477 real parts, each free to fly on its own.
   // Every part also knows a second shape: a blade or vane rounds into a rod, anything else rounds into a ball. So the turbine can become a network of balls and rods with nothing added and nothing thrown away.
-  var turbine = new THREE.Group(), parts = [], partsAt = 0, K = 0.8, mark = 0, markFor = '', seenNode = []; turbine.visible = false; city.add(turbine);
+  var turbine = new THREE.Group(), parts = [], partsAt = 0, glassM = null, indK = 0, indRow = 99, gOff = 0, K = window.innerWidth < 1000 ? 0.93 : 0.56, BY = 0.16, mark = 0, markFor = '', seenNode = []; turbine.visible = false; city.add(turbine);
   // A scanned steel plate from Poly Haven (metal_plate_02, CC0), shrunk to one small image: its roughness in red, its height in green. It is wrapped onto every part from three sides, so no part needs its own texture layout.
   var wear = new THREE.TextureLoader().load(window.innerWidth >= 1000 ? './textures/wear-wide.jpg' : './textures/wear.jpg', function () { lastKey = ''; }); wear.wrapS = wear.wrapT = THREE.MirroredRepeatWrapping; // mirrored, so the patch joins itself without a visible edge
   wear.colorSpace = THREE.NoColorSpace; wear.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); // stays sharp on surfaces seen at a glancing angle, as along the blades in the fly-through
   function wearFrag(shader) {
     shader.uniforms.uWear = { value: wear };
     shader.fragmentShader = 'uniform sampler2D uWear; varying vec3 vLp; varying vec3 vLn;\n' + shader.fragmentShader
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n vec3 bw = pow(abs(normalize(vLn)), vec3(4.0)); bw /= bw.x + bw.y + bw.z; vec3 wp = vLp * 5.0; vec4 wr = texture2D(uWear, wp.yz) * bw.x + texture2D(uWear, wp.zx) * bw.y + texture2D(uWear, wp.xy) * bw.z; roughnessFactor = clamp(roughnessFactor * mix(0.6, 1.7, wr.r), 0.05, 1.0); diffuseColor.rgb *= mix(0.78, 1.08, wr.g);')
-      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n { vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx); float det = dot(sx, r1); vec3 grad = sign(det) * (dFdx(wr.g) * r1 + dFdy(wr.g) * r2); normal = normalize(abs(det) * normal - 0.003 * grad); }');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n vec3 bw = pow(abs(normalize(vLn)), vec3(4.0)); bw /= bw.x + bw.y + bw.z; vec3 wp = vLp * 5.0; vec4 wr = texture2D(uWear, wp.yz) * bw.x + texture2D(uWear, wp.zx) * bw.y + texture2D(uWear, wp.xy) * bw.z; roughnessFactor = clamp(roughnessFactor * mix(0.6, 1.7, wr.r), 0.05, 1.0); diffuseColor.rgb *= mix(1.0, mix(0.78, 1.08, wr.g), smoothstep(0.3, 0.8, metalness));')
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n { vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx); float det = dot(sx, r1); vec3 grad = sign(det) * (dFdx(wr.g) * r1 + dFdy(wr.g) * r2); normal = normalize(abs(det) * normal - 0.003 * smoothstep(0.3, 0.8, metalness) * grad); }');
   }
   function worn(shader) { // a part that keeps its own shape: only the surface wear
     shader.vertexShader = 'varying vec3 vLp; varying vec3 vLn;\n' + shader.vertexShader.replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n vLn = objectNormal;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vLp = transformed;');
@@ -2573,9 +2578,10 @@ import * as THREE from './vendor/three.module.min.js';
       .replace('#include <begin_vertex>', 'vec3 transformed = mix(position, aTo, aMix); vLp = transformed;');
     wearFrag(shader);
   }
-  fetch('./models/board.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+  fetch('./models/galton.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
     var h = readModel(buf), T = h.T, R = h.R, q, k, a, count = h.meshes.map(function () { return 0; }), used = count.slice();
     h.mat3.forEach(function (m) { m.onBeforeCompile = reshape; });
+    h.mats.forEach(function (mm, q2) { if (mm.name === 'glass') { glassM = h.mat3[q2]; glassM.transparent = true; glassM.color.set(0x8fa6c4); glassM.opacity = 0.07; glassM.depthWrite = false; glassM.roughness = 0.04; glassM.metalness = 0; } }); // the board's front pane
     h.mesh.forEach(function (m) { count[m]++; });
     var ims = h.meshes.map(function (me, k) {
       var nv = me.v[1], g = h.geo[k], pos = g.attributes.position.array, to = new Float32Array(nv * 3), toN = new Float32Array(nv * 3);
@@ -2596,18 +2602,17 @@ import * as THREE from './vendor/three.module.min.js';
       }
       g.setAttribute('aTo', new THREE.BufferAttribute(to, 3)); g.setAttribute('aToN', new THREE.BufferAttribute(toN, 3)); g.setAttribute('aMix', new THREE.InstancedBufferAttribute(new Float32Array(count[k]), 1));
       g.userData = { span: hi[1], rho: rho };
-      return many(g, h.mat3[me.mat], count[k], turbine);
+      var made = many(g, h.mat3[me.mat], count[k], turbine); if (made.material === glassM) { made.castShadow = false; made.renderOrder = 2; } return made;
     });
     // What each part becomes in the network: blades and vanes are the rods (two or three end to end along every edge of the street graph); every other part is the ball at one corner. The model has exactly as many of those as the graph has corners.
     var rods = h.kind.filter(function (c) { return c < 2; }).length, sAt = 0, nAt = 0, side = new THREE.Vector3();
     for (k = 0; k < h.mesh.length; k++) {
       var im = ims[h.mesh[k]], o = k * 10, c = h.kind[k], ball = c > 1;
-      var part = { im: im, idx: used[h.mesh[k]]++, mix: im.geometry.attributes.aMix.array, c: im.material.color, rotor: h.rotor[k], sc: new THREE.Vector3(T[o + 7], T[o + 8], T[o + 9]), ax: 0, ay: 0, p: new THREE.Vector3(T[o], T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), ex: new THREE.Vector3(), key: 0, span: im.geometry.userData.span, rho: im.geometry.userData.rho };
+      var part = { im: im, idx: used[h.mesh[k]]++, mix: im.geometry.attributes.aMix.array, c: im.material.color, rotor: h.rotor[k], row: /^(can|blade)$/.test(h.pname[k].split('.')[0]) ? +h.pname[k].split('.')[2] : -1, sc: new THREE.Vector3(T[o + 7], T[o + 8], T[o + 9]), ax: 0, ay: 0, p: new THREE.Vector3(T[o], T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), ex: new THREE.Vector3(), key: 0, span: im.geometry.userData.span, rho: im.geometry.userData.rho };
       var px = part.p.x, rad = Math.hypot(part.p.y, part.p.z) || 1;
-      part.key = clamp((px + 1.1) / 2.2, 0, 1) * 0.7 + 0.3 * (hashNoise(k * 3.7) + 0.5); // the change sweeps from the nose to the exhaust, a little ragged
-      // The way out, as an exploded view: everything lifts off the deck by its layer (cells highest, then the lid and bolts, wiring, trucks), and whatever sits on an axle slides out along it. The deck stays.
-      var pz = part.p.z, out = Math.abs(pz) > 0.25;
-      part.ex.set(px * 0.3, out ? 0.1 : [0.5, 0.34, 0, 0.12, 0.2, 0.62, 0.4, 0.28][c], pz * (out ? 0.9 : 0.35));
+      part.key = clamp((1.15 - part.p.y) / 2.3, 0, 1) * 0.7 + 0.3 * (hashNoise(k * 3.7) + 0.5); // the change sweeps down the board from the hopper to the bins, a little ragged
+      // The way out, as an exploded view, straight toward the viewer in three layers: the glass comes furthest; the working layer (pegs, lattice, hopper, bins and frame) comes together, so the balls stay lined up with it; the back drops away.
+      part.ex.set(px * 0.06, 0, [0.7, 0.7, -0.3, 0.7, 0.7, 0, 1.6, 0][c]);
       var c1 = hashNoise(k * 3.7) + 0.5, c2 = hashNoise(k * 7.1 + 2), c3 = hashNoise(k * 1.9 + 5); part.sp = new THREE.Vector3(c2 * 2.2, 0.3 + 0.75 * c1, c3 * 1.5); part.sq = new THREE.Quaternion().setFromEuler(new THREE.Euler(c2 * 5, c3 * 5, c1 * 4)); part.bk = c1; // its point in the shared cloud (the same spread the scene models use)
       if (ball) part.node = (nAt++ * 37 + 11) % (n * n);
       else { part.e = edges[sAt % edges.length]; part.slot = Math.floor(sAt / edges.length); part.on = Math.floor((rods - 1 - sAt % edges.length) / edges.length) + 1; sAt++; }
@@ -2627,13 +2632,14 @@ import * as THREE from './vendor/three.module.min.js';
     turbine.visible = show > 0.001 && burst < 0.999 && parts.length > 0;
     if (!turbine.visible) return;
     var up = mix(0.004, HUB_R, lift), squash = mix(0.4, 1, lift); // flat, a rod lies half sunk in the plate like a groove, and a ball is a low rivet head
-    qSpin.setFromAxisAngle(vX.set(0, 0, 1), -spin); qTilt.setFromAxisAngle(vX.set(1, 0, 0), TILT); // the wheels turn on their axles; the board leans its underside toward the camera
+    qSpin.setFromAxisAngle(vX.set(0, 0, 1), -spin); qTilt.setFromAxisAngle(vX.set(1, 0, 0), TILT); // the board leans back a little, as it would on a desk
+    if (glassM) glassM.opacity = mix(0.07, 1, smooth(lw * 3)); // the pane turns solid as it becomes one of the network's corners
     for (var i = 0; i < parts.length; i++) {
       var P = parts[i], land = smooth(lw * 1.5 - 0.5 * P.key), grow = ease((t - partsAt - 150 - P.key * 900) / 700) * show, r; // on arrival the parts grow in from nose to exhaust
       pa.p.copy(P.p); pa.q.copy(P.q);
       if (P.rotor) { pa.p.x -= P.ax; pa.p.y -= P.ay; pa.p.applyQuaternion(qSpin); pa.p.x += P.ax; pa.p.y += P.ay; pa.q.premultiply(qSpin); }
-      pa.p.addScaledVector(P.ex, 0.7 * Math.sin(Math.PI * land) + boom); pa.p.y -= 0.12; // boom: the parts eased apart for the fly-through; 0.12: the board's middle height, so it turns about its own middle
-      pa.p.multiplyScalar(K).applyQuaternion(qTilt).applyQuaternion(qTurn); pa.p.y += AXIS; pa.q.premultiply(qTilt).premultiply(qTurn); pa.s.copy(P.sc).multiplyScalar(K * grow);
+      pa.p.addScaledVector(P.ex, 0.7 * Math.sin(Math.PI * land) + boom); // boom: the parts eased apart for the fly-through
+      pa.p.multiplyScalar(K).applyQuaternion(qTilt).applyQuaternion(qTurn); pa.p.y += BY; pa.q.premultiply(qTilt).premultiply(qTurn); pa.s.copy(P.sc).multiplyScalar(K * grow);
       if (land > 0) {
         if (P.e) { // a rod: one stretch of an edge, from corner to corner
           node3(P.e.a, lift, nA); node3(P.e.b, lift, nB); nB.sub(nA); var len = nB.length(), seg = len / P.on; nB.divideScalar(len);
@@ -2647,7 +2653,8 @@ import * as THREE from './vendor/three.module.min.js';
       }
       if (burst > 0) { var bu = smooth(burst * 1.5 - 0.5 * P.bk); pa.p.lerp(pb.p.copy(P.sp).applyQuaternion(qCloud), bu); pa.q.slerp(P.sq, bu); pa.s.multiplyScalar(1 - smooth((bu - 0.55) / 0.45)); } // each part lifts off toward its own point in the cloud, tumbling, and is gone by the time it gets there: the next model's parts are arriving at those same points
       P.im.setMatrixAt(P.idx, mat.compose(pa.p, pa.q, pa.s)); P.mix[P.idx] = land;
-      P.im.setColorAt(P.idx, tint.setRGB(mix(1, cT.r / P.c.r, land), mix(1, cT.g / P.c.g, land), mix(1, cT.b / P.c.b, land))); // the tint multiplies the part's own colour, so this carries it over to its colour in the network
+      var gl = P.row >= 0 ? indK * (1 - land) * clamp(P.row - indRow + 1, 0, 1) : 0; // the pricing tree: values come back up from the bins a row at a time, and each row lights as it is priced
+      P.im.setColorAt(P.idx, tint.setRGB(mix(1, cT.r / P.c.r, land) * (1 + 1.9 * gl), mix(1, cT.g / P.c.g, land) * (1 + 1.6 * gl), mix(1, cT.b / P.c.b, land) * (1 + 0.9 * gl))); // the tint multiplies the part's own colour, so this carries it over to its colour in the network
     }
     for (i = 0; i < turbine.children.length; i++) { var im = turbine.children[i]; im.instanceMatrix.needsUpdate = im.instanceColor.needsUpdate = im.geometry.attributes.aMix.needsUpdate = true; }
   }
@@ -3053,6 +3060,91 @@ import * as THREE from './vendor/three.module.min.js';
     P(0, 0.9, 0, AM, 0.06 + 0.14 * down, 1 + 2 * down);
   }
 
+  // ----- The Galton board's balls. Each ball makes one real left-or-right bounce at every row of pegs, so each is one path through an equal-odds binomial tree.
+  // That lets the same run price an option three ways, all worked out here and shown under the board: by simulation (the balls), by the tree (backward from the bins), and by the closed formula. -----
+  var PHONE = window.innerWidth < 700, GN = 13, GDX = 0.094, GDY = 0.082, GY0 = 0.52, GRB = 0.0095, GFLOOR = -0.93, GTOP = -0.55, GTHROAT = 0.6; // the board's own measurements (blender/build_galton.py)
+  var GNB = PHONE ? 160 : 320, GREL = PHONE ? 100 : 55, GROW = 95, GDROP = 460, GFALL = (GN + 1) * GROW + GDROP; // balls in a run; ms between releases; ms per row; ms for the last drop into a bin
+  var OPT = { S: 100, K: 100, r: 0.05, v: 0.2, T: 1 }; // a one-year European call, struck at the money
+  var gdt = OPT.T / GN, gu = Math.exp((OPT.r - OPT.v * OPT.v / 2) * gdt + OPT.v * Math.sqrt(gdt)), gd = Math.exp((OPT.r - OPT.v * OPT.v / 2) * gdt - OPT.v * Math.sqrt(gdt)), gdisc = Math.exp(-OPT.r * OPT.T); // the equal-odds (Jarrow-Rudd) tree: up and down are each one half, which is exactly what a peg does
+  function payoff(k) { return Math.max(OPT.S * Math.pow(gu, k) * Math.pow(gd, GN - k) - OPT.K, 0); } // a ball in bin k took k right turns
+  var TREE = (function () { var v = [], j, k; for (k = 0; k <= GN; k++) v.push(payoff(k)); for (j = GN - 1; j >= 0; j--) for (k = 0; k <= j; k++) v[k] = Math.exp(-OPT.r * gdt) * 0.5 * (v[k] + v[k + 1]); return v[0]; })(); // backward induction: each node is the discounted average of the two below it
+  function ncdf(x) { var q = 1 / (1 + 0.2316419 * Math.abs(x)), p = 0.3989423 * Math.exp(-x * x / 2) * q * (0.3193815 + q * (-0.3565638 + q * (1.781478 + q * (-1.821256 + q * 1.330274)))); return x > 0 ? 1 - p : p; }
+  var BSP = (function () { var sq = OPT.v * Math.sqrt(OPT.T), d1 = (Math.log(OPT.S / OPT.K) + (OPT.r + OPT.v * OPT.v / 2) * OPT.T) / sq; return OPT.S * ncdf(d1) - OPT.K * gdisc * ncdf(d1 - sq); })(); // Black-Scholes
+  var gSlots = (function () { var out = [], j, c; for (j = 0; out.length < GNB; j++) { var y = GTHROAT + 0.03 + j * GRB * 1.74, w = 0.02 + (y - GTHROAT) / 0.7 - GRB * 1.2, m = Math.ceil(w / (GRB * 2.04)); for (c = -m; c <= m; c++) { var x = c * GRB * 2.04 + (j % 2 ? GRB * 1.02 : 0); if (Math.abs(x) <= w) out.push([x, y]); } } return out; })(); // where the waiting balls sit in the hopper, lowest first
+  var gBits = new Uint16Array(GNB), gBin = new Uint8Array(GNB), gSlot = new Uint16Array(GNB), gSum = new Float64Array(GNB + 1), gSq = new Float64Array(GNB + 1), gHold = new Float32Array(GNB * 3), gCycle = 0, gT = REDUCE ? 1e9 : -900, gRew = -1e9, gTick = 0, gShown = '';
+  var gV = new THREE.Vector3(), gRig = new THREE.Group(), gIn = new THREE.Group(), gBalls = new THREE.InstancedMesh(new THREE.SphereGeometry(GRB, PHONE ? 8 : 12, PHONE ? 6 : 8), new THREE.MeshStandardMaterial({ color: 0xe6eaf0, metalness: 1, roughness: 0.14 }), GNB);
+  var gPathP = new Float32Array(GNB * GN * 6), gPathC = new Float32Array(GNB * GN * 6), gPathG = new THREE.BufferGeometry(), gGain = { value: 0.3 }, gLight = { value: 0 };
+  gPathG.setAttribute('position', new THREE.BufferAttribute(gPathP, 3)); gPathG.setAttribute('tint', new THREE.BufferAttribute(gPathC, 3));
+  var gPathM = new THREE.ShaderMaterial(Object.assign({ uniforms: { uGain: gGain, uLight: gLight }, vertexShader: 'attribute vec3 tint; varying vec3 vC; void main() { vC = tint; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform float uGain, uLight; varying vec3 vC; void main() { vec3 c = vC * uGain; float m = max(c.r, max(c.g, c.b)); if (uLight > 0.5) { float al = min(1.0, m * 2.4); gl_FragColor = vec4(c / max(m, 0.001) * 0.55 * al, al); } else gl_FragColor = vec4(c, min(1.0, m)); }' }, ADD));
+  var gPaths = new THREE.LineSegments(gPathG, gPathM), gBell = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xe8eeff, transparent: true, opacity: 0.85, toneMapped: false }));
+  (function () { // the curve the pile is heading for: the binomial share of the run in each bin, at the height that many balls stack to
+    var pts = [], k, c = 1; for (k = 0; k <= GN; k++) { var want = GNB * c / Math.pow(2, GN); pts.push(new THREE.Vector3((k - GN / 2) * GDX, GFLOOR + GRB * 2 + want / 3.5 * GRB * 1.74, 0.03)); c = c * (GN - k) / (k + 1); }
+    gBell.geometry.setFromPoints(new THREE.CatmullRomCurve3(pts).getPoints(90));
+  })();
+  [gBalls, gPaths, gBell].forEach(function (o) { o.frustumCulled = false; gIn.add(o); }); gRig.add(gIn); gRig.visible = false; city.add(gRig);
+  var gHud = document.createElement('p'); gHud.className = 'hud'; gHud.setAttribute('aria-hidden', 'true'); hero.appendChild(gHud);
+  function gWay(i, m, o) { // the m-th point on ball i's way down: 0 is the top of the first peg, then one row lower each time, and the last is the mouth of its bin
+    var x = 0, q; for (q = 0; q < m; q++) x += gBits[i] >> q & 1 ? 0.5 : -0.5;
+    return o.set(x * GDX, m === GN ? GTOP : GY0 - m * GDY + 0.021, 0.03);
+  }
+  function gRest(i, o) { var k = gBin[i], pr = gSlot[i] % 7, L = 2 * Math.floor(gSlot[i] / 7) + (pr >= 4 ? 1 : 0); return o.set((k - GN / 2) * GDX + (pr >= 4 ? pr - 5 : pr - 1.5) * GRB * 2.06, GFLOOR + GRB + L * GRB * 1.74, 0.03); } // where it comes to rest: bins stack four across, then three, like marbles in a slot
+  function gPrep(cy) { // one whole run, decided in advance from a seeded random stream: every bounce of every ball, which bin each ends in, and the running sums the estimate needs
+    var r = rng(1009 + cy * 7919), cnt = [], i, j, k, o = 0;
+    for (i = 0; i < GNB; i++) {
+      var bits = 0; k = 0; for (j = 0; j < GN; j++) if (r() < 0.5) { bits |= 1 << j; k++; }
+      gBits[i] = bits; gBin[i] = k; gSlot[i] = cnt[k] = (cnt[k] || 0); cnt[k]++; var py = payoff(k); gSum[i + 1] = gSum[i] + py; gSq[i + 1] = gSq[i] + py * py;
+      for (j = 0; j < GN; j++) { gWay(i, j, gV); gPathP[o] = gV.x; gPathP[o + 1] = gV.y; gPathP[o + 2] = gV.z; gWay(i, j + 1, gV); gPathP[o + 3] = gV.x; gPathP[o + 4] = gV.y; gPathP[o + 5] = gV.z; o += 6; }
+    }
+    for (i = 0; i < gPathC.length; i += 3) { gPathC[i] = 2.0 * 0.07; gPathC[i + 1] = 0.95 * 0.07; gPathC[i + 2] = 0.3 * 0.07; } // faint singly; where many balls took the same step the light adds up
+    gPathG.attributes.position.needsUpdate = gPathG.attributes.tint.needsUpdate = true;
+  }
+  gPrep(0);
+  function gPos(i, tau, o) { // where ball i is, tau ms after its release
+    var s = gSlots[GNB - 1 - i];
+    if (tau < -300) return o.set(s[0], s[1], 0.03);
+    if (tau < 0) { var f0 = smooth(1 + tau / 300); return o.set(mix(s[0], 0, f0), mix(s[1], GTHROAT, f0), 0.03); } // out of the pile and down to the throat
+    var seg = tau / GROW, m = Math.floor(seg), f = seg - m;
+    if (m === 0) return o.set(0, mix(GTHROAT, GY0 + 0.021, f * f), 0.03);
+    if (m <= GN) { gWay(i, m - 1, vZ); gWay(i, m, o); var y = mix(vZ.y, o.y, f * f) + 0.016 * Math.sin(Math.PI * f); o.x = mix(vZ.x, o.x, f); o.y = y; return o; } // off one peg, a small hop, down onto the next
+    var f3 = clamp((tau - (GN + 1) * GROW) / GDROP, 0, 1); gWay(i, GN, vZ); gRest(i, o); o.x = mix(vZ.x, o.x, f3); o.y = mix(vZ.y, o.y, f3 * f3); return o;
+  }
+  function gAgain(now) { // every ball back up into the hopper, and a new run with a new random stream
+    if (REDUCE || now - gRew < 2600) return;
+    for (var i = 0; i < GNB; i++) { gPos(i, gT - i * GREL, vT); gHold[i * 3] = vT.x; gHold[i * 3 + 1] = vT.y; gHold[i * 3 + 2] = vT.z; }
+    gRew = now; gCycle++; gPrep(gCycle); gT = -700;
+  }
+  function galton(now, dt, see, peak2, inFly) { // see: 0 gone, 1 fully there; peak2: how close the fly-through camera is; inFly: 0 in the opening, 1 once the fly-through has the screen
+    gRig.visible = see > 0.002 && parts.length > 0;
+    if (!gRig.visible) { if (gShown !== '') { gShown = ''; gHud.style.opacity = 0; } return; }
+    var back = now - gRew, rew = back < 1900, i, landed = 0;
+    if (!REDUCE && !rew) { gT += Math.min(dt, 60); if (gT > GNB * GREL + GFALL + 9000) gAgain(now); }
+    gRig.position.set(0, BY, 0); gRig.quaternion.copy(qTurn).multiply(qTilt); gRig.scale.setScalar(K); gIn.position.z = 0.7 * boom; // the same placing as the board's own parts, and lifted with its pegs in the exploded view
+    var bs = see * (1 - 0.22 * smooth(peak2 * 1.4)); // close in, the steel balls give a little way to the light of their paths
+    for (i = 0; i < GNB; i++) {
+      var tau = gT - i * GREL; if (tau >= GFALL) landed++;
+      if (rew) { var f = smooth((back - i / GNB * 700) / 1100), sl = gSlots[GNB - 1 - i]; pa.p.set(mix(gHold[i * 3], sl[0], f), mix(gHold[i * 3 + 1], sl[1], f) + 0.12 * Math.sin(Math.PI * f), 0.03); }
+      else gPos(i, tau, pa.p);
+      gBalls.setMatrixAt(i, mat.compose(pa.p, pa.q.identity(), pa.s.setScalar(bs)));
+    }
+    gBalls.instanceMatrix.needsUpdate = true;
+    var lt = THEMES[THEME_KEY].scheme === 'light' ? 1 : 0; if (lt !== gLight.value) { gLight.value = lt; gPathM.blendDst = lt ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor; gPathM.needsUpdate = true; gBell.material.color.set(lt ? 0x1a2a4a : 0xe8eeff); }
+    gPathG.setDrawRange(0, (rew ? 0 : landed) * GN * 2); gGain.value = see * (0.35 + 2.4 * smooth(peak2 * 1.4)); gBell.material.opacity = 0.8 * see * (1 - smooth(peak2 * 2));
+    gTick = rew ? back | 0 : gT < GNB * GREL + GFALL ? gT | 0 : -1; // changes while anything is moving, so the page keeps drawing
+    // the readout under the board
+    var mc = '', key;
+    if (landed > 1) { var mean = gSum[landed] / landed, sd = Math.sqrt(Math.max(0, gSq[landed] / landed - mean * mean) * landed / (landed - 1)); mc = (gdisc * mean).toFixed(2) + ' ± ' + (gdisc * sd / Math.sqrt(landed)).toFixed(2); } // the discounted average payoff, and its standard error
+    key = landed + '|' + (indRow < 0 ? 1 : 0) + '|' + (see > 0.5 ? 1 : 0);
+    if (key !== gShown) {
+      gShown = key;
+      gHud.innerHTML = '<span>European call · S 100 · K 100 · σ 20% · r 5% · 1 yr</span><span><b>Monte Carlo</b> ' + landed + ' paths ' + (mc ? '<i>' + mc + '</i>' : '') + '</span><span' + (indRow < 0 ? ' class="lit"' : '') + '><b>Tree</b> ' + GN + ' steps <i>' + TREE.toFixed(2) + '</i> · <b>Black–Scholes</b> <i>' + BSP.toFixed(2) + '</i></span>';
+    }
+    tmpV.set(0, BY - 1.24 * K, 0).project(camera);
+    var side = smooth((inFly - 0.3) / 0.4), hx = mix((tmpV.x + 1) / 2 * W, W > 900 ? W * 0.83 : W / 2, side), hy = mix((1 - tmpV.y) / 2 * H + gOff, W > 900 ? H * 0.44 : 76, side); // under the board in the opening; in the fly-through, where the board fills the middle, beside it (above it on phones)
+    gHud.style.transform = 'translate3d(' + hx.toFixed(1) + 'px,' + hy.toFixed(1) + 'px,0) translateX(-50%)';
+    gHud.style.opacity = (see * (1 - smooth(peak2 * 3) * (indRow < 0 ? 0 : 1))).toFixed(2);
+  }
+
   var ASM = [ // the model's name in the file; the stops it belongs to (a chapter's id, or a project's number in page order); camera height; size; its motion; lit: it faces the camera, so it gets the front light
     { name: 'line', at: ['experience'], elev: 0.36, fit: 1.2, tick: tickLine },
     { name: 'rec', draw: dsSignal, at: [1], elev: 0.42, fit: 1.0, tick: tickRec },
@@ -3169,7 +3261,7 @@ import * as THREE from './vendor/three.module.min.js';
   var STEEL = new THREE.Color(0x5d7096), AMBER = new THREE.Color(0xf2b56b), tint = new THREE.Color();
   var pa = new Pose(), pb = new Pose(), vR = new THREE.Vector3(), vT = new THREE.Vector3(), vZ = new THREE.Vector3(), vX = new THREE.Vector3(), m4 = new THREE.Matrix4();
   var eA = new THREE.Euler(), qI = new THREE.Quaternion();
-  var qCloud = new THREE.Quaternion(), qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qTilt = new THREE.Quaternion(), TILT = 0.9, qWave = new THREE.Quaternion(), qFace = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
+  var qCloud = new THREE.Quaternion(), qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qTilt = new THREE.Quaternion(), TILT = -0.07, qWave = new THREE.Quaternion(), qFace = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
   function pose(f, L, i, t, rise, o) {
     var a, rad;
     o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d); o.c = 0;
@@ -3428,7 +3520,7 @@ import * as THREE from './vendor/three.module.min.js';
     heroS = mix(heroS, (wide ? Math.min(W * 0.34, H * 0.58) : W * 0.5) * (1 + 1.8 * peak), fe); // in the fly-through it takes the middle of the screen, then the camera pushes in
     var S = mix(mix(heroS, sceneS, smooth(en * 1.5)), mix(pl0.s, pl1.s, mp) * mix(FIT[fA], FIT[fB], m), d) * (1 + 0.3 * nudge);
     var CX = mix(mix(mix(wide ? W * 0.72 : W / 2, W / 2, fe), mix(W * 0.74, W * 0.26, q), en), mix(pl0.x, pl1.x, mp), d);
-    var CY = mix(mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.3 - 20, H * 0.5 + 0.29 * heroS, fe), wide ? H * 0.87 : H * 0.72, en), mix(pl0.y, pl1.y, mp), d);
+    var CY = mix(mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.56, H * 0.5 + 0.1 * heroS, fe), wide ? H * 0.87 : H * 0.72, en), mix(pl0.y, pl1.y, mp), d);
     // Phones: where the model moves with the page, the canvas is laid on the page itself, so the phone's own scrolling carries it and it cannot trail behind the text. Where it holds still on screen, or during a dive, the canvas is fixed to the screen as before.
     var ride = !REDUCE && mix(mix(wide ? 0 : 1, 0, Math.max(en, fe)), mix(pl0.k, pl1.k, mp), d) > 0.5, rT = ride ? Math.round(clamp(CY + sc - H / 2, 0, document.body.offsetHeight - H)) : 0;
     if (ride !== riding) { riding = ride; cv.style.position = ride ? 'absolute' : 'fixed'; }
@@ -3436,15 +3528,16 @@ import * as THREE from './vendor/three.module.min.js';
     if (ride) CY += sc - rT;
     HIT.x = CX; HIT.y = ride ? CY - (sc - rT) : CY; HIT.s = alpha > 0.3 ? S : 0; HIT.asm = cur && m > 0.5 ? cur.asm || null : null; HIT.turb = (!cur && en < 0.5) || (!!cur && !!cur.fin && m > 0.5); HIT.t = t; if (held && HIT.asm && HIT.asm.tick === tickTK) keyed = t;
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
-    var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(mix(ELEV[1], 0.1, peak), 0.6, en), mix(ELEV[fA], ELEV[fB], m), d) - gy * 0.08 * Math.max(1 - en, d);
+    var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(mix(0.13, 0.06, peak), 0.6, en), mix(ELEV[fA], ELEV[fB], m), d) - gy * 0.08 * Math.max(1 - en, d);
     if (NAV.on) yaw = 0.62 + 0.22 * Math.sin(now * 0.00013) + gx * 0.18; // the map sways a little so it reads as a model, and holds still enough to aim at
-    qTurn.setFromAxisAngle(UP, yaw + 0.5 + 0.9 * smooth(fl) * (1 - tb) - 0.55 * peak); // at the ending it shows the same face as in the opening // through the fly-through the turbine swings round, so the camera looks along the blades and then across them
+    qTurn.setFromAxisAngle(UP, yaw + 0.3 + 0.3 * smooth(fl) * (1 - tb) - 0.3 * peak); // at the ending it shows the same face as in the opening // through the fly-through the turbine swings round, so the camera looks along the blades and then across them
     qWave.setFromAxisAngle(UP, yaw - 0.35); qCloud.setFromAxisAngle(UP, yaw + 0.5);
     qFace.setFromAxisAngle(UP, yaw - 0.14 + (REDUCE ? 0 : 0.1 * Math.sin(now * 0.0004)));
     fill.intensity = mix(0.5, 2.8, mix(UPRIGHT.indexOf(fA) < 0 ? 0 : 1, UPRIGHT.indexOf(fB) < 0 ? 0 : 1, m)); // upright charts face the camera and sway a little
     rig.rotation.y = yaw - 0.62 + 1.7 * (smooth(fl) - 0.5) * Math.sqrt(peak); // through the fly-through the key light sweeps across the blades
     var dist = 6, target = 0.05;
-    vT.set(mix(-0.5, 0.62, smooth(fl)) * K * peak, 0.3 * peak, 0).applyQuaternion(qTurn); // and the camera tracks along the shaft, from the compressor's first rows to the turbine wheels, at blade height
+    var back2 = smooth((fl - 0.52) / 0.4); indK = smooth((fl - 0.46) / 0.08) * (1 - smooth(en * 3)); indRow = mix(GN + 1.5, -1.5, back2); // past half way the tree is priced: back up from the bins, one row at a time, to the single number at the top
+    vT.set(0, (BY - 0.05 + mix(mix(0.62, -0.62, smooth(fl / 0.5)), 0.5, back2) * K) * peak, 0); // the camera follows the balls down the pegs to the bins, then rides back up with the pricing
     camera.position.set(vT.x + Math.sin(yaw) * Math.cos(elev) * dist, vT.y + target + Math.sin(elev) * dist, vT.z + Math.cos(yaw) * Math.cos(elev) * dist);
     camera.lookAt(vT.x, vT.y + target, vT.z);
     camera.zoom = (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / (H / S); // one model unit is S pixels
@@ -3478,6 +3571,7 @@ import * as THREE from './vendor/three.module.min.js';
       markFor = shown + ':' + plannedAt; mark++;
       for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
+    gOff = ride ? rT - sc : 0; galton(now, dt, (tb > 0 ? smooth((tb - 0.8) / 0.2) : cur ? 0 : 1 - smooth(en * 4)) * smooth((t - partsAt - 900) / 600) * (NAV.on ? 0 : 1), peak, tb > 0 ? 0 : fe);
     if (tb > 0) fly(0, 1, t, 1, 1 - tb); else fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? (wc > 0.001 ? 1 : 0) : 1, cur ? 1 - wc : 0);
     fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
     camL.copy(camera.position); city.worldToLocal(camL); dMat.uniforms.uS.value = S * 6 * renderer.getPixelRatio(); // points are sized in the model's own units
@@ -3496,7 +3590,7 @@ import * as THREE from './vendor/three.module.min.js';
     screenNodes.length = 0;
     for (var q = 0; q < n * n; q++) { node3(q, cur ? 0 : lift, tmpV).project(camera); screenNodes.push((tmpV.x + 1) / 2 * W, (1 - tmpV.y) / 2 * H + (ride ? rT - sc : 0)); }
     // Draw only when something on screen changed, so a still page costs nothing.
-    var k = [NAV.on, yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, draw.toFixed(3), risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, sS.toFixed(1), !cur || tb > 0 ? spin.toFixed(2) : 0, story ? sp.toFixed(3) : 0].join(); // spin: the rotor keeps turning even when nothing else moves
+    var k = [NAV.on, yaw.toFixed(4), elev.toFixed(4), S | 0, CX | 0, CY | 0, shown, tubeSegs, draw.toFixed(3), risen, W, H, fA, fB, m.toFixed(3), moving ? now : 0, gTick, sS.toFixed(1), !cur || tb > 0 ? spin.toFixed(2) : 0, story ? sp.toFixed(3) : 0].join(); // spin: the rotor keeps turning even when nothing else moves
     if (k !== lastKey) { lastKey = k; draw3d(peak); }
   }
 
@@ -3508,7 +3602,7 @@ import * as THREE from './vendor/three.module.min.js';
     window.addEventListener('pointerdown', function (e) {
       if (NAV.on || !HIT.s || (e.target.closest && e.target.closest('a, button, input, select, textarea, canvas[data-demo], .themes'))) return;
       if (Math.hypot(e.clientX - HIT.x, e.clientY - HIT.y) > HIT.s * 0.95) return;
-      if (HIT.turb) spinV = 4.5;
+      if (HIT.turb) gAgain(performance.now()); // click the board: every ball goes back up and a new run starts
       else if (HIT.asm && HIT.asm.tick === tickTK) { held = true; keyed = HIT.t; }
       else if (HIT.asm && HIT.asm.tick === tickSurf) setWave = HIT.t;
       else if (HIT.asm && HIT.t - poke > 1100) { pokeAsm = HIT.asm; poke = HIT.t; }

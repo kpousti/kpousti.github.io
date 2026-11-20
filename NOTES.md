@@ -4,6 +4,32 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The opening model is a Galton board that prices an option (2026-11-20)
+
+Kia did not love the skateboard and asked for an opening that "dresses for the job I want": quant. He picked the Galton board from five options. The skateboard model and its script are deleted; the turbine files stay but are unused.
+
+**The object** (`blender/build_galton.py`, one run builds, rounds edges, bakes shadows and exports `models/galton.bin`, 97 KB):
+walnut frame, plinth and crown; enamel back with the lattice of every possible path inlaid in brass; 13 rows of brass pegs (91); brass hopper, gate, bin dividers and feet; a glass front.
+For the street-network change it has exactly 100 ball parts (91 pegs and 9 others) and 198 rods (182 lattice lines, 13 dividers, 3 frame rails). The script asserts both. Peg and lattice names carry their row.
+
+**The balls** (page, "The Galton board's balls"): not in the file. 320 steel balls (160 on phones), each making one seeded pseudo-random left-or-right bounce per row, so each is one path of an equal-odds (Jarrow-Rudd) binomial tree. Bins stack four and three across. Click the board, or wait nine seconds after a run ends, and the balls go back up and a new run starts with a new random stream.
+
+**The pricing, all computed in the page and shown in the readout under the board** (a one-year at-the-money European call, S 100, K 100, sigma 20%, r 5%):
+- Monte Carlo: the discounted average payoff of the balls that have landed, with its standard error.
+- Tree: backward induction through the same 13-step tree (10.51).
+- Black-Scholes closed form (10.45), with a standard polynomial approximation of the normal CDF.
+
+**The fly-through**: the camera follows the balls down the pegs to the bins while each ball's path glows (where many balls took the same step the light adds up); the board opens in three layers (back, working layer, glass); past half way the tree is priced back up from the bins a row at a time, each row lighting gold, and the camera rides up with it to the single number at the top. Then the pegs and lattice become the street network as before.
+
+**Other changes that came with it**
+- Opening sentence: "Scroll: the Galton board becomes a pricing tree, then a street map." (both the mouse and touch versions; the touch one still said "turbine").
+- The scanned-metal wear now applies only to metal parts (it showed as brick lines on wood, enamel and rubber).
+- Phones: the opening reserves more room under the text (the board is about 0.9 of the screen width tall).
+- Reduced motion: the board shows a finished run and the final numbers.
+- Known: on a computer the very first fast scroll has a few one-off slow frames where each later model first appears (thru, Experience, Projects, first light-drawn scene). They are gone on the second pass. Not caused by the board.
+
+**For Kia before interviews**: anything on the home screen is fair game. Be ready to explain the bell curve from independent bounces, why the tree is priced backward, what "risk-neutral" means here, why the simulation's error shrinks with the square root of the number of paths, and why tree and formula differ slightly (13 steps).
+
 ## The opening model is now Kia's electric skateboard, not a turbine (2026-11-20)
 
 Kia's point: the turbine made the page read as "interested in turbines". It stood for the employer, not for him. He chose the electric skateboard he helped build the speed controller for.
