@@ -2287,14 +2287,16 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
 (function () {
   var holder = document.getElementById('themes');
   window.addEventListener('scroll', function () { holder.classList.toggle('away', window.scrollY > window.innerHeight * 0.5); }, { passive: true });
-  if (!holder || /(^|\.)kiapousti\.com$|github\.io$/.test(location.hostname)) return;
-  holder.hidden = false;
+  if (!holder) return;
+  holder.hidden = false; // shown to every visitor since 2026-11-20 (it was a preview-only tool before)
+  var saved = null; try { saved = localStorage.getItem('kp-theme'); } catch (e) {}
+  if (saved && THEMES[saved] && saved !== THEME_KEY) applyTheme(saved); // a returning visitor keeps the look they picked
   Object.keys(THEMES).forEach(function (key) {
     var t = THEMES[key], b = document.createElement('button');
     b.type = 'button'; b.id = 'theme-' + key; b.setAttribute('aria-pressed', key === THEME_KEY);
     b.innerHTML = '<i style="background:' + t.ink + ';border-color:' + t.accent + '"><u style="background:' + t.accent + '"></u></i>' + t.name;
     b.addEventListener('click', function () {
-      applyTheme(key);
+      applyTheme(key); try { localStorage.setItem('kp-theme', key); } catch (e) {}
       holder.querySelectorAll('button').forEach(function (o) { o.setAttribute('aria-pressed', o === b); });
     });
     holder.appendChild(b);
