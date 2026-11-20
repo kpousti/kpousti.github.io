@@ -148,7 +148,7 @@ h1 {
 .hero-role em { font-style: normal; color: var(--accent); }
 .hero-pitch { max-width: 52ch; color: var(--text-dim); font-size: 1.08rem; margin: 16px 0 0; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.btn { padding: 12px 20px; border-radius: 8px; border: 1px solid var(--line); color: var(--bright); font-weight: 500; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.btn { padding: 12px 22px; border-radius: 999px; border: 1px solid var(--line); color: var(--bright); font-weight: 500; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn.primary:hover { background: var(--bright); border-color: var(--bright); color: var(--on-accent); }
@@ -234,7 +234,7 @@ body.nav #map { z-index: 31; }
 .builds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .build { grid-column: span 1; }
 .build.wide { grid-column: span 2; }
-.feature, .build { position: relative; border: 1px solid var(--line); border-radius: 4px; background: rgb(var(--panel)); overflow: hidden; }
+.feature, .build { position: relative; border: 1px solid var(--line); border-radius: 22px; background: rgb(var(--panel)); overflow: hidden; }
 
 .screen { position: relative; border-bottom: 1px solid var(--line); background: var(--screen); }
 .screen canvas { display: block; width: 100%; height: 200px; }
@@ -248,8 +248,20 @@ body.nav #map { z-index: 31; }
 .ios::after { content: ""; position: absolute; z-index: 3; bottom: 6px; left: 50%; width: 84px; height: 4px; margin-left: -42px; border-radius: 2px; background: rgba(255, 255, 255, 0.55); pointer-events: none; }
 .ios-status { flex: none; height: 38px; display: flex; justify-content: space-between; align-items: center; padding: 4px 20px 0 24px; font-weight: 600; font-size: 12px; }
 .ios-status svg { display: block; }
-.ios-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 14px 8px; }
-.ios-head b { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.ios-head { flex: none; display: flex; align-items: center; gap: 9px; padding: 4px 14px 9px; }
+.ios-head span { flex: 1; min-width: 0; }
+.ios-head small { display: block; font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8e8e93; }
+.ios-head b { display: block; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.ios-me { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #2c2c2e; color: #d1d1d6; font-style: normal; font-size: 9.5px; font-weight: 700; }
+.ios-sec { margin: 12px 4px 0; font-size: 9.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8e8e93; }
+.ios-sec + .ios-card { margin-top: 5px; }
+.ios-av { flex: none; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; background: var(--tint); color: #0b0d14; font-style: normal; font-size: 11px; font-weight: 700; }
+.ios-grow { flex: 1; min-width: 0; }
+.app-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 24px 24px 0; }
+.app-head .status { margin-top: 8px; white-space: nowrap; }
+.app-head h3 { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; font-size: 1.5rem; line-height: 1.15; }
+.app-head h3 .ios-ico { grid-row: span 2; width: 54px; height: 54px; border-radius: 13px; margin: 0; box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.7); }
+.app-as { display: block; font-family: var(--font-mono); font-size: 11.5px; font-weight: 400; letter-spacing: 0.02em; color: var(--text-dim); }
 .ios-ico { flex: none; width: 26px; height: 26px; border-radius: 7px; display: block; }
 h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6px; vertical-align: -5px; margin-right: 9px; }
 .ios-views { flex: 1; min-height: 0; position: relative; }
@@ -286,11 +298,10 @@ h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6
 .ios-view input[type="range"] { width: 100%; accent-color: var(--tint); margin: 4px 0 0; }
 .ios-mic { display: grid; place-items: center; width: 46px; height: 46px; margin: 10px auto 2px; border: 0; border-radius: 50%; background: var(--tint); cursor: pointer; }
 .ios-mic.on { box-shadow: 0 0 0 6px rgba(242, 181, 107, 0.25); }
-.ios-tabs { flex: none; display: flex; padding: 5px 6px 20px; border-top: 0.5px solid #38383a; background: #121214; }
+.ios-tabs { flex: none; display: flex; padding: 6px 6px 18px; border-top: 0.5px solid #38383a; background: #121214; }
 .ios-tabs button { flex: 1; padding: 4px 0 2px; border: 0; background: none; color: #8e8e93; font: inherit; font-size: 9.5px; font-weight: 600; cursor: pointer; }
-.ios-tabs button::before { content: ""; display: block; width: 16px; height: 3px; margin: 0 auto 4px; border-radius: 2px; background: currentColor; opacity: 0.35; }
+.ios-tabs button svg { display: block; margin: 0 auto 2px; }
 .ios-tabs button[aria-pressed="true"] { color: var(--tint); }
-.ios-tabs button[aria-pressed="true"]::before { opacity: 1; }
 .ios button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .screen-bar {
   display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line);
@@ -353,7 +364,7 @@ h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6
 .beyond .wide { grid-column: span 2; }
 .beyond li { padding: 0 0 8px; border-top: 0; }
 
-.mini { display: block; width: 100%; height: 124px; margin: 0 0 16px; background: var(--screen); border: 1px solid var(--line); border-radius: 4px; object-fit: cover; }
+.mini { display: block; width: 100%; height: 124px; margin: 0 0 16px; background: var(--screen); border: 1px solid var(--line); border-radius: 16px; object-fit: cover; }
 .beyond li:not(.wide) img.mini { height: auto; aspect-ratio: 2 / 1; } /* the rendered pictures are 2:1: show all of them at every width */
 .beyond li { font-size: 0.94rem; text-align: left; }
 .beyond i { color: var(--bright); }
@@ -947,16 +958,17 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
 var THEMES = {
   night:   { name: 'Pacific Dusk',  scheme: 'dark',  ink: '#0e151e', inkRgb: '14,21,30',   panel: '19,27,38',   screen: SCREEN, panelc: PANELC, line: '#293442', text: '#c6cad4', dim: '#a3a9b8', bright: '#eef0f5', accent: '#f2b56b', accentRgb: '242,181,107', onAccent: '#0e151e', edge: '255,255,255', grain: 0.04,
              demo: { glow: '98,152,255', white: '238,243,250', dim: '132,146,168', palette: ['98,152,255', '242,181,107', '126,214,190', '201,160,255', '238,243,250'] } },
-  studio:  { name: 'Studio Black', scheme: 'dark',  ink: '#000000', inkRgb: '0,0,0',      panel: '22,22,24',   screen: '#0a0a0c', panelc: '#161618', line: '#2c2c30', text: '#d2d2d7', dim: '#98989f', bright: '#f5f5f7', accent: '#2997ff', accentRgb: '41,151,255',  onAccent: '#000000', edge: '255,255,255', grain: 0.03,
-             demo: { glow: '170,176,190', white: '245,245,247', dim: '134,134,139', palette: ['170,176,190', '41,151,255', '110,210,200', '180,150,255', '245,245,247'] } },
-  gallery: { name: 'Gallery Light', scheme: 'light', ink: '#f5f5f7', inkRgb: '245,245,247', panel: '255,255,255', screen: '#111114', panelc: '#1b1b20', line: '#d2d2d7', text: '#3a3a3c', dim: '#6e6e73', bright: '#1d1d1f', accent: '#0066cc', accentRgb: '0,102,204',   onAccent: '#ffffff', edge: '0,0,0',       grain: 0.025,
-             demo: { glow: '150,170,200', accent: '77,163,255', white: '245,245,247', dim: '150,150,160', palette: ['150,170,200', '77,163,255', '110,210,200', '180,150,255', '245,245,247'] },
-             page: { glow: '60,90,140', accent: '0,102,204', white: '29,29,31', palette: ['60,90,140', '0,102,204', '20,130,110', '110,70,200', '29,29,31'] },
-             s: { text: '#d2d2d7', dim: '#a1a1a8', bright: '#f5f5f7', line: '#2c2c30', accent: '#4da3ff' } },
-  volt:    { name: 'Volt',         scheme: 'dark',  ink: '#070806', inkRgb: '7,8,6',      panel: '17,19,14',   screen: '#030402', panelc: '#0f110c', line: '#272b1f', text: '#c9cfbf', dim: '#969d88', bright: '#f4f7ea', accent: '#c8f230', accentRgb: '200,242,48',  onAccent: '#0a0d02', edge: '255,255,255', grain: 0.045,
-             demo: { glow: '168,178,150', white: '244,247,234', dim: '140,146,128', palette: ['168,178,150', '200,242,48', '120,220,190', '230,230,120', '244,247,234'] } },
-  aurora:  { name: 'Aurora',       scheme: 'dark',  ink: '#0d0b16', inkRgb: '13,11,22',   panel: '23,20,38',   screen: '#08070f', panelc: '#14122a', line: '#2c2845', text: '#cbc7df', dim: '#9c96b8', bright: '#f3f0ff', accent: '#7ee6c8', accentRgb: '126,230,200', onAccent: '#07120f', edge: '255,255,255', grain: 0.04,
-             demo: { glow: '160,130,255', white: '243,240,255', dim: '140,134,170', palette: ['160,130,255', '126,230,200', '255,160,200', '120,180,255', '243,240,255'] } }
+  // The other four are named for things I do away from the keyboard: cars, surfing, basketball and the markets.
+  studio:  { name: 'Garage',       scheme: 'dark',  ink: '#0b0c0e', inkRgb: '11,12,14',   panel: '20,21,24',   screen: '#070809', panelc: '#141518', line: '#2a2c31', text: '#cfd2d8', dim: '#959aa4', bright: '#f4f5f7', accent: '#ff5a3c', accentRgb: '255,90,60',   onAccent: '#0b0c0e', edge: '255,255,255', grain: 0.03,
+             demo: { glow: '160,170,185', white: '244,245,247', dim: '134,138,146', palette: ['160,170,185', '255,90,60', '110,200,210', '240,190,90', '244,245,247'] } },
+  gallery: { name: 'Dawn Patrol',  scheme: 'light', ink: '#f3f7fd', inkRgb: '243,247,253', panel: '255,255,255', screen: '#0d1422', panelc: '#17202f', line: '#d5deeb', text: '#33415a', dim: '#66758f', bright: '#0f1a2e', accent: '#1f6bff', accentRgb: '31,107,255',  onAccent: '#ffffff', edge: '0,0,0',       grain: 0.02,
+             demo: { glow: '150,175,215', accent: '96,160,255', white: '240,245,252', dim: '150,160,178', palette: ['150,175,215', '96,160,255', '110,210,200', '255,190,110', '240,245,252'] },
+             page: { glow: '60,100,170', accent: '31,107,255', white: '15,26,46', palette: ['60,100,170', '31,107,255', '20,130,110', '220,120,30', '15,26,46'] },
+             s: { text: '#d0d8e6', dim: '#9aa6ba', bright: '#f3f7fd', line: '#28344a', accent: '#60a0ff' } },
+  volt:    { name: 'Hardwood',     scheme: 'dark',  ink: '#130d09', inkRgb: '19,13,9',    panel: '30,21,15',   screen: '#0c0806', panelc: '#1b130d', line: '#3a2a1e', text: '#d8cbbd', dim: '#a59383', bright: '#f8efe4', accent: '#f0792b', accentRgb: '240,121,43',  onAccent: '#130d09', edge: '255,255,255', grain: 0.045,
+             demo: { glow: '190,165,140', white: '248,239,228', dim: '150,134,118', palette: ['190,165,140', '240,121,43', '120,200,170', '230,200,120', '248,239,228'] } },
+  aurora:  { name: 'Ticker',       scheme: 'dark',  ink: '#050d0a', inkRgb: '5,13,10',    panel: '12,24,19',   screen: '#030806', panelc: '#0b1712', line: '#1d3329', text: '#c2d3ca', dim: '#8aa095', bright: '#effaf4', accent: '#3ddc84', accentRgb: '61,220,132',  onAccent: '#04110a', edge: '255,255,255', grain: 0.04,
+             demo: { glow: '130,170,150', white: '239,250,244', dim: '124,146,136', palette: ['130,170,150', '61,220,132', '240,180,90', '120,180,255', '239,250,244'] } }
 };
 // Colors the project screens draw with, and the colors the page-wide scenes draw with. applyTheme fills both.
 var GLOW, AMBER, WHITE, DIM, PALETTE, SCREEN, PANELC, PAGE = {}, THEME_KEY = 'night';
@@ -2292,7 +2304,8 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
 // ---------- Side builds as small working iPhone apps: a status bar, the app's name and logo, three tabs and real controls, built round each build's live canvas. Everything shown is sample data. ----------
 (function () {
   function sw(on, locked) { return '<button class="ios-sw" role="switch" aria-checked="' + (on ? 'true' : 'false') + '"' + (locked ? ' disabled' : '') + '></button>'; }
-  function row(a, sub, right) { return '<div class="ios-row"><span>' + a + (sub ? '<small class="ios-sub">' + sub + '</small>' : '') + '</span>' + (right || '') + '</div>'; }
+  function row(a, sub, right, av) { return '<div class="ios-row">' + (av ? '<i class="ios-av">' + av + '</i>' : '') + '<span class="ios-grow">' + a + (sub ? '<small class="ios-sub">' + sub + '</small>' : '') + '</span>' + (right || '') + '</div>'; }
+  function sec(t) { return '<p class="ios-sec">' + t + '</p>'; }
   function card(h, pad) { return '<div class="ios-card' + (pad ? ' pad' : '') + '">' + h + '</div>'; }
   function chip(t, warm) { return '<span class="ios-chip' + (warm ? ' warm' : '') + '">' + t + '</span>'; }
   function ico(bg, glyph) { return '<svg class="ios-ico" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" fill="' + bg + '"/><g fill="#0b0d14" stroke="#0b0d14" stroke-width="0">' + glyph + '</g></svg>'; }
@@ -2300,52 +2313,60 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   var CV = '<div data-cv></div>';
   var APPS = {
     city: { feat: ["Six agents, one job each. Switch any of them off.", "Only what needs a decision reaches me.", "What each agent did, in order."], name: 'Agent City', tint: '#f2b56b', ico: ico('#f2b56b', '<path d="M4 14l4.5-4.5L13 14zM13 14l4.5-4.5L22 14zM8.5 20.5L13 16l4.5 4.5z"/>'), tabs: ['Agents', 'Needs you', 'Log'], views: [
-      CV + card(['inbox', 'jobs', 'ideas', 'coach', 'markets', 'builder'].map(function (n, k) { return row(n, k % 3 === 2 ? 'idle' : 'ran this morning', sw(k !== 2)); }).join('')),
+      CV + sec('Agents') + card(['inbox', 'jobs', 'ideas', 'coach', 'markets', 'builder'].map(function (n, k) { return row(n, k % 3 === 2 ? 'idle' : 'ran this morning', sw(k !== 2), n[0].toUpperCase()); }).join('')),
       '<p class="ios-sub" data-empty style="padding:14px 4px">Nothing needs you right now.</p>' + ['<b>jobs</b><small class="ios-sub">One listing matches your filters.</small>', '<b>inbox</b><small class="ios-sub">A reply is drafted and waiting.</small>', '<b>markets</b><small class="ios-sub">A pullback crossed a tier.</small>'].map(function (t) { return card(t + '<div class="ios-btns"><button class="ios-btn" data-dismiss>Open</button><button class="ios-btn ghost" data-dismiss>Later</button></div>', true); }).join(''),
-      card(['markets filed its report', 'inbox sorted new mail', 'jobs checked listings', 'coach planned the day', 'builder ran its checks'].map(function (t, k) { return row(t, 'sample · ' + (6 + k) + ':30 AM'); }).join(''))] },
+      sec('This morning') + card(['markets filed its report', 'inbox sorted new mail', 'jobs checked listings', 'coach planned the day', 'builder ran its checks'].map(function (t, k) { return row(t, 'sample · ' + (6 + k) + ':30 AM'); }).join(''))] },
     wave: { feat: ["The morning report: height, period and wind.", "The swell for the days ahead.", "One notification, and only above the height I set."], name: 'Dawn Patrol', tint: '#4aa3ff', ico: ico('#4aa3ff', '<circle cx="18" cy="8" r="3.2"/><path d="M3 17c3-4.5 6-4.5 9 0s6 4 11-1v7H3z"/>'), tabs: ['Today', 'Week', 'Alerts'], views: [
-      CV + card('<span class="ios-big">3 to 4 ft</span><small class="ios-sub">14 s · offshore wind · sample report</small><div class="ios-btns">' + chip('Worth the paddle') + '</div>', true) + card(row('Best window', '', '<b>6:30 to 8</b>') + row('Tide', 'sample', '<b>Rising</b>')),
-      card(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d, k) { var w = [55, 70, 40, 30, 62, 85, 48][k]; return row('<b>' + d + '</b>', '', '<span class="ios-bar" style="max-width:120px"><i style="width:' + w + '%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Sample swell heights.</p>',
-      card(row('Morning alert', 'One notification, only if it is worth it', sw(true)) + row('Send at', '', step(390, 'time', 15)) + row('Only above', '', step(3, 'ft', 1)))] },
+      CV + card('<span class="ios-big">3 to 4 ft</span><small class="ios-sub">14 s · offshore wind · sample report</small><div class="ios-btns">' + chip('Worth the paddle') + '</div>', true) + sec('Conditions') + card(row('Best window', '', '<b>6:30 to 8</b>') + row('Tide', 'sample', '<b>Rising</b>')),
+      sec('Next seven days') + card(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d, k) { var w = [55, 70, 40, 30, 62, 85, 48][k]; return row('<b>' + d + '</b>', '', '<span class="ios-bar" style="max-width:120px"><i style="width:' + w + '%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Sample swell heights.</p>',
+      sec('Notification') + card(row('Morning alert', 'One notification, only if it is worth it', sw(true)) + row('Send at', '', step(390, 'time', 15)) + row('Only above', '', step(3, 'ft', 1)))] },
     voice: { feat: ["Ask out loud; it answers out loud.", "The tools it can call to answer.", "What was asked before."], name: 'Kia-bot', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="5" y="10" width="2.6" height="6" rx="1.3"/><rect x="9.4" y="6" width="2.6" height="14" rx="1.3"/><rect x="13.8" y="8.5" width="2.6" height="9" rx="1.3"/><rect x="18.2" y="11" width="2.6" height="4" rx="1.3"/>'), tabs: ['Talk', 'Tools', 'History'], views: [
       CV + '<button class="ios-mic" data-mic aria-label="Talk" aria-pressed="false"><svg width="20" height="22" viewBox="0 0 20 22" fill="none" stroke="#0b0d14" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="6.5" y="1" width="7" height="12" rx="3.5" fill="#0b0d14"/><path d="M3 10a7 7 0 0 0 14 0M10 17v4"/></svg></button><p class="ios-sub" data-mic-label style="text-align:center">Tap to talk</p>',
-      card(row('surf_forecast', 'Called when you ask about waves', sw(true)) + row('tides', 'Called when you ask about waves', sw(true))),
-      card(row('How is the surf tomorrow morning?', 'sample · answered out loud'))] },
+      sec('Tools it can call') + card(row('surf_forecast', 'Called when you ask about waves', sw(true), 'ƒ') + row('tides', 'Called when you ask about waves', sw(true), 'ƒ')),
+      sec('Earlier') + card(row('How is the surf tomorrow morning?', 'sample · answered out loud'))] },
     histogram: { feat: ["Train and test stretches on synthetic prices.", "Fit on one stretch, test on the next, six times.", "Fees and slippage come off every trade."], name: 'Walkforward', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="4" y="15" width="3" height="6"/><rect x="8.5" y="11" width="3" height="10"/><rect x="13" y="13" width="3" height="8"/><rect x="17.5" y="7" width="3" height="14"/><path d="M7 5h9v2H9v3H7z"/>'), tabs: ['Chart', 'Folds', 'Costs'], views: [
-      CV + card(row('Mode', '', chip('Paper trading')) + row('Prices', '', chip('Synthetic')) + row('Validation', '', '<b>Walk-forward</b>')),
-      card([1, 2, 3, 4, 5, 6].map(function (k) { return row('<b>Fold ' + k + '</b>', '', '<span class="ios-bar two" style="max-width:130px"><i style="width:' + (52 + k * 4) + '%"></i><i style="width:22%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Blue is the stretch it fits on, amber the stretch it is tested on.</p>',
-      card('<label>Fee <b data-out>2 bps</b><input type="range" min="0" max="20" value="2" data-unit="bps"></label>', true) + card('<label>Slippage <b data-out>5 bps</b><input type="range" min="0" max="20" value="5" data-unit="bps"></label>', true) + '<p class="ios-sub" style="padding:8px 4px">Costs come off every trade before results are reported.</p>'] },
+      CV + sec('Run') + card(row('Mode', '', chip('Paper trading')) + row('Prices', '', chip('Synthetic')) + row('Validation', '', '<b>Walk-forward</b>')),
+      sec('Six folds') + card([1, 2, 3, 4, 5, 6].map(function (k) { return row('<b>Fold ' + k + '</b>', '', '<span class="ios-bar two" style="max-width:130px"><i style="width:' + (52 + k * 4) + '%"></i><i style="width:22%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Blue is the stretch it fits on, amber the stretch it is tested on.</p>',
+      sec('Trading costs') + card('<label>Fee <b data-out>2 bps</b><input type="range" min="0" max="20" value="2" data-unit="bps"></label>', true) + card('<label>Slippage <b data-out>5 bps</b><input type="range" min="0" max="20" value="5" data-unit="bps"></label>', true) + '<p class="ios-sub" style="padding:8px 4px">Costs come off every trade before results are reported.</p>'] },
     funnel: { feat: ["Each inquiry with its drafted reply.", "Read once, then sent down one path.", "Complaints always go to a person."], name: 'Firstreply', tint: '#6aa5ff', ico: ico('#6aa5ff', '<path d="M11 5.5L4.5 12l6.5 6.5V14c5 0 8 1.2 10 5 0-7.5-4-10.5-10-10.5z"/>'), tabs: ['Inbox', 'Flow', 'Rules'], views: [
       [['Do you open on Sundays?', 'auto-reply', 'Yes, we are open 9 to 3 on Sundays.', 'Send'], ['Can I get a quote for two rooms?', 'auto-reply', 'Happy to. Could you share the room sizes?', 'Send'], ['My order arrived damaged.', 'to a person', 'Complaints always go to a person.', 'Hand off']].map(function (m) {
         return card('<b>' + m[0] + '</b><div class="ios-btns">' + chip(m[1], m[1] !== 'auto-reply') + '</div><small class="ios-sub" style="margin-top:7px">' + m[2] + '</small><button class="ios-btn wide" data-done="' + (m[3] === 'Send' ? 'Sent' : 'Handed off') + '">' + m[3] + '</button>', true); }).join('') + '<p class="ios-sub" style="padding:8px 4px">Sample inquiries.</p>',
       CV + '<p class="ios-sub" style="padding:8px 4px">Each inquiry is read once, then leaves on one path.</p>',
-      card(row('Reply right away', '', sw(true)) + row('Complaints go to a person', 'Always on', sw(true, true)) + row('Quiet hours', 'Hold replies overnight', sw(false)))] },
+      sec('Rules') + card(row('Reply right away', '', sw(true)) + row('Complaints go to a person', 'Always on', sw(true, true)) + row('Quiet hours', 'Hold replies overnight', sw(false)))] },
     candles: { feat: ["How far each holding sits under its high.", "What is coming up for each holding.", "A signal when a pullback crosses a tier."], name: 'Debrief', tint: '#5b8cff', ico: ico('#5b8cff', '<rect x="6" y="9" width="4" height="9" rx="1"/><rect x="7.5" y="5" width="1" height="16"/><rect x="15" y="7" width="4" height="7" rx="1"/><rect x="16.5" y="4" width="1" height="14"/>'), tabs: ['Today', 'Events', 'Signals'], views: [
-      CV + card(row('Sample holding A', 'under its 52-week high', chip('no signal')) + row('Sample holding B', 'under its 52-week high', chip('tier 1', true)) + row('Sample holding C', 'under its 52-week high', chip('tier 2', true))),
-      card(row('Earnings', 'Sample holding B · Thursday') + row('Dividend date', 'Sample holding A · Monday') + row('Rate decision', 'Wednesday')) + '<p class="ios-sub" style="padding:8px 4px">Sample events.</p>',
-      card(row('Tier 1', 'Pullback of 5%', sw(true)) + row('Tier 2', 'Pullback of 10%', sw(true)) + row('Tier 3', 'Pullback of 20%', sw(true)))] },
+      CV + sec('Holdings') + card(row('Sample holding A', 'under its 52-week high', chip('no signal'), 'A') + row('Sample holding B', 'under its 52-week high', chip('tier 1', true), 'B') + row('Sample holding C', 'under its 52-week high', chip('tier 2', true), 'C')),
+      sec('Coming up') + card(row('Earnings', 'Sample holding B · Thursday') + row('Dividend date', 'Sample holding A · Monday') + row('Rate decision', 'Wednesday')) + '<p class="ios-sub" style="padding:8px 4px">Sample events.</p>',
+      sec('Signal me at') + card(row('Tier 1', 'Pullback of 5%', sw(true)) + row('Tier 2', 'Pullback of 10%', sw(true)) + row('Tier 3', 'Pullback of 20%', sw(true)))] },
     spiral: { feat: ["Flashcards that flip from question to answer.", "Questions that earn XP.", "From Greek geometry to Renaissance algebra."], name: 'Math 163', tint: '#f2b56b', ico: ico('#f2b56b', '<path fill="none" stroke-width="2" stroke-linecap="round" d="M13 13.5a1.5 1.5 0 1 1 1.5 1.5a3.5 3.5 0 1 1-3.5-3.5a6 6 0 1 1 6 6"/>'), tabs: ['Cards', 'Quiz', 'Progress'], views: [
       CV + '<p class="ios-sub" style="padding:8px 4px">Flashcards flip from question to answer.</p>',
       card('<b>Base of Babylonian numerals?</b><div class="ios-btns" style="flex-wrap:wrap">' + [10, 12, 20, 60].map(function (n) { return '<button class="ios-btn ghost" data-ans="' + (n === 60 ? 1 : 0) + '">' + n + '</button>'; }).join('') + '</div><small class="ios-sub" data-result style="margin-top:8px">Pick one.</small>', true),
-      card(row('Greek geometry', '', '<span class="ios-bar" style="max-width:110px"><i style="width:70%"></i></span>') + row('Renaissance algebra', '', '<span class="ios-bar" style="max-width:110px"><i style="width:35%"></i></span>')) + '<p class="ios-sub" style="padding:8px 4px">Sample progress.</p>'] }
+      sec('Topics') + card(row('Greek geometry', '', '<span class="ios-bar" style="max-width:110px"><i style="width:70%"></i></span>') + row('Renaissance algebra', '', '<span class="ios-bar" style="max-width:110px"><i style="width:35%"></i></span>')) + '<p class="ios-sub" style="padding:8px 4px">Sample progress.</p>'] }
   };
+  var TI = { grid: '<path d="M4 4h6v6H4zM12 4h6v6h-6zM4 12h6v6H4zM12 12h6v6h-6z"/>', bell: '<path d="M11 3a5 5 0 0 0-5 5v4l-2 3h14l-2-3V8a5 5 0 0 0-5-5zM9 17a2 2 0 0 0 4 0z"/>', list: '<path d="M4 5h2v2H4zM8 5h10v2H8zM4 10h2v2H4zM8 10h10v2H8zM4 15h2v2H4zM8 15h10v2H8z"/>',
+    sun: '<circle cx="11" cy="11" r="4"/><path d="M11 2v3M11 17v3M2 11h3M17 11h3M4.6 4.6l2.1 2.1M15.3 15.3l2.1 2.1M4.6 17.4l2.1-2.1M15.3 6.7l2.1-2.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', cal: '<path d="M4 6h14v12H4zM4 10h14M7 3v4M15 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    mic: '<rect x="8" y="2" width="6" height="11" rx="3"/><path d="M5 10a6 6 0 0 0 12 0M11 16v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', tool: '<path d="M14 3a5 5 0 0 0-4.6 6.9L3 16.3 5.7 19l6.4-6.4A5 5 0 0 0 19 8l-3 3-3-1-1-3 3-3a5 5 0 0 0-1-.9z"/>', clock: '<circle cx="11" cy="11" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 6v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    chart: '<path d="M3 16l5-6 4 3 7-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 19h16" stroke="currentColor" stroke-width="1.6"/>', layers: '<path d="M11 3l8 4-8 4-8-4zM3 11l8 4 8-4M3 15l8 4 8-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>', slide: '<path d="M3 7h16M3 15h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="7" r="2.6"/><circle cx="14" cy="15" r="2.6"/>',
+    tray: '<path d="M3 12l3-8h10l3 8v6H3zM3 12h5a3 3 0 0 0 6 0h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>', flow: '<path d="M3 11h6M9 11l8-6M9 11l8 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="11" r="2.5"/><circle cx="17" cy="5" r="2"/><circle cx="17" cy="17" r="2"/>', shield: '<path d="M11 2l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V5z"/>',
+    bolt: '<path d="M12 2L5 12h5l-1 8 7-10h-5z"/>', cards: '<rect x="3" y="6" width="12" height="13" rx="2"/><path d="M7 3h10a2 2 0 0 1 2 2v11" fill="none" stroke="currentColor" stroke-width="1.8"/>', ask: '<circle cx="11" cy="11" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="11" cy="16" r="1.1"/>', bars: '<path d="M4 12h3v7H4zM9.5 7h3v12h-3zM15 3h3v16h-3z"/>' };
+  var TAB = { Agents: 'grid', 'Needs you': 'bell', Log: 'list', Today: 'sun', Week: 'cal', Alerts: 'bell', Talk: 'mic', Tools: 'tool', History: 'clock', Chart: 'chart', Folds: 'layers', Costs: 'slide', Inbox: 'tray', Flow: 'flow', Rules: 'shield', Events: 'cal', Signals: 'bolt', Cards: 'cards', Quiz: 'ask', Progress: 'bars' };
   var SIG = '<svg width="38" height="11" viewBox="0 0 38 11" fill="#f2f2f7" aria-hidden="true"><rect x="0" y="7" width="2.5" height="4" rx="0.6"/><rect x="4" y="5" width="2.5" height="6" rx="0.6"/><rect x="8" y="3" width="2.5" height="8" rx="0.6"/><rect x="12" y="0.5" width="2.5" height="10.5" rx="0.6"/><rect x="20" y="1" width="15" height="9" rx="2.5" fill="none" stroke="#f2f2f7" opacity="0.5"/><rect x="21.5" y="2.5" width="10" height="6" rx="1.2"/></svg>';
   document.querySelectorAll('#builds .scene').forEach(function (sc) {
     var A = APPS[sc.getAttribute('data-shape')], screen = sc.querySelector('.screen'), cv = screen && screen.querySelector('canvas');
     if (!A || !cv) return;
     var chat = screen.querySelector('.chat'), h3 = sc.querySelector('h3'), tabs = '', views = '';
-    A.tabs.forEach(function (t, k) { tabs += '<button aria-pressed="' + (k ? 'false' : 'true') + '">' + t + '</button>'; views += '<div class="ios-view' + (k ? ' off' : '') + '">' + A.views[k] + '</div>'; });
+    A.tabs.forEach(function (t, k) { tabs += '<button aria-pressed="' + (k ? 'false' : 'true') + '"><svg viewBox="0 0 22 22" width="21" height="21" fill="currentColor" aria-hidden="true">' + TI[TAB[t]] + '</svg>' + t + '</button>'; views += '<div class="ios-view' + (k ? ' off' : '') + '">' + A.views[k] + '</div>'; });
     var wrap = document.createElement('div'); wrap.style.display = 'contents';
-    wrap.innerHTML = '<div class="ios-status"><span>9:41</span>' + SIG + '</div><div class="ios-head">' + A.ico + '<b>' + A.name + '</b></div><div class="ios-views">' + views + '</div><nav class="ios-tabs" aria-label="' + A.name + ' sections">' + tabs + '</nav>';
+    wrap.innerHTML = '<div class="ios-status"><span>9:41</span>' + SIG + '</div><div class="ios-head">' + A.ico + '<span><small>Sample data</small><b>' + A.name + '</b></span><i class="ios-me">KP</i></div><div class="ios-views">' + views + '</div><nav class="ios-tabs" aria-label="' + A.name + ' sections">' + tabs + '</nav>';
     var slot = wrap.querySelector('[data-cv]'); slot.appendChild(cv); if (chat) slot.appendChild(chat);
     screen.appendChild(wrap); screen.classList.add('ios'); screen.style.setProperty('--tint', A.tint);
     var stage = document.createElement('div'), list = document.createElement('ul'); stage.className = 'ios-stage'; list.className = 'ios-feats'; // beside the phone: one row per screen; picking a row turns the phone to it
     list.innerHTML = A.tabs.map(function (t, k) { return '<li><button class="ios-feat" aria-pressed="' + (k ? 'false' : 'true') + '"><b>' + t + '</b>' + A.feat[k] + '</button></li>'; }).join('');
     screen.parentNode.insertBefore(stage, screen); stage.appendChild(list); stage.appendChild(screen);
+    var fh = sc.querySelector('.feature-head'); if (fh) { fh.classList.add('app-head'); stage.parentNode.insertBefore(fh, stage); } // the app's icon and name lead the card, the way an app page does
     var fb = list.querySelectorAll('.ios-feat');
     list.addEventListener('click', function (e) { var b = e.target.closest('.ios-feat'); if (b) show(Array.prototype.indexOf.call(fb, b)); });
     function show(k) { for (var q = 0; q < tb.length; q++) { tb[q].setAttribute('aria-pressed', q === k ? 'true' : 'false'); fb[q].setAttribute('aria-pressed', q === k ? 'true' : 'false'); vs[q].classList.toggle('off', q !== k); } }
-    if (h3) h3.insertAdjacentHTML('afterbegin', A.ico);
+    if (h3) { h3.insertAdjacentHTML('afterbegin', A.ico); h3.insertAdjacentHTML('beforeend', '<small class="app-as">iPhone app' + (A.name === h3.textContent.trim() ? '' : ' · ' + A.name) + '</small>'); }
     var vs = wrap.querySelectorAll('.ios-view'), tb = wrap.querySelectorAll('.ios-tabs button');
     function empty() { var e = wrap.querySelector('[data-empty]'); if (e) e.style.display = wrap.querySelectorAll('[data-dismiss]').length ? 'none' : ''; }
     empty();
@@ -2825,12 +2846,13 @@ import * as THREE from './vendor/three.module.min.js';
   dGeo.setAttribute('position', new THREE.BufferAttribute(dP, 3)); dGeo.setAttribute('tint', new THREE.BufferAttribute(dC, 3)); dGeo.setAttribute('size', new THREE.BufferAttribute(dS, 1));
   lGeo.setAttribute('position', new THREE.BufferAttribute(lP, 3)); lGeo.setAttribute('tint', new THREE.BufferAttribute(lC, 3));
   var ADD = { transparent: true, depthWrite: false, toneMapped: false, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor }; // light adds up; a dim point is also a see-through one
-  var dMat = new THREE.ShaderMaterial(Object.assign({ uniforms: { uS: { value: 1 } },
+  var uLight = { value: 0 }; // 1 on the light colour option: light cannot add up on a pale page, so the same points are drawn as ink
+  var dMat = new THREE.ShaderMaterial(Object.assign({ uniforms: { uS: { value: 1 }, uLight: uLight },
     vertexShader: 'attribute float size; attribute vec3 tint; uniform float uS; varying vec3 vC; void main() { vC = tint; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = max(1.5, size * uS / -mv.z); gl_Position = projectionMatrix * mv; }',
-    fragmentShader: 'varying vec3 vC; void main() { float a = smoothstep(1.0, 0.3, length(gl_PointCoord - 0.5) * 2.0); gl_FragColor = vec4(vC * a, a * min(1.0, max(vC.r, max(vC.g, vC.b)))); }' }, ADD));
-  var lMat = new THREE.ShaderMaterial(Object.assign({
+    fragmentShader: 'uniform float uLight; varying vec3 vC; void main() { float a = smoothstep(1.0, 0.3, length(gl_PointCoord - 0.5) * 2.0), m = max(vC.r, max(vC.g, vC.b)); if (uLight > 0.5) { float al = a * min(1.0, m * 2.0); gl_FragColor = vec4(vC / max(m, 0.001) * 0.5 * al, al); } else gl_FragColor = vec4(vC * a, a * min(1.0, m)); }' }, ADD));
+  var lMat = new THREE.ShaderMaterial(Object.assign({ uniforms: { uLight: uLight },
     vertexShader: 'attribute vec3 tint; varying vec3 vC; void main() { vC = tint; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: 'varying vec3 vC; void main() { gl_FragColor = vec4(vC, min(1.0, max(vC.r, max(vC.g, vC.b)))); }' }, ADD));
+    fragmentShader: 'uniform float uLight; varying vec3 vC; void main() { float m = max(vC.r, max(vC.g, vC.b)); if (uLight > 0.5) { float al = min(1.0, m * 2.0); gl_FragColor = vec4(vC / max(m, 0.001) * 0.5 * al, al); } else gl_FragColor = vec4(vC, min(1.0, m)); }' }, ADD));
   var BL = [0.3, 0.55, 1.45], AM = [2.0, 0.95, 0.3], WH = [0.85, 0.9, 1.05], TAU = Math.PI * 2;
   function P(x, y, z, c, s, k) { if (dn >= DN) return; var o = dn * 3; dP[o] = x; dP[o + 1] = y; dP[o + 2] = z; dC[o] = c[0] * k; dC[o + 1] = c[1] * k; dC[o + 2] = c[2] * k; dS[dn++] = s; }
   function L(x0, y0, z0, x1, y1, z1, c, k) { if (ln >= DL) return; var o = ln * 6; lP[o] = x0; lP[o + 1] = y0; lP[o + 2] = z0; lP[o + 3] = x1; lP[o + 4] = y1; lP[o + 5] = z1; lC[o] = lC[o + 3] = c[0] * k; lC[o + 1] = lC[o + 4] = c[1] * k; lC[o + 2] = lC[o + 5] = c[2] * k; ln++; }
@@ -3038,7 +3060,7 @@ import * as THREE from './vendor/three.module.min.js';
     { name: 'la', draw: dsLeads, at: [8], elev: 0.3, fit: 0.95, tick: tickLA, lit: true },
     { name: 'md', draw: dsMarket, at: [9], elev: 0.12, fit: 0.95, tick: tickMD, lit: true },
     { name: 'mg', draw: dsSeeds, at: [10], elev: 0.6, fit: 1.0, tick: tickMG },
-    { name: 'tools', draw: dsStack, at: ['skills'], elev: 0.3, fit: 1.3, tick: tickTools, lit: true },
+    { name: 'tools', draw: dsStack, at: ['skills'], elev: 0.3, fit: 1.05, tick: tickTools, lit: true },
     { name: 'tk', draw: dsBeacon, at: ['contact'], elev: 0.3, fit: 1.35, tick: tickTK }
   ];
   fetch('./models/scenes.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
@@ -3079,7 +3101,8 @@ import * as THREE from './vendor/three.module.min.js';
     A.g.rotation.y = yaw + 0.5; // it keeps a three-quarter front to the camera, however the camera has orbited
     var i, P;
     for (i = 0; i < A.parts.length; i++) { P = A.parts[i]; P.cp.copy(P.p); P.cq.copy(P.q); P.cs = 1; }
-    if (A.draw) { dn = ln = 0; A.draw(t); dGeo.setDrawRange(0, dn); lGeo.setDrawRange(0, ln * 2); dGeo.attributes.position.needsUpdate = dGeo.attributes.tint.needsUpdate = dGeo.attributes.size.needsUpdate = lGeo.attributes.position.needsUpdate = lGeo.attributes.tint.needsUpdate = true; return; }
+    if (A.draw) { var lt = THEMES[THEME_KEY].scheme === 'light' ? 1 : 0; if (lt !== uLight.value) { uLight.value = lt; dMat.blendDst = lMat.blendDst = lt ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor; dMat.needsUpdate = lMat.needsUpdate = true; }
+      dn = ln = 0; A.draw(t); dGeo.setDrawRange(0, dn); lGeo.setDrawRange(0, ln * 2); dGeo.attributes.position.needsUpdate = dGeo.attributes.tint.needsUpdate = dGeo.attributes.size.needsUpdate = lGeo.attributes.position.needsUpdate = lGeo.attributes.tint.needsUpdate = true; return; }
     A.tick(t, A);
     for (i = 0; i < A.parts.length; i++) {
       P = A.parts[i]; var u = smooth(sc * 1.5 - 0.5 * P.key);

@@ -4,6 +4,15 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Closer to Minutes, real-looking apps, and colour options named for Kia's interests (2026-11-20)
+
+- Colour options: Pacific Dusk stays the default. The other four are now Garage (cars: graphite and red), Dawn Patrol (surfing: the light, airy, Minutes-style one), Hardwood (basketball: dark maple and orange) and Ticker (markets: near-black green). Keys in `THEMES` are unchanged (studio, gallery, volt, aurora), only names and colours.
+- NOTE: the colour picker is only shown on localhost. `kiapousti.com` hides it (the check is in the picker script), so visitors always get Pacific Dusk. Showing it live is Kia's call.
+- The light-drawn animations switch to ink on the light option (`uLight` in both shaders, normal blending instead of adding light), so they are visible on a pale page.
+- Apps: SVG icons in every tab bar, a "Sample data" overline and avatar in the app header, section labels and badges in lists.
+- App header beside each phone, like an app page: a 54 px icon, the build's name and "iPhone app · <app name>".
+- Minutes look: pill buttons, 22 px card corners, 16 px picture corners.
+
 ## Borrowed from myminutes.ai: the flow, not the look (2026-11-20)
 
 Kia liked how myminutes.ai reads (a Framer page: one idea per screen, proof up top, a click-through feature list beside a phone, a questions list). He chose to borrow the flow and keep the 3D opening and live algorithms.
