@@ -13,6 +13,7 @@ def kind(name):
 def srgb(c): return round((c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055) * 255)
 
 objs = sorted((o for o in bpy.data.objects if o.type == 'MESH'), key=lambda o: o.name)
+RING = int(bpy.context.scene.get("ring", 6))  # points in each section of a rod-like part
 mats, meshes, mesh_id, centre = [], [], {}, {}
 pos, nor, idx, ring, vcol = array.array('f'), array.array('b'), array.array('H'), array.array('B'), array.array('B')
 multi = any(len({p.material_index for p in o.data.polygons}) > 1 for o in objs)  # then every vertex carries its own colour
@@ -50,7 +51,7 @@ for o in objs:
                 c3 = rgb(me.materials[mi]) if multi else (255, 255, 255)   # without per-vertex colours the part keeps its material colour and this is just the shading
                 if ao: c3 = tuple(srgb(unsrgb(c) * ao.data[vi].value) for c in c3)
                 vcol.extend(c3)
-                ring.append(vi % 6 if strip else 255)  # which of the six points round a blade section this is, so the site can round the blade into a rod
+                ring.append(vi % RING if strip else 255)  # which point round a rod section this is (six for the old turbine blades, twelve for the board), so the site can straighten it into a rod
             idx.append(seen[key])
     assert len(seen) < 65536
     meshes.append({"name": o.name, "mat": [x["name"] for x in mats].index(m.name), "v": [v0, len(seen)], "i": [i0, len(idx) - i0]})
@@ -68,7 +69,7 @@ def pad(b): return b + b"\0" * (-len(b) % 4)
 blobs = [pad(q.tobytes()), pad(nor.tobytes()), pad(idx.tobytes()), parts.tobytes(), pad(ring.tobytes())] + ([pad(vcol.tobytes())] if multi or shaded else [])
 offs, at = [], 0
 for b in blobs: offs.append(at); at += len(b)
-head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr, "pname": [o.name for o in objs], "multi": multi}, separators=(",", ":")).encode()
+head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr, "pname": [o.name for o in objs], "multi": multi, "ring": RING}, separators=(",", ":")).encode()
 head += b" " * (-len(head) % 4)  # spaces, so the header still parses as JSON
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "wb") as f:

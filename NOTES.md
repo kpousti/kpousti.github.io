@@ -4,6 +4,19 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The opening model is now Kia's electric skateboard, not a turbine (2026-11-20)
+
+Kia's point: the turbine made the page read as "interested in turbines". It stood for the employer, not for him. He chose the electric skateboard he helped build the speed controller for.
+
+- `blender/build_board.py` models it deck-down so the hardware shows: trucks, wheels with spoked cores, belt drive and motor, a 60-cell battery under a ribbed lid with nickel strips, balance leads and a BMS, the finned controller, capacitors and wiring. 285 parts.
+  Run: `Blender -b --python blender/build_board.py`, then `Blender -b blender/board.blend --python blender/finish_turbine.py --python blender/export_parts.py` (rounds edges, bakes soft shadows, writes `models/board.bin`, 260 KB; the turbine was 421 KB).
+- The street-network change needs exactly 100 ball parts (one per corner) and at least one rod per street edge. The board has 100 and 185: cells, wheel spokes, belt links, cooling fins and wire runs are the rods. The build script asserts the 100.
+- `export_parts.py` now takes the number of points in a rod section from the scene (`ring`, 12 for the board, 6 for the old turbine) and writes it in the header; the page reads `h.ring`.
+- Page (`fly()` and the loader): parts keep their own scale (wire and belt pieces are one unit mesh stretched); the wheels turn about their own axles; the exploded view lifts parts by layer (cells highest) and slides anything on an axle outward; the board leans its underside to the camera (`TILT`).
+- Wording changed in the opening paragraph, as the swap requires: "the turbine rebuilds" is now "the skateboard rebuilds".
+- `models/turbine.bin`, `blender/turbine.blend` and their scripts are no longer used by the page. Kept for now in case Experience gets a small turbine.
+- Known weak spot: the scanned-metal wear pattern shows as faint brick lines on the wheels up close.
+
 ## Closer to Minutes, real-looking apps, and colour options named for Kia's interests (2026-11-20)
 
 - Colour options: Pacific Dusk stays the default. The other four are now Garage (cars: graphite and red), Dawn Patrol (surfing: the light, airy, Minutes-style one), Hardwood (basketball: dark maple and orange) and Ticker (markets: near-black green). Keys in `THEMES` are unchanged (studio, gallery, volt, aurora), only names and colours.

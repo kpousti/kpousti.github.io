@@ -584,7 +584,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
     <p class="eyebrow">Developer · San Diego, CA</p>
     <h1>Kia Pousti</h1>
     <p class="hero-role" id="hook">Fast graph systems. <em>Practical AI.</em></p>
-    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">Scroll: the turbine rebuilds into a street map. Point at any corner of it and A* plans the route there, live.</span><span class="has-touch">Scroll: the turbine rebuilds into a street map, and A* plans a route across it, live.</span></p>
+    <p class="hero-pitch">I build routing engines in C++ and applied AI in Python. <span class="has-mouse">Scroll: the skateboard rebuilds into a street map. Point at any corner of it and A* plans the route there, live.</span><span class="has-touch">Scroll: the turbine rebuilds into a street map, and A* plans a route across it, live.</span></p>
     <div class="actions">
       <a class="btn primary" href="#projects">See the work</a>
       <a class="btn" href="#contact">Get in touch</a>
@@ -2573,7 +2573,7 @@ import * as THREE from './vendor/three.module.min.js';
       .replace('#include <begin_vertex>', 'vec3 transformed = mix(position, aTo, aMix); vLp = transformed;');
     wearFrag(shader);
   }
-  fetch('./models/turbine.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+  fetch('./models/board.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
     var h = readModel(buf), T = h.T, R = h.R, q, k, a, count = h.meshes.map(function () { return 0; }), used = count.slice();
     h.mat3.forEach(function (m) { m.onBeforeCompile = reshape; });
     h.mesh.forEach(function (m) { count[m]++; });
@@ -2586,7 +2586,7 @@ import * as THREE from './vendor/three.module.min.js';
       for (q = 0; q < nv; q++) {
         var x = pos[q * 3], y = pos[q * 3 + 1], z = pos[q * 3 + 2], cx, cy, cz;
         if (strip) { // a blade section's six points spread evenly round a circle: the blade becomes a rod along its own length
-          a = [180, 120, 60, 0, -60, -120][R[me.v[0] + q]] * Math.PI / 180; cx = Math.cos(a); cy = 0; cz = -Math.sin(a); to.set([rho * cx, y, rho * cz], q * 3);
+          a = Math.PI - R[me.v[0] + q] * Math.PI * 2 / (h.ring || 6); cx = Math.cos(a); cy = 0; cz = -Math.sin(a); to.set([rho * cx, y, rho * cz], q * 3);
         } else { // anything turned on a lathe wraps onto a ball: its length becomes latitude, its angle round the shaft becomes longitude (a cutaway arc stretches to go all the way round)
           var lat = hi[0] > lo[0] ? Math.PI * (x - lo[0]) / (hi[0] - lo[0]) : Math.PI / 2, lon = y * y + z * z > 1e-8 ? Math.atan2(y, -z) : 0;
           if (amax - amin < 5.5) lon = (lon - amin) / (amax - amin) * Math.PI * 2;
@@ -2602,19 +2602,21 @@ import * as THREE from './vendor/three.module.min.js';
     var rods = h.kind.filter(function (c) { return c < 2; }).length, sAt = 0, nAt = 0, side = new THREE.Vector3();
     for (k = 0; k < h.mesh.length; k++) {
       var im = ims[h.mesh[k]], o = k * 10, c = h.kind[k], ball = c > 1;
-      var part = { im: im, idx: used[h.mesh[k]]++, mix: im.geometry.attributes.aMix.array, c: im.material.color, rotor: h.rotor[k], p: new THREE.Vector3(T[o] - 0.06, T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), ex: new THREE.Vector3(), key: 0, span: im.geometry.userData.span, rho: im.geometry.userData.rho };
+      var part = { im: im, idx: used[h.mesh[k]]++, mix: im.geometry.attributes.aMix.array, c: im.material.color, rotor: h.rotor[k], sc: new THREE.Vector3(T[o + 7], T[o + 8], T[o + 9]), ax: 0, ay: 0, p: new THREE.Vector3(T[o], T[o + 1], T[o + 2]), q: new THREE.Quaternion(T[o + 3], T[o + 4], T[o + 5], T[o + 6]), ex: new THREE.Vector3(), key: 0, span: im.geometry.userData.span, rho: im.geometry.userData.rho };
       var px = part.p.x, rad = Math.hypot(part.p.y, part.p.z) || 1;
       part.key = clamp((px + 1.1) / 2.2, 0, 1) * 0.7 + 0.3 * (hashNoise(k * 3.7) + 0.5); // the change sweeps from the nose to the exhaust, a little ragged
-      // The way out: each part leaves along its own line (a blade straight off its wheel, a can outward, the casing downward), so paths arc clear of each other.
-      if (c === 0) part.ex.set(0, 1, 0).applyQuaternion(part.q).multiplyScalar(0.36).add(side.set(px * 0.5, 0, 0));
-      else if (c === 3 || c === 4) part.ex.set(px * 0.5 - (c === 4 ? 0.22 : 0), part.p.y / rad * 0.45, part.p.z / rad * 0.45);
-      else if (c === 1 || c === 5 || c === 6) part.ex.set(px * 0.5, -0.55, 0);
-      else part.ex.set(px * (c === 2 ? 0.5 : 0.7), 0, 0);
+      // The way out, as an exploded view: everything lifts off the deck by its layer (cells highest, then the lid and bolts, wiring, trucks), and whatever sits on an axle slides out along it. The deck stays.
+      var pz = part.p.z, out = Math.abs(pz) > 0.25;
+      part.ex.set(px * 0.3, out ? 0.1 : [0.5, 0.34, 0, 0.12, 0.2, 0.62, 0.4, 0.28][c], pz * (out ? 0.9 : 0.35));
       var c1 = hashNoise(k * 3.7) + 0.5, c2 = hashNoise(k * 7.1 + 2), c3 = hashNoise(k * 1.9 + 5); part.sp = new THREE.Vector3(c2 * 2.2, 0.3 + 0.75 * c1, c3 * 1.5); part.sq = new THREE.Quaternion().setFromEuler(new THREE.Euler(c2 * 5, c3 * 5, c1 * 4)); part.bk = c1; // its point in the shared cloud (the same spread the scene models use)
       if (ball) part.node = (nAt++ * 37 + 11) % (n * n);
       else { part.e = edges[sAt % edges.length]; part.slot = Math.floor(sAt / edges.length); part.on = Math.floor((rods - 1 - sAt % edges.length) / edges.length) + 1; sAt++; }
       parts.push(part);
     }
+    [-1, 1].forEach(function (sg) { // each pair of wheels turns about its own axle: where that axle is
+      var w = parts.filter(function (P) { return P.rotor && P.p.x * sg > 0; }), mx = 0, my = 0;
+      w.forEach(function (P) { mx += P.p.x / w.length; my += P.p.y / w.length; }); w.forEach(function (P) { P.ax = mx; P.ay = my; });
+    });
     partsAt = performance.now() - t0; lastKey = ''; if (REDUCE) frame(0);
   }).catch(function () {}); // no model: the page reads fine without it
   var nA = new THREE.Vector3(), nB = new THREE.Vector3(), cT = new THREE.Color(), ROD = new THREE.Color(0x7f8fb0), BALL = new THREE.Color(0xdfe6f2), BLUE = new THREE.Color(0x3f86ff).multiplyScalar(1.7);
@@ -2625,12 +2627,13 @@ import * as THREE from './vendor/three.module.min.js';
     turbine.visible = show > 0.001 && burst < 0.999 && parts.length > 0;
     if (!turbine.visible) return;
     var up = mix(0.004, HUB_R, lift), squash = mix(0.4, 1, lift); // flat, a rod lies half sunk in the plate like a groove, and a ball is a low rivet head
-    qSpin.setFromAxisAngle(vX.set(1, 0, 0), spin);
+    qSpin.setFromAxisAngle(vX.set(0, 0, 1), -spin); qTilt.setFromAxisAngle(vX.set(1, 0, 0), TILT); // the wheels turn on their axles; the board leans its underside toward the camera
     for (var i = 0; i < parts.length; i++) {
       var P = parts[i], land = smooth(lw * 1.5 - 0.5 * P.key), grow = ease((t - partsAt - 150 - P.key * 900) / 700) * show, r; // on arrival the parts grow in from nose to exhaust
-      pa.p.copy(P.p).addScaledVector(P.ex, 0.7 * Math.sin(Math.PI * land) + boom); pa.q.copy(P.q); // boom: the parts eased apart for the fly-through
-      if (P.rotor) { pa.p.applyQuaternion(qSpin); pa.q.premultiply(qSpin); }
-      pa.p.multiplyScalar(K).applyQuaternion(qTurn); pa.p.y += AXIS; pa.q.premultiply(qTurn); pa.s.setScalar(K * grow);
+      pa.p.copy(P.p); pa.q.copy(P.q);
+      if (P.rotor) { pa.p.x -= P.ax; pa.p.y -= P.ay; pa.p.applyQuaternion(qSpin); pa.p.x += P.ax; pa.p.y += P.ay; pa.q.premultiply(qSpin); }
+      pa.p.addScaledVector(P.ex, 0.7 * Math.sin(Math.PI * land) + boom); pa.p.y -= 0.12; // boom: the parts eased apart for the fly-through; 0.12: the board's middle height, so it turns about its own middle
+      pa.p.multiplyScalar(K).applyQuaternion(qTilt).applyQuaternion(qTurn); pa.p.y += AXIS; pa.q.premultiply(qTilt).premultiply(qTurn); pa.s.copy(P.sc).multiplyScalar(K * grow);
       if (land > 0) {
         if (P.e) { // a rod: one stretch of an edge, from corner to corner
           node3(P.e.a, lift, nA); node3(P.e.b, lift, nB); nB.sub(nA); var len = nB.length(), seg = len / P.on; nB.divideScalar(len);
@@ -3166,7 +3169,7 @@ import * as THREE from './vendor/three.module.min.js';
   var STEEL = new THREE.Color(0x5d7096), AMBER = new THREE.Color(0xf2b56b), tint = new THREE.Color();
   var pa = new Pose(), pb = new Pose(), vR = new THREE.Vector3(), vT = new THREE.Vector3(), vZ = new THREE.Vector3(), vX = new THREE.Vector3(), m4 = new THREE.Matrix4();
   var eA = new THREE.Euler(), qI = new THREE.Quaternion();
-  var qCloud = new THREE.Quaternion(), qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qWave = new THREE.Quaternion(), qFace = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
+  var qCloud = new THREE.Quaternion(), qTurn = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qTilt = new THREE.Quaternion(), TILT = 0.9, qWave = new THREE.Quaternion(), qFace = new THREE.Quaternion(); // the rotor keeps its side to the camera, however the camera has orbited
   function pose(f, L, i, t, rise, o) {
     var a, rad;
     o.p.set(L.cx, 0, L.cz); o.q.setFromAxisAngle(UP, L.ang); o.s.set(L.w, L.h * rise, L.d); o.c = 0;
