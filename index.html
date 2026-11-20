@@ -2748,19 +2748,57 @@ import * as THREE from './vendor/three.module.min.js';
     }
     kit.hub.instanceMatrix.needsUpdate = kit.hub.instanceColor.needsUpdate = kit.ferrule.instanceMatrix.needsUpdate = kit.ring.instanceMatrix.needsUpdate = true;
   }
-  // ----- Scene models (blender/build_scenes.py -> scenes.blend -> models/scenes.bin): each scene has its own object, built from real parts. The parts fly together as the scene arrives and apart as it leaves, and each model has its own motion. -----
+  // ----- Scene models. (The older ones, blender/build_scenes.py -> models/scenes.bin, are no longer loaded: every scene but Experience is drawn in light.) Originally: each scene has its own object, built from real parts. The parts fly together as the scene arrives and apart as it leaves, and each model has its own motion. -----
   function pulse(c, a, b) { return smooth((c - a) / 0.04) * (1 - smooth((c - b) / 0.04)); }
   var qL = new THREE.Quaternion(), LY = new THREE.Vector3(0, 1, 0), LZ = new THREE.Vector3(0, 0, 1), INKC = new THREE.Color(0.35, 0.5, 0.9);
-  function tickLine(t, A) { // by hand on the left: one job crawls between two hand stamps. Automated on the right: jobs ride the conveyor and each stamp fires as one passes under it
-    var c = (t * 0.00011) % 1, st = A.by.stamp, hd = A.by.head, cards = A.by.card, i, j;
-    st[0].cp.y += 0.09 * (1 - pulse(c, 0.06, 0.2)); st[1].cp.y += 0.09 * (1 - pulse(c, 0.66, 0.8));
-    cards[0].cp.x += 0.42 * smooth((c - 0.26) / 0.34); cards[0].cs = smooth(c / 0.04) * (1 - smooth((c - 0.92) / 0.06));
-    var down = [0, 0];
-    for (i = 1; i < cards.length; i++) {
-      var u = (t * 0.00032 + i / (cards.length - 1)) % 1, x = 0.06 + 0.88 * u; cards[i].cp.x = x; cards[i].cs = smooth(u / 0.05) * smooth((1 - u) / 0.05);
-      for (j = 0; j < hd.length; j++) down[j] = Math.max(down[j], 1 - smooth(Math.abs(x - hd[j].p.x) / 0.045));
+  // ----- The pop-up plant (Experience). The San Diego model's base plate is 34 tiles and 8 strips, each with the city on one face and the factory on the other. Each has two poses, lying in the plate and standing in an approval line,
+  // and moves between them as one rigid body about one fixed axis, the way a hinged part does (a screw: one turn about the axis, and a slide along it), never a straight drift with a spin. FOLD.u: 0 the plate, 1 the line. -----
+  var sQ = new THREE.Quaternion(), sT = new THREE.Vector3();
+  function screwOf(pA, qA, pB, qB) { // worked out once per part: the axis, the angle, a point the axis passes through, and the slide along it
+    sQ.copy(qA).invert().premultiply(qB); if (sQ.w < 0) { sQ.x = -sQ.x; sQ.y = -sQ.y; sQ.z = -sQ.z; sQ.w = -sQ.w; }
+    var ang = 2 * Math.acos(Math.min(1, sQ.w)), sn = Math.sqrt(Math.max(0, 1 - sQ.w * sQ.w));
+    if (ang < 1e-3) return { ang: 0, n: new THREE.Vector3(0, 1, 0), c: new THREE.Vector3(), d: 0 };
+    var n = new THREE.Vector3(sQ.x / sn, sQ.y / sn, sQ.z / sn);
+    sT.copy(pA).applyQuaternion(sQ).negate().add(pB); var d = sT.dot(n); sT.addScaledVector(n, -d);
+    return { ang: ang, n: n, c: new THREE.Vector3().crossVectors(n, sT).multiplyScalar(1 / Math.tan(ang / 2)).add(sT).multiplyScalar(0.5), d: d };
+  }
+  function screwAt(S, pA, qA, pB, u, op, oq) { // u may run a little past 1: the part swings past its stop and settles
+    if (!S.ang) { op.lerpVectors(pA, pB, u); oq.copy(qA); return; }
+    sQ.setFromAxisAngle(S.n, S.ang * u); op.copy(pA).sub(S.c).applyQuaternion(sQ).add(S.c).addScaledVector(S.n, S.d * u); oq.copy(qA).premultiply(sQ);
+  }
+  (function () { // self-check: any two poses must be met exactly at both ends
+    var a = new THREE.Vector3(0.3, -0.2, 0.5), b = new THREE.Vector3(-0.4, 0.6, 0.1), qa = new THREE.Quaternion(0.1, 0.7, -0.2, 0.67).normalize(), qb = new THREE.Quaternion(-0.5, 0.2, 0.6, 0.59).normalize(), o = new THREE.Vector3(), q = new THREE.Quaternion(), S = screwOf(a, qa, b, qb);
+    screwAt(S, a, qa, b, 1, o, q); console.assert(o.distanceTo(b) < 1e-5 && Math.abs(Math.abs(q.dot(qb)) - 1) < 1e-6, 'screw: misses its second pose'); screwAt(S, a, qa, b, 0, o, q); console.assert(o.distanceTo(a) < 1e-9, 'screw: leaves its first pose');
+  })();
+  var FOLD = { u: 1, on: false, k: 0 }, FLASH = new THREE.Color(2.3, 1.75, 0.8);
+  // When each group of tiles moves, as a share of the whole fold: the conveyor's bed first, then its skirts, the bench, the cabinet, the gantries, and last the tiles that only turn over to be the shop floor.
+  var STAGE = { bed: [0.05, 0.28, 0], skirt: [0.13, 0.4, 0], top: [0.2, 0.44, 0], bench: [0.26, 0.52, 0], cab: [0.36, 0.62, 0], captop: [0.56, 0.76, 0], post: [0.46, 0.76, 0.34], leg: [0.5, 0.8, 0.34], beam: [0.62, 0.87, 0.3], floor: [0.5, 0.9, 0.24] }; // start, end, and how high it is carried on the way (the far-flying strips and the tiles that turn over in place)
+  function swing(x) { x = clamp(x, 0, 1) - 1; return 1 + 2.2 * x * x * x + 1.2 * x * x; } // to its stop, about six degrees past on a quarter turn, and back
+  function tickFold(t, A) {
+    var u = FOLD.u, i, j, P, st, g, x, lag;
+    if (A === pokeAsm) u *= 1 - Math.sin(Math.PI * clamp((t - poke) / 3600, 0, 1)); // clicked: it folds back down into the plate and stands up again
+    for (i = 0; i < A.parts.length; i++) {
+      P = A.parts[i]; P.tint = PLAIN; if (!P.sw) continue;
+      g = P.n[1]; st = STAGE[g];
+      lag = g === 'floor' ? 0.2 * clamp(Math.hypot(P.p.x, P.p.z + 0.2) / 1.5, 0, 1) : g === 'cab' ? 0.04 * (+P.n[2] === 0 ? 0 : +P.n[2] === 1 ? (+P.n[3] === 1 ? 1 : 2) : 3) : g === 'bench' ? (+P.n[2] === 2 ? 0 : +P.n[2] === 4 ? 0.04 : 0.08) : g === 'skirt' ? 0.03 * (+P.n[3] - 3) + (+P.n[2] === 4 ? 0.05 : 0) : g === 'bed' || g === 'top' ? 0.035 * (+P.n[3] % 3) : 0.035 * +P.n[2]; // inside a group: column by column, back before front, nearest the line first
+      x = seg(u, st[0] + lag, st[1] + lag - (g === 'floor' ? 0.2 : 0));
+      screwAt(P.sw, P.p, P.q, P.p2, swing(x), P.cp, P.cq);
+      P.cp.y += st[2] * Math.sin(Math.PI * x) + 0.014 * Math.sin(Math.PI * seg(u, 0, 0.07)); // carried over what already stands; and at the very start every tile lifts a hair off the chassis: the plate cracks along its seams
+      if (x > 0.7 && x < 1) P.tint = tint.copy(PLAIN).lerp(FLASH, Math.exp(-(x - 0.9) * (x - 0.9) / 0.004)); // brass catches the light as it locks
+      else if (u < 0.08) P.tint = tint.copy(PLAIN).lerp(FLASH, 0.8 * (1 - u / 0.08)); // and all along the seams at the moment the plate cracks
     }
-    for (j = 0; j < hd.length; j++) hd[j].cp.y += 0.07 * (1 - down[j]);
+    // what comes out once the line stands: the press heads telescope down from the beams, the hand stamps and ink pads rise out of the bench, the beacon's mast goes up
+    var run = smooth(seg(u, 0.97, 1)), c = (t * 0.00011) % 1, stp = A.by.stamp, hd = A.by.head, cards = A.by.card, pad = A.by.pad, bc = A.by.beacon[0], down = [0, 0];
+    for (j = 0; j < 2; j++) { stp[j].cs = swing(seg(u, 0.84 + 0.03 * j, 0.93 + 0.03 * j)); pad[j].cs = swing(seg(u, 0.86 + 0.03 * j, 0.95 + 0.03 * j)); }
+    stp[0].cp.y += 0.08 * run * (1 - pulse(c, 0.06, 0.2)); stp[1].cp.y += 0.08 * run * (1 - pulse(c, 0.66, 0.8)); // by hand: one job, stamped, carried across, stamped again
+    cards[0].cp.x += 0.4 * smooth((c - 0.26) / 0.34); cards[0].cs = run * smooth(c / 0.04) * (1 - smooth((c - 0.92) / 0.06));
+    for (i = 1; i < cards.length; i++) { // automated: jobs ride the belt and each press fires as one passes under it
+      var w = (t * 0.00032 + i / (cards.length - 1)) % 1, cx = 0.04 + 1.12 * w; cards[i].cp.x = cx; cards[i].cs = run * smooth(w / 0.05) * smooth((1 - w) / 0.05);
+      for (j = 0; j < hd.length; j++) down[j] = Math.max(down[j], 1 - smooth(Math.abs(cx - hd[j].p.x) / 0.05));
+    }
+    for (j = 0; j < hd.length; j++) { g = smooth(seg(u, 0.86 + 0.03 * j, 0.95 + 0.03 * j)); hd[j].cs = g > 0.001 ? 1 : 0; (hd[j].sv = hd[j].sv || new THREE.Vector3()).set(1, Math.max(0.02, g * (1 + 0.19 * run * down[j])), 1); }
+    A.by.chassis[0].cs = REDUCE ? 1 : 0; // the city's own plate is the base; with reduced motion the plant stands alone, on its own
+    g = smooth(seg(u, 0.88, 0.97)); bc.cs = g > 0.001 ? 1 : 0; (bc.sv = bc.sv || new THREE.Vector3()).set(1, Math.max(0.02, g), 1); bc.tint = run > 0.5 && (t % 1400) < 700 ? HOT : PLAIN;
   }
   function sig(k) { var a = Math.floor(k), f = k - a; return mix(signalValue(a), signalValue(a + 1), f); } // the same synthetic sensor signal the project's own demo plots
   function tickRec(t, A) { // the pen follows the live signal; the trace it has drawn scrolls down the paper, and anomalies are marked in amber
@@ -3180,7 +3218,7 @@ import * as THREE from './vendor/three.module.min.js';
   }
 
   var ASM = [ // the model's name in the file; the stops it belongs to (a chapter's id, or a project's number in page order); camera height; size; its motion; lit: it faces the camera, so it gets the front light
-    { name: 'line', at: ['experience'], elev: 0.36, fit: 1.2, tick: tickLine },
+    { name: 'fold', at: ['experience'], elev: 0.42, fit: 1.0, tick: tickFold, fold: true },
     { name: 'rec', draw: dsSignal, at: [1], elev: 0.42, fit: 1.0, tick: tickRec },
     { name: 'mm', draw: dsDijkstra, at: [2], elev: 0.5, fit: 1.0, tick: tickMM, lit: true },
     { name: 'gears', draw: dsTarjan, at: [3], elev: 0.5, fit: 1.1, tick: tickGears, lit: true },
@@ -3194,7 +3232,7 @@ import * as THREE from './vendor/three.module.min.js';
     { name: 'tools', draw: dsStack, at: ['skills'], elev: 0.3, fit: 1.05, tick: tickTools, lit: true },
     { name: 'tk', draw: dsBeacon, at: ['contact'], elev: 0.3, fit: 1.35, tick: tickTK }
   ];
-  fetch('./models/scenes.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+  fetch('./models/fold.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) { // the one scene still built of parts: the Experience chapter's pop-up plant. Every other scene is drawn in light and needs no file
     var h = readModel(buf), T = h.T;
     h.mat3.forEach(function (m) { m.onBeforeCompile = worn; }); // the same scanned-metal wear as the turbine: uneven shine, scuffs and fine relief on every part
     ASM.forEach(function (A) {
@@ -3212,6 +3250,7 @@ import * as THREE from './vendor/three.module.min.js';
         var j = A.parts.length, r1 = hashNoise(j * 3.7) + 0.5, r2 = hashNoise(j * 7.1 + 2), r3 = hashNoise(j * 1.9 + 5);
         P.sp.set(r2 * 2.2, 0.3 + 0.75 * r1, r3 * 1.5); // the same cloud for every model: part j of the one leaving and part j of the one arriving share a point, so the swarm regroups rather than swaps
         P.sq.setFromEuler(eA.set(r2 * 5, r3 * 5, r1 * 4)); P.key = clamp((P.p.x + 1) / 2, 0, 1) * 0.6 + 0.4 * r1;
+        var al = h.alt && h.alt[k]; if (al && al.length) { P.p2 = new THREE.Vector3(al[0], al[1], al[2]); P.q2 = new THREE.Quaternion(al[3], al[4], al[5], al[6]); P.sw = screwOf(P.p, P.q, P.p2, P.q2); } // a part with a second pose, and the one fixed axis that takes it there
         im.setColorAt(P.idx, PLAIN); A.parts.push(P); (A.by[P.n[1]] = A.by[P.n[1]] || []).push(P);
       });
       var f = ELEV.length; ELEV.push(A.elev); FIT.push(A.fit); if (A.lit) UPRIGHT.push(f);
@@ -3226,20 +3265,20 @@ import * as THREE from './vendor/three.module.min.js';
   }
   // ----- Hand-overs between two light-drawn scenes: nothing is cut. Every point of the scene being left travels to become a point of the next one, and each pair of scenes makes the trip its own way (WAYS). -----
   function held2() { return { p: new Float32Array(DN * 3), c: new Float32Array(DN * 3), s: new Float32Array(DN), lp: new Float32Array(DL * 6), lc: new Float32Array(DL * 6), n: 0, l: 0 }; }
-  var mA = held2(), mB = held2(), va = new THREE.Vector3(), vb = new THREE.Vector3(), vo = new THREE.Vector3(), vS = new THREE.Vector3(), wt = 0, wu = 0, wk = 1; // wu: how far along this point is (set by the way); wk: its brightness on the way
+  var mA = held2(), mB = held2(), va = new THREE.Vector3(), vb = new THREE.Vector3(), vo = new THREE.Vector3(), vS = new THREE.Vector3(), wt = 0, wu = 0, wk = 1, wcol = null; // wu: how far along this point is (set by the way); wk: its brightness on the way
   function grab(A, t, into) { dn = ln = 0; A.draw(t); into.n = dn; into.l = ln; into.p.set(dP.subarray(0, dn * 3)); into.c.set(dC.subarray(0, dn * 3)); into.s.set(dS.subarray(0, dn)); into.lp.set(lP.subarray(0, ln * 6)); into.lc.set(lC.subarray(0, ln * 6)); }
   function stag(m, key, w) { return smooth(m * (1 + w) - key * w); } // each point sets off at its own moment: key 0 goes first, key 1 last; w is how spread out the departures are
   function spinY(o, ang) { var c = Math.cos(ang), s2 = Math.sin(ang), x = o.x; o.x = x * c + o.z * s2; o.z = -x * s2 + o.z * c; return o; }
   function seg(u, a, b) { return clamp((u - a) / (b - a), 0, 1); }
   function back(u) { u = clamp(u, 0, 1) - 1; return 1 + 2.70158 * u * u * u + 1.70158 * u * u; } // arrives, swings a little past, and settles
-  var SD = [[0, 0]].concat([0, 1, 2, 3, 4, 5].map(function (j) { var b = j / 6 * TAU + 0.4; return [0.88 * Math.cos(b), 0.88 * Math.sin(b)]; })), LANES = [[0.95, 0.74, -0.45], [1.0, 0.42, 0], [0.95, 0.1, 0.45]]; // where Agent City's hub and six agents stand; where the Lead Autoresponder's three ways out end
+  var SD = [[0, 0]].concat([0, 1, 2, 3, 4, 5].map(function (j) { var b = j / 6 * TAU + 0.4; return [0.88 * Math.cos(b), 0.88 * Math.sin(b)]; })), LANES = [[0.95, 0.74, -0.45, BL], [1.0, 0.42, 0, WH], [0.95, 0.1, 0.45, AM]]; // where Agent City's hub and six agents stand; where the Lead Autoresponder's three ways out end
   // Every pair of neighbouring scenes changes its own way, and each way says something true about the two works. Unlisted pairs use '*'. A way gets (m, i, n, a, b, o): m 0 to 1, point i of n, from a to b, answer in o.
   var WAYS = {
     '*': function (m, i, n, a, b, o) { wu = stag(m, hashNoise(i * 1.7) + 0.5, 0.6); o.lerpVectors(a, b, wu); o.y += 0.25 * Math.sin(Math.PI * wu); },
     // Route Engine into Industrial AI Notebook: "skyline readout". A bar of light crosses San Diego and takes the city with it: every roof and street is picked up as the bar reaches it and rides the bar. Then the bar comes back and prints the sensor trace, setting each point down as it passes its place. A skyline is a signal, height against distance, and the bar reads it.
     'city>rec': function (m, i, n, a, b, o) {
-      var xb = m < 0.5 ? -1.15 + 4.6 * m : 1.15 - 4.6 * (m - 0.5), pick = clamp((a.x + 1.15) / 4.6, 0, 0.49), drop = 0.5 + (1.15 - clamp(b.x, -1.1, 1.1)) / 4.6;
-      if (m < pick) { o.copy(a); wu = 0; } else if (m < drop) { var q = smooth((m - pick) / (drop - pick)); o.set(xb, mix(a.y, b.y, q), mix(a.z, b.z, q)); wu = q; wk = 1.7; } else { o.copy(b); wu = 1; wk = 1 + 2.5 * Math.exp(-(m - drop) * (m - drop) / 0.0006); }
+      var m2 = m < 0.46 ? m / 0.92 : m < 0.54 ? 0.5 : 0.5 + (m - 0.54) / 0.92, xb = m2 < 0.5 ? -1.15 + 4.6 * m2 : 1.15 - 4.6 * (m2 - 0.5), pick = clamp((a.x + 1.15) / 4.6, 0, 0.49), drop = 0.5 + (1.15 - clamp(b.x, -1.1, 1.1)) / 4.6; // across, a beat's wait at the far side, and back
+      if (m2 < pick) { o.copy(a); wu = 0; } else if (m2 <= drop) { var q = smooth((m2 - pick) / (drop - pick)); o.set(xb, mix(a.y, b.y, q), mix(a.z, b.z, q)); wu = q; wk = 1.7; } else { o.copy(b); wu = 1; wk = 1 + 2.5 * Math.exp(-(m2 - drop) * (m2 - drop) / 0.0006); }
     },
     // Industrial AI Notebook into Mini Maps. The lanes of the signal swing round their left end like the blades of a fan until they are spokes: time along a lane becomes distance from the centre, which is what Dijkstra measures. Then each sample drops onto a node, nearest first, the order Dijkstra settles them.
     'rec>mm': function (m, i, n, a, b, o) {
@@ -3282,8 +3321,8 @@ import * as THREE from './vendor/three.module.min.js';
       var X = a.x + 2.3 * m, sw = Math.max((0.95 - a.x) / 2.3, (b.x + 1.15) / 2.3), q = LANES[i % 5 === 0 ? 2 : i % 2];
       if (m >= sw) { o.copy(b); wu = 1; wk = smooth((m - sw) / 0.08); return; }
       wu = 0;
-      if (X < 0) { var nr = smooth(seg(X, -0.5, 0)); o.set(X, mix(a.y, 0.5, nr), a.z * (1 - nr)); wk = 1 + 2 * nr * nr; }
-      else { var w = Math.min(1, X / 0.95), s2 = smooth(w); o.set(q[0] * w, mix(0.5, q[1], s2), q[2] * s2); wk = (1 + 2 * (1 - w)) * (1 - smooth(seg(w, 0.8, 1))); }
+      if (X < 0) { var nr = smooth(seg(X, -0.55, 0)); o.set(X, mix(a.y, 0.5, nr), a.z * (1 - nr)); wcol = WH; wk = 0.7 + 1.6 * nr * nr; } // the whole tape, the stretches already tested with it, drawn in to one thread
+      else { var w = Math.min(1, X / 0.95), s2 = smooth(w); o.set(q[0] * w, mix(0.5, q[1], s2), q[2] * s2); wcol = q[3]; wk = (1 + 1.6 * (1 - w)) * (1 - smooth(seg(w, 0.82, 1))); } // out the far side on one of the three ways
     },
     // Lead Autoresponder into Market Debrief. The three ways out wind into a whirlpool about the dial's centre, the inside turning faster than the rim, and settle as a year of prices round the dial.
     'la>md': function (m, i, n, a, b, o) {
@@ -3314,10 +3353,10 @@ import * as THREE from './vendor/three.module.min.js';
       var th = Math.atan2(a.z, a.x) + 5 * inn, r = mix(ra, 0.015, inn); o.set(r * Math.cos(th), mix(a.y, 0.9, up), r * Math.sin(th)); o.lerp(b, out); wu = out; wk = 1 + 2 * up * (1 - out);
     }
   };
-  WAYS['city>rec'].prop = function (m) { var x = m < 0.5 ? -1.15 + 4.6 * m : 1.15 - 4.6 * (m - 0.5), k = 1.5 * smooth(m * 12) * smooth((1 - m) * 12); if (k < 0.02) return; L(x, 0, -1.05, x, 0, 1.05, AM, k); L(x, 0.95, -1.05, x, 0.95, 1.05, AM, k); L(x, 0, -1.05, x, 0.95, -1.05, AM, k); L(x, 0, 1.05, x, 0.95, 1.05, AM, k); }; // the bar
+  WAYS['city>rec'].prop = function (m) { var m2 = m < 0.46 ? m / 0.92 : m < 0.54 ? 0.5 : 0.5 + (m - 0.54) / 0.92, x = m2 < 0.5 ? -1.15 + 4.6 * m2 : 1.15 - 4.6 * (m2 - 0.5), k = 1.5 * smooth(m * 12) * smooth((1 - m) * 12); if (k < 0.02) return; L(x, 0, -1.05, x, 0, 1.05, AM, k); L(x, 0.95, -1.05, x, 0.95, 1.05, AM, k); L(x, 0, -1.05, x, 0.95, -1.05, AM, k); L(x, 0, 1.05, x, 0.95, 1.05, AM, k); }; // the bar
   WAYS['mm>gears'].prop = function (m) { var k = Math.sin(Math.PI * m); if (k < 0.02) return; L(0, 0.08, 0, 0, 0.92, 0, BL, 0.5 * k); hoop(0, 0.08, 0, 0.07, 24, BL, 0.014, k); }; // where the stack stands
   WAYS['gears>ac'].prop = function (m) { var k = 1.4 * smooth(seg(m, 0.2, 0.38)) * (1 - smooth(seg(m, 0.5, 0.66))); if (k < 0.02) return; [[0, 1], [1, 2], [0, 3], [3, 4], [1, 4]].forEach(function (e) { L(TJ.cx[e[0]], 0.5, TJ.cz[e[0]], TJ.cx[e[1]], 0.5, TJ.cz[e[1]], AM, k); }); for (var q = 0; q < 5; q++) P(TJ.cx[q], 0.5, TJ.cz[q], AM, 0.13, k); }; // the condensed graph: five nodes, and the same one-way links the full graph had between its cycles
-  WAYS['qb>la'].prop = function (m) { var k = 1.3 * smooth(m * 10) * (1 - smooth(seg(m, 0.72, 0.9))), i, j, q, px, py, pz; if (k < 0.02) return; for (i = 0; i < 40; i++) { var an = i / 40 * TAU; P(0, 0.5 + 0.15 * Math.sin(an), 0.15 * Math.cos(an), WH, i % 5 ? 0.016 : 0.032, k); } for (j = 0; j < 3; j++) { q = LANES[j]; px = 0; py = 0.5; pz = 0; for (i = 1; i <= 10; i++) { var w = i / 10, s2 = smooth(w); L(px, py, pz, q[0] * w, mix(0.5, q[1], s2), q[2] * s2, BL, 0.35 * k); px = q[0] * w; py = mix(0.5, q[1], s2); pz = q[2] * s2; } } }; // the reader's ring, there from the start so the tape has something to go through, and the three ways out of it
+  WAYS['qb>la'].prop = function (m) { var k = 1.8 * smooth(m * 10) * (1 - smooth(seg(m, 0.78, 0.94))), R = mix(0.24, 0.15, smooth(seg(m, 0.7, 0.92))), i, j, q, px, py, pz; if (k < 0.02) return; for (i = 0; i < 64; i++) { var an = i / 64 * TAU; P(0, 0.5 + R * Math.sin(an), R * Math.cos(an), i % 8 ? WH : AM, i % 8 ? 0.02 : 0.045, k); if (i % 2) P(0, 0.5 + R * 1.25 * Math.sin(an), R * 1.25 * Math.cos(an), BL, 0.012, k * 0.6); } for (j = 0; j < 3; j++) { q = LANES[j]; px = 0; py = 0.5; pz = 0; for (i = 1; i <= 10; i++) { var w = i / 10, s2 = smooth(w); L(px, py, pz, q[0] * w, mix(0.5, q[1], s2), q[2] * s2, q[3], 0.3 * k); px = q[0] * w; py = mix(0.5, q[1], s2); pz = q[2] * s2; } } }; // the reader's ring, large and there from the start so the tape has something to go through, and the three ways out of it
   WAYS['ac>surf'].prop = function (m) { var R = 1.75 * seg(m, 0.18, 0.84), k = 1.4 * smooth(seg(m, 0.18, 0.24)) * (1 - seg(m, 0.3, 0.8)), q; if (k < 0.02) return; for (q = 0; q < 7; q++) { hoop(SD[q][0], 0.3, SD[q][1], R, 56, WH, 0.016, k); hoop(SD[q][0], 0.3, SD[q][1], R * 0.6, 40, BL, 0.012, k * 0.6); } }; // the rings from the seven landings
   WAYS['tools>tk'].prop = function (m) { var k = smooth(seg(m, 0.05, 0.3)); L(0, 0.1, 0, 0, 0.9, 0, WH, 0.7 * k * (1 - smooth(seg(m, 0.8, 1)))); }; // the mast is there to be climbed before the rest of the station is
   var mG = new THREE.Group(); mG.visible = false; city.add(mG); [new THREE.Points(dGeo, dMat), new THREE.LineSegments(lGeo, lMat)].forEach(function (o) { o.frustumCulled = false; mG.add(o); }); // the hand-over's own stage
@@ -3357,10 +3396,10 @@ import * as THREE from './vendor/three.module.min.js';
       if (mA.n) va.set(mA.p[ia * 3], mA.p[ia * 3 + 1], mA.p[ia * 3 + 2]); else va.set(0, 0.5, 0);
       if (mB.n) vb.set(mB.p[ib * 3], mB.p[ib * 3 + 1], mB.p[ib * 3 + 2]); else vb.set(0, 0.5, 0);
       if (A.solid) spinY(va, back); if (B.solid) spinY(vb, back);
-      wu = m; wk = 1; way(m, i, n, va, vb, vo);
+      wu = m; wk = 1; wcol = null; way(m, i, n, va, vb, vo);
       var o3 = i * 3, ka = i < mA.n ? (1 - wu) * inA : 0, kb = i < mB.n ? wu * inB : 0; // a point with no partner on one side is born dark from a neighbour's place, or dims as it lands on one
       dP[o3] = vo.x; dP[o3 + 1] = vo.y; dP[o3 + 2] = vo.z; dS[i] = ((mA.n ? mA.s[ia] : 0) * (1 - wu) + (mB.n ? mB.s[ib] : 0) * wu) * (1 + 0.5 * Math.sin(Math.PI * wu));
-      for (q = 0; q < 3; q++) dC[o3 + q] = (mA.c[ia * 3 + q] * ka + mB.c[ib * 3 + q] * kb) * wk;
+      for (q = 0; q < 3; q++) dC[o3 + q] = wcol ? wcol[q] * wk : (mA.c[ia * 3 + q] * ka + mB.c[ib * 3 + q] * kb) * wk;
     }
     dn = n; ln = 0; fa *= inA; fb *= inB;
     for (i = 0; i < mA.l && fa > 0.002 && ln < DL; i++, ln++) for (q = 0; q < 6; q++) { lP[ln * 6 + q] = mA.lp[i * 6 + q]; lC[ln * 6 + q] = mA.lc[i * 6 + q] * fa; } // the old scene's lines let go first, the new one's are drawn once its points have landed
@@ -3375,12 +3414,17 @@ import * as THREE from './vendor/three.module.min.js';
   function showAsm(A, a, t, yaw, leaving) {
     // One continuous camera: the model being left comes straight at the camera and passes it; the next one is already far off down the same line and arrives. Reduced motion: it is simply there or not.
     var k = 0, vis = a > 0.001, sc = REDUCE ? a : 1;
-    if (!REDUCE && a < 1) { vis = a > 0.5; var u = (1 - a) * 2; k = leaving ? 1.05 * u * u : -7 * u * u * u; }
-    if (A === pokeAsm) sc *= 1 - 0.5 * Math.sin(Math.PI * clamp((t - poke) / 1100, 0, 1)); // clicked: its parts spring apart and settle back
+    if (A.fold && !REDUCE) vis = FOLD.on; // the pop-up plant is there exactly while its tiles stand in for the city's plate
+    else if (!REDUCE && a < 1) { vis = a > 0.5; var u = (1 - a) * 2; k = leaving ? 1.05 * u * u : -7 * u * u * u; }
+    if (A === pokeAsm && !A.fold) sc *= 1 - 0.5 * Math.sin(Math.PI * clamp((t - poke) / 1100, 0, 1)); // clicked: its parts spring apart and settle back
     A.g.visible = vis;
     if (!vis) return;
     A.g.position.copy(camL).multiplyScalar(k);
     A.g.rotation.y = yaw + 0.5; // it keeps a three-quarter front to the camera, however the camera has orbited
+    if (A.fold && !REDUCE) { // as a plate it lies square with the city's plate (which the camera orbits); as the fold goes it turns, by at most an eighth of a turn, to its own three-quarter front
+      if (FOLD.u <= 0.001 || FOLD.u >= 0.999) FOLD.k = Math.round((yaw + 0.5) / (Math.PI / 2)); // which of the plate's four sides is nearest, held for the length of one fold
+      A.g.rotation.y = mix(FOLD.k * Math.PI / 2, yaw + 0.5, smooth(seg(FOLD.u, 0.04, 0.9))); A.g.position.y = 0.004; slab.rotation.y = A.g.rotation.y - FOLD.k * Math.PI / 2; // the tiles lie a hair proud of the city's plate, which is still under them and turns with them
+    }
     var i, P;
     for (i = 0; i < A.parts.length; i++) { P = A.parts[i]; P.cp.copy(P.p); P.cq.copy(P.q); P.cs = 1; }
     if (A.draw) { dn = ln = 0; A.draw(t); dsOut(); return; }
@@ -3673,7 +3717,7 @@ import * as THREE from './vendor/three.module.min.js';
     lagNow = lag; place(prev || cur, pl0); place(cur, pl1);
     // Crossing into a chapter: the model rides in on the chapter's title card, in front of it, a little larger and lower than where it will rest, and settles into the title block's open space as the card's strips slide away.
     var cross = !!cur && cur.chapter && !NAV.on, settle = cross ? 1 - smooth((cbNow - 0.45) / 0.35) : 0, rides = !prev || pl0.k === 1;
-    if (cross) { pl1.y += 0.2 * H * settle; pl1.s *= 1 + 0.15 * settle; } // lower on the card than its resting place, so it sits under the card's big title and not over it
+    if (cross) { pl1.y += 0.2 * H * settle; pl1.s *= 1 + 0.45 * settle; } // lower on the card than its resting place, so it sits under the card's big title and not over it
     // The pinned story on the city: the scroll scrubs one request on the real street graph. sp: how far through.
     var story = cur && cur.story ? cur : null, sp = 0;
     var tb = cur && cur.fin ? m : 0; // the ending: how far the parts have come back together as the turbine
@@ -3746,14 +3790,21 @@ import * as THREE from './vendor/three.module.min.js';
     blocks.instanceMatrix.needsUpdate = true; blocks.instanceColor.needsUpdate = true;
     var dom = m > 0.5 ? fB : fA, moving = !REDUCE && (STILL.indexOf(dom) < 0 || (m > 0 && m < 1));
     var wc = (fA === 0 ? 1 - m : 0) + (fB === 0 ? m : 0); // how much of a city it is right now
+    var fIn = !!cur && cur.asm === ASM[0] && !!ASM[0].g, fOut = !fIn && !!prev && prev.asm === ASM[0] && !!ASM[0].g, folding = !REDUCE && ((fIn && !!prev && fA === 0) || (fOut && fB === 0)); // the pop-up plant: arriving from the city, or going back to it
+    var fx = cur ? (H - cur.top) / H : 0; // how far the chapter being entered has come up the screen: 0 as its title card appears at the bottom, 1 with its top at the top, and on past that. The fold is given this longer run, not just the card's
+    FOLD.on = fIn || fOut; FOLD.u = 1;
+    if (folding && fIn) { wc = 1 - smooth((fx - 0.36) / 0.14); FOLD.on = fx >= 0.5; FOLD.u = seg(fx, 0.5, 1.14); } // About into Experience: the buildings go down into the plate, the plate's tiles take its place, and they fold up into the line while the chapter's heading arrives
+    if (folding && fOut) { wc = smooth((fx - 0.9) / 0.1); FOLD.on = fx < 0.9; FOLD.u = 1 - seg(fx, 0.44, 0.9); } // Experience into Projects: riding the Projects card, the line folds back down flat, and the city rises out of the plate
     if (mo && sA === CITY) wc = 1 - smooth(m * 6); else if (mo && sB === CITY) wc = 1 - smooth((1 - m) * 6); // the solid city hands over to its points at once
     net.visible = dom === 0 || dom === 2 || dom === 7; trip.visible = dom !== 7; // every other shape stands free
-    var cs = cur ? Math.max(0.001, smooth(wc * 1.5)) : 1; slab.scale.setScalar(cs); net.scale.setScalar(cs); // leaving the city, the plate and its route draw in to nothing instead of blinking off
-    net.visible = net.visible || (!!cur && wc > 0.001); slab.visible = net.visible || (!cur && en > 0 && lift < 0.999); slab.position.y = slabY - (cur ? 0 : 0.4 * lift); // in the pinned scene the plate rises to meet the network as it settles, and the rods press into it
+    if (folding) net.visible = wc > 0.001; // into and out of the pop-up plant, the city's plate is there until the instant the tiles take its place
+    var cs = folding ? 1 : cur ? Math.max(0.001, smooth(wc * 1.5)) : 1; slab.scale.setScalar(cs); net.scale.setScalar(cs); slab.rotation.y = 0; // leaving the city, the plate and its route draw in to nothing instead of blinking off
+    net.visible = net.visible || (!!cur && wc > 0.001); slab.visible = net.visible || folding || (!cur && en > 0 && lift < 0.999); // the city's plate, with its rim and scale marks, stays on as the pop-up plant's base slab.position.y = slabY - (cur ? 0 : 0.4 * lift); // in the pinned scene the plate rises to meet the network as it settles, and the rods press into it
     var step = NAV.on ? 7 : 16, drive = NAV.on ? 1300 : 2400; // as navigation the trip is quick
-    streets.opacity = 0.28 * (1 - lift); searched.material.opacity = 0.4 * (1 - lift); // the flat street lines wait until the network has settled
+    streets.opacity = 0.28 * (1 - lift) * (folding ? wc : 1); searched.material.opacity = 0.4 * (1 - lift) * (folding ? wc : 1); // the flat street lines wait until the network has settled
     var shown = REDUCE ? explored.length : Math.min(explored.length, Math.max(0, Math.floor((now - plannedAt) / step)), Math.floor(explored.length * clamp((ql - 0.04) / 0.42, 0, 1)));
     var draw = REDUCE ? 1 : Math.min(clamp((now - plannedAt - explored.length * step) / drive, 0, 1), clamp((ql - 0.5) / 0.28, 0, 1)); // the marker takes a couple of seconds to drive the route
+    if (folding) draw *= smooth(wc * 1.3); // the route is rolled back up before the plate folds
     if (story) { shown = Math.floor(explored.length * clamp((sp - 0.24) / 0.28, 0, 1)); draw = clamp((sp - 0.56) / 0.18, 0, 1); } // in the pinned story the scroll is the clock: search, then route
     searched.geometry.setDrawRange(0, shown * 2);
     if (markFor !== shown + ':' + plannedAt) { // which edges and corners the search has reached so far
@@ -3761,7 +3812,7 @@ import * as THREE from './vendor/three.module.min.js';
       for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
     gOff = ride ? rT - sc : 0; galton(now, dt, (pour ? smooth((m - 0.95) / 0.04) : tb > 0 ? smooth((tb - 0.8) / 0.2) : cur ? 0 : 1 - smooth(en * 4)) * smooth((t - partsAt - 900) / 600) * (NAV.on ? 0 : 1), peak, tb > 0 ? 0 : fe);
-    if (tb > 0) fly(0, 1, t, 1, 1 - tb); else fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? (wc > 0.001 ? 1 : 0) : 1, cur ? 1 - wc : 0);
+    if (tb > 0) fly(0, 1, t, 1, 1 - tb); else if (folding) fly(1, 0, t, wc, 0); else fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? (wc > 0.001 ? 1 : 0) : 1, cur ? 1 - wc : 0);
     fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
     camL.copy(camera.position); city.worldToLocal(camL); dMat.uniforms.uS.value = S * 6 * renderer.getPixelRatio(); // points are sized in the model's own units
     for (var ai = 0; ai < ASM.length; ai++) if (ASM[ai].g) showAsm(ASM[ai], mo && (ASM[ai] === sA || ASM[ai] === sB) ? 0 : (prev && prev.asm === ASM[ai] ? 1 - m : 0) + (cur && cur.asm === ASM[ai] ? m : 0), t, yaw, !(cur && cur.asm === ASM[ai]));

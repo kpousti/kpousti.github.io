@@ -4,22 +4,56 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
-## Scenes turn into each other; an auditor, a creator and an approver (2026-11-20)
+## Every scene change is its own move, and one is a Transformer (2026-11-20)
 
 Kia asked for every scene change to be "insanely cool" and different from the others, every diagram to be unique and clever, one change to work "like a Transformer", and for three agents to run it: one that goes over everything, one that invents, one that approves or sends the ideas back.
 
-**The three agents.** Their notes are outside the repo, in the session's shared notes folder: `audit.md` (the auditor, "Caliper"), `concepts-v*.md` (the creator, "Riff"), `verdict-v*.md` (the approver, "Veto").
-The audit counted 29 hand-overs and 36 diagrams. 15 hand-overs used the same swap (the old scene flies at the camera, the new one arrives from behind), and two card demos showed marks or results that were not computed.
+**The three agents.** Their notes are outside the repo, in the session's shared notes folder: `audit.md` (the auditor, "Caliper"), `concepts-v1.md` (the creator, "Riff"), `verdict-v1.md` (the approver, "Veto").
+- The audit counted 29 hand-overs and 36 diagrams. 15 hand-overs used the same swap (the old scene flies at the camera, the new one arrives from behind), and two card demos showed marks or results that were not computed.
+- The creator took 46 minutes, so the builder designed and built a first set of 13 meanwhile. The approver passed 8 and sent 5 back. Those 5 were rebuilt from the creator's designs; 4 passed the second round and the last passed the third. The approver also approved the Transformer plan with three changes, all made (two-sided tiles, a staged cascade with overshoot and a brass flash, a larger model that turns as it folds).
 
 **How one scene becomes the next** (`morph` and `WAYS` in the page). Every light-drawn scene can be asked for its points at any moment. Part way between two scenes the page asks both, and point i of the old scene travels to point i of the new one. Lines of the old scene let go in the first 40%, lines of the new one are drawn in the last 40%.
-`WAYS['old>new']` is the path for one pair of scenes: it gets the progress, the point's number, where it starts and where it must land, and answers where it is now. A pair with no entry uses the plain path `'*'`.
-A solid model can take part through a stand-in drawn in points. The San Diego model has one (`dsCity`: roof outlines and streets); it appears in place as the solid model sinks, and only then sets off.
-Phones: each scene rides the page under its own name, so the first half of a change plays where the old scene was and the second half where the new one is.
-Reduced motion: no travel. The scenes swap as before.
+`WAYS['old>new']` is the path for one pair: it gets the progress, the point's number, where it starts and where it must land, and answers where it is now. It may also set the point's brightness and colour for the trip, and bring a prop (`.prop`: a scan bar, a ring, the condensed graph). A pair with no entry uses the plain path `'*'`.
+Every scene keeps the same number of points in the same order (a point that is not showing is drawn dark), or points would change places mid-flight.
+A solid model can take part through a stand-in drawn in points: the San Diego model has one (`dsCity`), and the ending's board has its pile of balls (`dsPile`).
+On computers the points cross in front of the page while they travel (they used to pass behind the app cards and be lost). Phones: each scene rides the page under its own name, so the first half of a change plays where the old scene was and the second half where the new one is. Reduced motion: no travel; the scenes swap as before.
+
+**The 13 hand-overs** (pair, name, what it says):
+1. Route Engine to Industrial AI Notebook, "skyline readout": a bar of light carries the city away and comes back printing the sensor trace. A skyline is a signal.
+2. Notebook to Mini Maps, "fan": the signal's lanes swing open into spokes; time along a lane becomes distance from the centre, and samples land nearest first, the order Dijkstra settles nodes.
+3. Mini Maps to TheAlgorithms/C++, "push, pop": the real Tarjan run. Each point is pushed onto a tower at its node's real visit time and stack depth; each strongly connected component pops off together when the run finds it.
+4. TheAlgorithms/C++ to Agent City, "condense": each cycle draws in to one node and the one-way links between them stay. That is the condensed graph, and the prop draws its true links.
+5. Agent City to Surf Alert, "seven drops": the hub and six agents drop into the water; the sea lights where their ring fronts pass and rides the real sum of the seven ripples.
+6. Surf Alert to Kia-bot, "barrel": the sheet of swell curls up and closes into a ball standing on the waterline.
+7. Kia-bot to Quant Backtest Lab, "tape reel": the ball spins and is paid out, laid down left to right as the price line.
+8. Quant Backtest Lab to Lead Autoresponder, "tape through the reader": the price line is pulled through the reader's ring, pinches to a thread, and leaves split onto the three ways out. Both works read a stream in order and never look ahead.
+9. Lead Autoresponder to Market Debrief, "whirlpool": the three ways out wind onto the dial, the inside turning faster than the rim.
+10. Market Debrief to Math 163, "coin and lock": the dial is laid flat in one piece, then its rings turn against each other until every tick sits at the golden angle.
+11. Math 163 to Skills, "armillary": the seed head sorts into eight flat rings, and each turns up as a rigid hoop on its own gimbal. Eight rings, eight rows of the table.
+12. Skills to Contact, "up the mast": the rings wind in onto the mast, run up it, and are sent from the top.
+13. Contact to the ending, "the first experiment": the Morse points come down through the Galton board's pegs, each taking one ball's real seeded path, into the pile; the steel balls then stand in exactly where they landed. The ending's stop now lasts until the page runs out, so this plays while the board is on screen.
+
+**The Transformer: the pop-up plant** (About into Experience, and Experience into Projects). `blender/build_fold.py` builds, bakes and exports `models/fold.bin` (274 KB) in one run.
+The San Diego model's base plate is 34 square tiles and 8 strips. Each has the city on one face (dark enamel, a few roof blocks, a brass rim) and the factory on the other (steel, belt, walnut, hazard stripes or the control panel). Each has two poses in the file (the exporter's new `alt` list): lying in the plate, and standing in an approval line. What each cell becomes:
+- columns 3 to 5: the conveyor (three tiles turn over as its bed, six hinge up as its skirts);
+- columns 0 and 1: the workbench where a job is stamped by hand (walnut top, back, front, one end);
+- column 2: the control cabinet behind the gap (four walls and a lid);
+- the eight strips: two gantries of two posts and a beam, and two legs for the bench's open end;
+- the other 13 tiles turn over where they lie and become the shop floor.
+The page moves every tile between its two poses as one rigid body about one fixed axis, the way a hinged part moves (`screwOf`, `screwAt`; self-checked on load), in stages (`STAGE`): bed, skirts, bench, cabinet, gantries, floor. Each swings about six degrees past its stop and settles, and its brass flashes as it locks. Then the press heads telescope down from the beams, the hand stamps and ink pads rise out of the bench, the beacon's mast goes up, and the line runs.
+Going in: the buildings go down into the plate, the tiles appear on it with a flash along the seams, and they fold while the model turns from the city's heading to its own. The city's own plate, with its rim and scale marks, stays as the plant's base. Going out to Projects it runs backwards and the city rises again. The fold is driven by how far the chapter has come up the screen, so scrolling back reverses it exactly.
+Click the plant and it folds down flat and stands up again. Reduced motion: the finished line simply shows.
+`models/scenes.bin` (519 KB, the older scene models) is no longer downloaded: every other scene is drawn in light. The file and its script are still in the repo, unused, like the turbine's.
 
 **Two demos now compute what they show.**
 - Telemetry card and the 3D signal ribbon (`detect`): a real isolation forest (60 trees of 64 samples, trained once on 600 samples of the synthetic signal, seeing each reading and the average of the 12 before it) and a real rolling z-score (last 40 samples, alarm beyond 3 spreads). An amber dot is what the forest flags; a ring is where the reading left the baseline's band. Checked over 7,050 samples: the forest catches all 150 spikes and the baseline 146; on the slow drift the forest flags about 1 sample in 5 and the baseline about 1 in 300; false alarms are under 1 in 300 for both.
 - Backtest card (`demos.backtest`): a real walk-forward on synthetic prices, a new path every loop. The first 40% is only fitted on; then six test stretches, each traded with the lookback (5, 10 or 20) that did best on everything before it, with a cost on every change of position. Over 400 paths the rule ends ahead of holding in 235 at the starting cost (7 hundredths of a percent), 272 with no cost and 141 at the sliders' maximum. The Walkforward app's fee and slippage sliders now set that cost, and its six fold bars are drawn to the real proportions.
+
+**Left for later** (found by the auditor or the approver, not done):
+- Nine CSS transitions animate colour, background or width (`.tabs a`, `.bar-cta`, `.btn`, `.links a`, `.bar-map`, `.feature-head a`, `.pin-step b`, `.contact-cards a`, `.tab-ink`), against the "only transform and opacity" rule. They are the hover fades on links and buttons.
+- About 120 lines of motion code for the old scene models (`tickRec` to `tickTK`) are no longer used.
+- Diagram ideas the approver ranked: a real priority queue for Agent City, the Skills rings lighting their own row of the table, a scorer for the Lead Autoresponder dots (only if the project really scores messages that way).
+- The creator's other idea for the Transformer, the line folding into a flatbed truck that drives onto the map, was not built: a scripted vehicle is the risky shape.
 
 ## The opening model is a Galton board that prices an option (2026-11-20)
 

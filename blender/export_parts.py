@@ -1,6 +1,7 @@
 # Run inside Blender: writes every mesh object in the open file as "parts" the site can load without any extra library.
 # One file: [uint32 header length][JSON header][Int16 positions][Int8 normals][Uint16 indices][Float32 part transforms][Uint8 blade-section point][Uint8 vertex colours, if some mesh uses more than one material or has baked shading].
 # Coordinates are turned from Blender's Z-up to the site's Y-up: (x, y, z) -> (x, z, -y).
+# A part may carry other poses (the header's "alt": per part, 7 numbers per pose: position, then rotation as x, y, z, w). The Experience model's tiles do.
 import bpy, json, struct, array, os
 
 OUT = os.path.join(os.path.dirname(bpy.data.filepath), "..", "models", os.path.splitext(os.path.basename(bpy.data.filepath))[0] + ".bin")
@@ -63,13 +64,20 @@ for o in objs:
     parts.extend((loc.x, loc.z, -loc.y, rot.x, rot.z, -rot.y, rot.w, scl.x, scl.z, scl.y))
     pm.append(mesh_id[o.data.name]); pk.append(kind(o.name)); pr.append(1 if o.users_collection[0].name == "rotor" else 0)
 
+def poses(o):   # a part's other poses, if its builder gave it any (o["poses"]: one 4x4 world matrix each, row by row): position and rotation, converted like the main one
+    out, ps = [], list(o.get("poses", [])); c = __import__("mathutils").Vector(centre[o.data.name])
+    for k in range(len(ps) // 16):
+        m = __import__("mathutils").Matrix([ps[k * 16 + r * 4: k * 16 + r * 4 + 4] for r in range(4)]); loc, rot, scl = m.decompose(); loc = loc + m.to_3x3() @ c
+        out += [round(v, 5) for v in (loc.x, loc.z, -loc.y, rot.x, rot.z, -rot.y, rot.w)]
+    return out
+alt = [poses(o) for o in objs]
 scale = max(abs(x) for x in pos) / 32767
 q = array.array('h', (round(x / scale) for x in pos))
 def pad(b): return b + b"\0" * (-len(b) % 4)
 blobs = [pad(q.tobytes()), pad(nor.tobytes()), pad(idx.tobytes()), parts.tobytes(), pad(ring.tobytes())] + ([pad(vcol.tobytes())] if multi or shaded else [])
 offs, at = [], 0
 for b in blobs: offs.append(at); at += len(b)
-head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr, "pname": [o.name for o in objs], "multi": multi, "ring": RING}, separators=(",", ":")).encode()
+head = json.dumps({"scale": scale, "mats": mats, "meshes": meshes, "verts": len(pos) // 3, "off": offs, "mesh": pm, "kind": pk, "rotor": pr, "pname": [o.name for o in objs], "multi": multi, "ring": RING, **({"alt": alt} if any(alt) else {})}, separators=(",", ":")).encode()
 head += b" " * (-len(head) % 4)  # spaces, so the header still parses as JSON
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "wb") as f:
