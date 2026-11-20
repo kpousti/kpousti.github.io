@@ -4,6 +4,16 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Side builds as working iPhone apps (2026-11-20)
+
+Kia asked for realistic, usable iPhone interfaces for the side builds, each its own app with a name and a logo.
+
+- Script (`APPS` table, classic script, above "The name") builds an iOS-style app round each build's live canvas: status bar, logo and app name, three tabs, and a tab bar. Styles are the `.ios-*` rules. Without script the plain demo screen stays.
+- Every control works: tabs switch, switches toggle, Agent City's "Needs you" cards dismiss, Dawn Patrol's alert time and minimum height step, Walkforward's fee and slippage sliders move, Firstreply's replies send or hand off, Kia-bot's microphone toggles, Math 163's quiz marks the answer (base 60).
+- All content is sample data and says so on screen ("sample", "Sample holding A", "synthetic"). No real holdings, customers or results.
+- App names shown in the phone (the page's own headings are unchanged): Agent City, Dawn Patrol (Surf Alert), Kia-bot, Walkforward (Quant Backtest Lab), Firstreply (Lead Autoresponder), Debrief (Market Debrief), Math 163. These are my suggestions and are Kia's to change: one `name:` per app in `APPS`.
+- Each logo is a small inline SVG, also shown beside the build's heading in its card.
+
 ## Side builds: the live demos run inside phones (2026-11-20)
 
 Kia compared the page with seanwirkus.com (app screenshots in phone frames) and chose to put the live demos in the frames rather than send screenshots.

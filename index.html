@@ -228,13 +228,58 @@ body.nav #map { z-index: 31; }
 .screen canvas { display: block; width: 100%; height: 200px; }
 .build .screen canvas { height: 240px; }
 .build.wide .screen canvas { height: 330px; }
-/* Side builds: the live demo runs inside a phone, since these are things I use from mine. The frame is only a frame: the screen is the same live canvas. */
-#builds .build .screen { width: 250px; box-sizing: border-box; margin: 26px auto 22px; padding: 42px 0 24px; border: 9px solid #06080c; border-radius: 42px; overflow: hidden; background: var(--screen); box-shadow: 0 0 0 1px rgba(var(--edge), 0.28), 0 0 0 3px #161b25, 0 0 0 4px rgba(var(--edge), 0.12), 0 34px 60px -28px rgba(0, 0, 0, 0.85); } /* the padding keeps the demo clear of the island and the home bar */
-#builds .build .screen canvas { height: 410px !important; }
-#builds .build .screen canvas[data-demo="voice"] { height: 150px !important; }
-#builds .build .screen .chat { min-height: 260px; box-sizing: border-box; padding: 14px 14px 10px; border: 0; font-size: 0.84rem; } /* Kia-bot's exchange happens on the phone, under its voice */
-#builds .build .screen::before { content: ""; position: absolute; z-index: 1; top: 10px; left: 50%; width: 62px; height: 18px; margin-left: -31px; border-radius: 10px; background: #000; }
-#builds .build .screen::after { content: ""; position: absolute; z-index: 1; bottom: 8px; left: 50%; width: 84px; height: 4px; margin-left: -42px; border-radius: 2px; background: rgba(255, 255, 255, 0.5); }
+/* Side builds as small working iPhone apps. The frame, the status bar and the tab bar are built by script round the same live canvas; every control works, and all of it is sample data. Without script the plain demo screen stays. */
+#builds .build .screen.ios { width: 250px; height: 500px; box-sizing: border-box; margin: 26px auto 22px; padding: 0; border: 9px solid #06080c; border-radius: 42px; overflow: hidden; display: flex; flex-direction: column; background: #000; color: #f2f2f7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; font-size: 12px; line-height: 1.3; letter-spacing: 0;
+  box-shadow: 0 0 0 1px rgba(var(--edge), 0.28), 0 0 0 3px #161b25, 0 0 0 4px rgba(var(--edge), 0.12), 0 34px 60px -28px rgba(0, 0, 0, 0.85); }
+.ios::before { content: ""; position: absolute; z-index: 3; top: 10px; left: 50%; width: 62px; height: 18px; margin-left: -31px; border-radius: 10px; background: #000; box-shadow: 0 0 0 1px #111; }
+.ios::after { content: ""; position: absolute; z-index: 3; bottom: 6px; left: 50%; width: 84px; height: 4px; margin-left: -42px; border-radius: 2px; background: rgba(255, 255, 255, 0.55); pointer-events: none; }
+.ios-status { flex: none; height: 38px; display: flex; justify-content: space-between; align-items: center; padding: 4px 20px 0 24px; font-weight: 600; font-size: 12px; }
+.ios-status svg { display: block; }
+.ios-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 14px 8px; }
+.ios-head b { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.ios-ico { flex: none; width: 26px; height: 26px; border-radius: 7px; display: block; }
+h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6px; vertical-align: -5px; margin-right: 9px; }
+.ios-views { flex: 1; min-height: 0; position: relative; }
+.ios-view { position: absolute; inset: 0; overflow-y: auto; padding: 0 11px 10px; scrollbar-width: none; }
+.ios-view::-webkit-scrollbar { display: none; }
+.ios-view.off { visibility: hidden; pointer-events: none; }
+#builds .build .screen.ios canvas { height: 150px !important; border-radius: 12px; }
+#builds .build .screen.ios canvas[data-demo="voice"] { height: 84px !important; }
+#builds .build .screen.ios .chat { min-height: 0; padding: 10px 2px 2px; border: 0; background: none; font-size: 11.5px; gap: 6px; }
+.ios-card { background: #1c1c1e; border-radius: 12px; padding: 2px 11px; margin-top: 8px; }
+.ios-card.pad { padding: 10px 11px; }
+.ios-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 0; border-top: 0.5px solid #38383a; }
+.ios-row:first-child { border-top: 0; }
+.ios-sub { display: block; color: #8e8e93; font-size: 10.5px; font-weight: 400; }
+.ios-big { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.ios-chip { flex: none; padding: 3px 7px; border-radius: 6px; font-size: 10px; font-weight: 600; background: #2c2c2e; color: var(--tint); }
+.ios-chip.warm { color: #ffb340; }
+.ios-sw { flex: none; position: relative; width: 36px; height: 21px; padding: 0; border: 0; border-radius: 11px; background: #39393d; cursor: pointer; }
+.ios-sw::after { content: ""; position: absolute; left: 2px; top: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.ios-sw[aria-checked="true"] { background: var(--tint); }
+.ios-sw[aria-checked="true"]::after { transform: translateX(15px); }
+.ios-sw:disabled { opacity: 0.55; cursor: default; }
+.ios-btn { border: 0; border-radius: 9px; padding: 7px 11px; font: inherit; font-weight: 600; font-size: 11.5px; background: var(--tint); color: #000; cursor: pointer; }
+.ios-btn.ghost { background: #2c2c2e; color: #f2f2f7; }
+.ios-btn.wide { display: block; width: 100%; margin-top: 6px; text-align: center; }
+.ios-btn.right { color: #0b2; background: #12331c; } .ios-btn.wrong { color: #f66; background: #3a1616; }
+.ios-btns { display: flex; gap: 6px; margin-top: 8px; }
+.ios-step { display: flex; align-items: center; gap: 7px; }
+.ios-step button { width: 22px; height: 22px; border: 0; border-radius: 6px; background: #2c2c2e; color: #f2f2f7; font: inherit; font-weight: 600; cursor: pointer; }
+.ios-bar { height: 6px; border-radius: 3px; background: #2c2c2e; overflow: hidden; flex: 1; }
+.ios-bar i { display: block; height: 100%; border-radius: 3px; background: var(--tint); }
+.ios-bar i + i { background: #ffb340; }
+.ios-bar.two { display: flex; gap: 2px; background: none; }
+.ios-view input[type="range"] { width: 100%; accent-color: var(--tint); margin: 4px 0 0; }
+.ios-mic { display: grid; place-items: center; width: 46px; height: 46px; margin: 10px auto 2px; border: 0; border-radius: 50%; background: var(--tint); cursor: pointer; }
+.ios-mic.on { box-shadow: 0 0 0 6px rgba(242, 181, 107, 0.25); }
+.ios-tabs { flex: none; display: flex; padding: 5px 6px 20px; border-top: 0.5px solid #38383a; background: #121214; }
+.ios-tabs button { flex: 1; padding: 4px 0 2px; border: 0; background: none; color: #8e8e93; font: inherit; font-size: 9.5px; font-weight: 600; cursor: pointer; }
+.ios-tabs button::before { content: ""; display: block; width: 16px; height: 3px; margin: 0 auto 4px; border-radius: 2px; background: currentColor; opacity: 0.35; }
+.ios-tabs button[aria-pressed="true"] { color: var(--tint); }
+.ios-tabs button[aria-pressed="true"]::before { opacity: 1; }
+.ios button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .screen-bar {
   display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; color: var(--text-dim);
@@ -2198,6 +2243,79 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
       holder.querySelectorAll('button').forEach(function (o) { o.setAttribute('aria-pressed', o === b); });
     });
     holder.appendChild(b);
+  });
+})();
+
+// ---------- Side builds as small working iPhone apps: a status bar, the app's name and logo, three tabs and real controls, built round each build's live canvas. Everything shown is sample data. ----------
+(function () {
+  function sw(on, locked) { return '<button class="ios-sw" role="switch" aria-checked="' + (on ? 'true' : 'false') + '"' + (locked ? ' disabled' : '') + '></button>'; }
+  function row(a, sub, right) { return '<div class="ios-row"><span>' + a + (sub ? '<small class="ios-sub">' + sub + '</small>' : '') + '</span>' + (right || '') + '</div>'; }
+  function card(h, pad) { return '<div class="ios-card' + (pad ? ' pad' : '') + '">' + h + '</div>'; }
+  function chip(t, warm) { return '<span class="ios-chip' + (warm ? ' warm' : '') + '">' + t + '</span>'; }
+  function ico(bg, glyph) { return '<svg class="ios-ico" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" fill="' + bg + '"/><g fill="#0b0d14" stroke="#0b0d14" stroke-width="0">' + glyph + '</g></svg>'; }
+  function step(v, unit, by) { return '<span class="ios-step"><button data-step="-' + by + '" aria-label="Less">−</button><b data-val="' + v + '" data-unit="' + unit + '">' + (unit === 'time' ? '6:30 AM' : v + ' ' + unit) + '</b><button data-step="' + by + '" aria-label="More">+</button></span>'; }
+  var CV = '<div data-cv></div>';
+  var APPS = {
+    city: { name: 'Agent City', tint: '#f2b56b', ico: ico('#f2b56b', '<path d="M4 14l4.5-4.5L13 14zM13 14l4.5-4.5L22 14zM8.5 20.5L13 16l4.5 4.5z"/>'), tabs: ['Agents', 'Needs you', 'Log'], views: [
+      CV + card(['inbox', 'jobs', 'ideas', 'coach', 'markets', 'builder'].map(function (n, k) { return row(n, k % 3 === 2 ? 'idle' : 'ran this morning', sw(k !== 2)); }).join('')),
+      '<p class="ios-sub" data-empty style="padding:14px 4px">Nothing needs you right now.</p>' + ['<b>jobs</b><small class="ios-sub">One listing matches your filters.</small>', '<b>inbox</b><small class="ios-sub">A reply is drafted and waiting.</small>', '<b>markets</b><small class="ios-sub">A pullback crossed a tier.</small>'].map(function (t) { return card(t + '<div class="ios-btns"><button class="ios-btn" data-dismiss>Open</button><button class="ios-btn ghost" data-dismiss>Later</button></div>', true); }).join(''),
+      card(['markets filed its report', 'inbox sorted new mail', 'jobs checked listings', 'coach planned the day', 'builder ran its checks'].map(function (t, k) { return row(t, 'sample · ' + (6 + k) + ':30 AM'); }).join(''))] },
+    wave: { name: 'Dawn Patrol', tint: '#4aa3ff', ico: ico('#4aa3ff', '<circle cx="18" cy="8" r="3.2"/><path d="M3 17c3-4.5 6-4.5 9 0s6 4 11-1v7H3z"/>'), tabs: ['Today', 'Week', 'Alerts'], views: [
+      CV + card('<span class="ios-big">3 to 4 ft</span><small class="ios-sub">14 s · offshore wind · sample report</small><div class="ios-btns">' + chip('Worth the paddle') + '</div>', true) + card(row('Best window', '', '<b>6:30 to 8</b>') + row('Tide', 'sample', '<b>Rising</b>')),
+      card(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d, k) { var w = [55, 70, 40, 30, 62, 85, 48][k]; return row('<b>' + d + '</b>', '', '<span class="ios-bar" style="max-width:120px"><i style="width:' + w + '%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Sample swell heights.</p>',
+      card(row('Morning alert', 'One notification, only if it is worth it', sw(true)) + row('Send at', '', step(390, 'time', 15)) + row('Only above', '', step(3, 'ft', 1)))] },
+    voice: { name: 'Kia-bot', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="5" y="10" width="2.6" height="6" rx="1.3"/><rect x="9.4" y="6" width="2.6" height="14" rx="1.3"/><rect x="13.8" y="8.5" width="2.6" height="9" rx="1.3"/><rect x="18.2" y="11" width="2.6" height="4" rx="1.3"/>'), tabs: ['Talk', 'Tools', 'History'], views: [
+      CV + '<button class="ios-mic" data-mic aria-label="Talk" aria-pressed="false"><svg width="20" height="22" viewBox="0 0 20 22" fill="none" stroke="#0b0d14" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="6.5" y="1" width="7" height="12" rx="3.5" fill="#0b0d14"/><path d="M3 10a7 7 0 0 0 14 0M10 17v4"/></svg></button><p class="ios-sub" data-mic-label style="text-align:center">Tap to talk</p>',
+      card(row('surf_forecast', 'Called when you ask about waves', sw(true)) + row('tides', 'Called when you ask about waves', sw(true))),
+      card(row('How is the surf tomorrow morning?', 'sample · answered out loud'))] },
+    histogram: { name: 'Walkforward', tint: '#f2b56b', ico: ico('#f2b56b', '<rect x="4" y="15" width="3" height="6"/><rect x="8.5" y="11" width="3" height="10"/><rect x="13" y="13" width="3" height="8"/><rect x="17.5" y="7" width="3" height="14"/><path d="M7 5h9v2H9v3H7z"/>'), tabs: ['Chart', 'Folds', 'Costs'], views: [
+      CV + card(row('Mode', '', chip('Paper trading')) + row('Prices', '', chip('Synthetic')) + row('Validation', '', '<b>Walk-forward</b>')),
+      card([1, 2, 3, 4, 5, 6].map(function (k) { return row('<b>Fold ' + k + '</b>', '', '<span class="ios-bar two" style="max-width:130px"><i style="width:' + (52 + k * 4) + '%"></i><i style="width:22%"></i></span>'); }).join('')) + '<p class="ios-sub" style="padding:8px 4px">Blue is the stretch it fits on, amber the stretch it is tested on.</p>',
+      card('<label>Fee <b data-out>2 bps</b><input type="range" min="0" max="20" value="2" data-unit="bps"></label>', true) + card('<label>Slippage <b data-out>5 bps</b><input type="range" min="0" max="20" value="5" data-unit="bps"></label>', true) + '<p class="ios-sub" style="padding:8px 4px">Costs come off every trade before results are reported.</p>'] },
+    funnel: { name: 'Firstreply', tint: '#6aa5ff', ico: ico('#6aa5ff', '<path d="M11 5.5L4.5 12l6.5 6.5V14c5 0 8 1.2 10 5 0-7.5-4-10.5-10-10.5z"/>'), tabs: ['Inbox', 'Flow', 'Rules'], views: [
+      [['Do you open on Sundays?', 'auto-reply', 'Yes, we are open 9 to 3 on Sundays.', 'Send'], ['Can I get a quote for two rooms?', 'auto-reply', 'Happy to. Could you share the room sizes?', 'Send'], ['My order arrived damaged.', 'to a person', 'Complaints always go to a person.', 'Hand off']].map(function (m) {
+        return card('<b>' + m[0] + '</b><div class="ios-btns">' + chip(m[1], m[1] !== 'auto-reply') + '</div><small class="ios-sub" style="margin-top:7px">' + m[2] + '</small><button class="ios-btn wide" data-done="' + (m[3] === 'Send' ? 'Sent' : 'Handed off') + '">' + m[3] + '</button>', true); }).join('') + '<p class="ios-sub" style="padding:8px 4px">Sample inquiries.</p>',
+      CV + '<p class="ios-sub" style="padding:8px 4px">Each inquiry is read once, then leaves on one path.</p>',
+      card(row('Reply right away', '', sw(true)) + row('Complaints go to a person', 'Always on', sw(true, true)) + row('Quiet hours', 'Hold replies overnight', sw(false)))] },
+    candles: { name: 'Debrief', tint: '#5b8cff', ico: ico('#5b8cff', '<rect x="6" y="9" width="4" height="9" rx="1"/><rect x="7.5" y="5" width="1" height="16"/><rect x="15" y="7" width="4" height="7" rx="1"/><rect x="16.5" y="4" width="1" height="14"/>'), tabs: ['Today', 'Events', 'Signals'], views: [
+      CV + card(row('Sample holding A', 'under its 52-week high', chip('no signal')) + row('Sample holding B', 'under its 52-week high', chip('tier 1', true)) + row('Sample holding C', 'under its 52-week high', chip('tier 2', true))),
+      card(row('Earnings', 'Sample holding B · Thursday') + row('Dividend date', 'Sample holding A · Monday') + row('Rate decision', 'Wednesday')) + '<p class="ios-sub" style="padding:8px 4px">Sample events.</p>',
+      card(row('Tier 1', 'Pullback of 5%', sw(true)) + row('Tier 2', 'Pullback of 10%', sw(true)) + row('Tier 3', 'Pullback of 20%', sw(true)))] },
+    spiral: { name: 'Math 163', tint: '#f2b56b', ico: ico('#f2b56b', '<path fill="none" stroke-width="2" stroke-linecap="round" d="M13 13.5a1.5 1.5 0 1 1 1.5 1.5a3.5 3.5 0 1 1-3.5-3.5a6 6 0 1 1 6 6"/>'), tabs: ['Cards', 'Quiz', 'Progress'], views: [
+      CV + '<p class="ios-sub" style="padding:8px 4px">Flashcards flip from question to answer.</p>',
+      card('<b>Base of Babylonian numerals?</b><div class="ios-btns" style="flex-wrap:wrap">' + [10, 12, 20, 60].map(function (n) { return '<button class="ios-btn ghost" data-ans="' + (n === 60 ? 1 : 0) + '">' + n + '</button>'; }).join('') + '</div><small class="ios-sub" data-result style="margin-top:8px">Pick one.</small>', true),
+      card(row('Greek geometry', '', '<span class="ios-bar" style="max-width:110px"><i style="width:70%"></i></span>') + row('Renaissance algebra', '', '<span class="ios-bar" style="max-width:110px"><i style="width:35%"></i></span>')) + '<p class="ios-sub" style="padding:8px 4px">Sample progress.</p>'] }
+  };
+  var SIG = '<svg width="38" height="11" viewBox="0 0 38 11" fill="#f2f2f7" aria-hidden="true"><rect x="0" y="7" width="2.5" height="4" rx="0.6"/><rect x="4" y="5" width="2.5" height="6" rx="0.6"/><rect x="8" y="3" width="2.5" height="8" rx="0.6"/><rect x="12" y="0.5" width="2.5" height="10.5" rx="0.6"/><rect x="20" y="1" width="15" height="9" rx="2.5" fill="none" stroke="#f2f2f7" opacity="0.5"/><rect x="21.5" y="2.5" width="10" height="6" rx="1.2"/></svg>';
+  document.querySelectorAll('#builds .scene').forEach(function (sc) {
+    var A = APPS[sc.getAttribute('data-shape')], screen = sc.querySelector('.screen'), cv = screen && screen.querySelector('canvas');
+    if (!A || !cv) return;
+    var chat = screen.querySelector('.chat'), h3 = sc.querySelector('h3'), tabs = '', views = '';
+    A.tabs.forEach(function (t, k) { tabs += '<button aria-pressed="' + (k ? 'false' : 'true') + '">' + t + '</button>'; views += '<div class="ios-view' + (k ? ' off' : '') + '">' + A.views[k] + '</div>'; });
+    var wrap = document.createElement('div'); wrap.style.display = 'contents';
+    wrap.innerHTML = '<div class="ios-status"><span>9:41</span>' + SIG + '</div><div class="ios-head">' + A.ico + '<b>' + A.name + '</b></div><div class="ios-views">' + views + '</div><nav class="ios-tabs" aria-label="' + A.name + ' sections">' + tabs + '</nav>';
+    var slot = wrap.querySelector('[data-cv]'); slot.appendChild(cv); if (chat) slot.appendChild(chat);
+    screen.appendChild(wrap); screen.classList.add('ios'); screen.style.setProperty('--tint', A.tint);
+    if (h3) h3.insertAdjacentHTML('afterbegin', A.ico);
+    var vs = wrap.querySelectorAll('.ios-view'), tb = wrap.querySelectorAll('.ios-tabs button');
+    function empty() { var e = wrap.querySelector('[data-empty]'); if (e) e.style.display = wrap.querySelectorAll('[data-dismiss]').length ? 'none' : ''; }
+    empty();
+    screen.addEventListener('input', function (e) { var o = e.target.closest('label'); if (o) o.querySelector('[data-out]').textContent = e.target.value + ' ' + e.target.getAttribute('data-unit'); });
+    screen.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var k = Array.prototype.indexOf.call(tb, b);
+      if (k >= 0) { for (var q = 0; q < tb.length; q++) { tb[q].setAttribute('aria-pressed', q === k ? 'true' : 'false'); vs[q].classList.toggle('off', q !== k); } return; }
+      if (b.classList.contains('ios-sw')) b.setAttribute('aria-checked', b.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+      else if (b.hasAttribute('data-dismiss')) { b.closest('.ios-card').remove(); empty(); }
+      else if (b.hasAttribute('data-done')) { b.textContent = b.getAttribute('data-done') + ' ✓'; b.classList.add('ghost'); b.disabled = true; }
+      else if (b.hasAttribute('data-step')) {
+        var v = b.parentNode.querySelector('[data-val]'), n = +v.getAttribute('data-val') + +b.getAttribute('data-step'), u = v.getAttribute('data-unit');
+        n = u === 'time' ? clamp(n, 300, 600) : clamp(n, 1, 12); v.setAttribute('data-val', n);
+        v.textContent = u === 'time' ? Math.floor(n / 60) + ':' + ('0' + n % 60).slice(-2) + ' AM' : n + ' ' + u;
+      }
+      else if (b.hasAttribute('data-ans')) { var ok = b.getAttribute('data-ans') === '1'; b.classList.remove('ghost'); b.classList.add(ok ? 'right' : 'wrong'); wrap.querySelector('[data-result]').textContent = ok ? 'Right: base 60. +50 XP' : 'Not that one. Try again.'; }
+      else if (b.hasAttribute('data-mic')) { var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('on', on); wrap.querySelector('[data-mic-label]').textContent = on ? 'Listening… (sample)' : 'Tap to talk'; }
+    });
   });
 })();
 
