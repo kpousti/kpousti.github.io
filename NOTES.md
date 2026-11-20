@@ -4,6 +4,23 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## Scenes turn into each other; an auditor, a creator and an approver (2026-11-20)
+
+Kia asked for every scene change to be "insanely cool" and different from the others, every diagram to be unique and clever, one change to work "like a Transformer", and for three agents to run it: one that goes over everything, one that invents, one that approves or sends the ideas back.
+
+**The three agents.** Their notes are outside the repo, in the session's shared notes folder: `audit.md` (the auditor, "Caliper"), `concepts-v*.md` (the creator, "Riff"), `verdict-v*.md` (the approver, "Veto").
+The audit counted 29 hand-overs and 36 diagrams. 15 hand-overs used the same swap (the old scene flies at the camera, the new one arrives from behind), and two card demos showed marks or results that were not computed.
+
+**How one scene becomes the next** (`morph` and `WAYS` in the page). Every light-drawn scene can be asked for its points at any moment. Part way between two scenes the page asks both, and point i of the old scene travels to point i of the new one. Lines of the old scene let go in the first 40%, lines of the new one are drawn in the last 40%.
+`WAYS['old>new']` is the path for one pair of scenes: it gets the progress, the point's number, where it starts and where it must land, and answers where it is now. A pair with no entry uses the plain path `'*'`.
+A solid model can take part through a stand-in drawn in points. The San Diego model has one (`dsCity`: roof outlines and streets); it appears in place as the solid model sinks, and only then sets off.
+Phones: each scene rides the page under its own name, so the first half of a change plays where the old scene was and the second half where the new one is.
+Reduced motion: no travel. The scenes swap as before.
+
+**Two demos now compute what they show.**
+- Telemetry card and the 3D signal ribbon (`detect`): a real isolation forest (60 trees of 64 samples, trained once on 600 samples of the synthetic signal, seeing each reading and the average of the 12 before it) and a real rolling z-score (last 40 samples, alarm beyond 3 spreads). An amber dot is what the forest flags; a ring is where the reading left the baseline's band. Checked over 7,050 samples: the forest catches all 150 spikes and the baseline 146; on the slow drift the forest flags about 1 sample in 5 and the baseline about 1 in 300; false alarms are under 1 in 300 for both.
+- Backtest card (`demos.backtest`): a real walk-forward on synthetic prices, a new path every loop. The first 40% is only fitted on; then six test stretches, each traded with the lookback (5, 10 or 20) that did best on everything before it, with a cost on every change of position. Over 400 paths the rule ends ahead of holding in 235 at the starting cost (7 hundredths of a percent), 272 with no cost and 141 at the sliders' maximum. The Walkforward app's fee and slippage sliders now set that cost, and its six fold bars are drawn to the real proportions.
+
 ## The opening model is a Galton board that prices an option (2026-11-20)
 
 Kia did not love the skateboard and asked for an opening that "dresses for the job I want": quant. He picked the Galton board from five options. The skateboard model and its script are deleted; the turbine files stay but are unused.

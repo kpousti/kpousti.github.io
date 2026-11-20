@@ -2939,14 +2939,14 @@ import * as THREE from './vendor/three.module.min.js';
     for (i = 0; i < DJ.E.length; i++) {
       var a = DJ.E[i][0], b = DJ.E[i][1], tree = DJ.prev[a] === b || DJ.prev[b] === a, lit = tree && Math.max(DJ.dist[a], DJ.dist[b]) <= front;
       L(DJ.x[a], h(a), DJ.z[a], DJ.x[b], h(b), DJ.z[b], lit ? AM : BL, lit ? 0.1 + 0.8 * keep : 0.22);
-      if (lit) { var u = (t * 0.0006 + i * 0.37) % 1, s0 = DJ.prev[b] === a ? a : b, s1 = s0 === a ? b : a; P(mix(DJ.x[s0], DJ.x[s1], u), mix(h(s0), h(s1), u), mix(DJ.z[s0], DJ.z[s1], u), WH, 0.024, keep); }
+      var u = (t * 0.0006 + i * 0.37) % 1, s0 = DJ.prev[b] === a ? a : b, s1 = s0 === a ? b : a; P(mix(DJ.x[s0], DJ.x[s1], u), mix(h(s0), h(s1), u), mix(DJ.z[s0], DJ.z[s1], u), WH, 0.024, lit ? keep : 0); // dark until its edge joins the tree: every scene keeps the same points in the same order, so a hand-over never sees one change places
     }
     for (i = 0; i < DJ.n; i++) {
       var d = DJ.dist[i], set = d <= front, edge = set ? 1 - smooth((front - d) / (DJ.far * 0.15)) : 0;
       P(DJ.x[i], h(i), DJ.z[i], set ? AM : BL, i ? 0.045 + 0.05 * edge : 0.1, set ? 0.7 + 1.2 * edge : 0.5);
       if (set) L(DJ.x[i], 0.08, DJ.z[i], DJ.x[i], h(i), DJ.z[i], AM, 0.18);
     }
-    var R = front / DJ.far; if (R < 1.1) hoop(DJ.x[0], 0.08, DJ.z[0], R, 90, WH, 0.014, 0.6 * keep); // the wave of the search going out
+    var R = front / DJ.far; hoop(DJ.x[0], 0.08, DJ.z[0], Math.min(R, 1.1), 90, WH, 0.014, R < 1.1 ? 0.6 * keep : 0); // the wave of the search going out
   }
 
   var TJ = (function () { // a directed graph of five cycles joined by one-way links, and a real run of Tarjan's algorithm over it: when each node is first visited and when its component is found
@@ -2954,14 +2954,14 @@ import * as THREE from './vendor/three.module.min.js';
     for (c = 0; c < 5; c++) { first.push(n); for (k = 0; k < sizes[c]; k++) { comp.push(c); slot.push(k); adj.push([]); n++; } }
     for (c = 0; c < 5; c++) for (k = 0; k < sizes[c]; k++) { adj[first[c] + k].push(first[c] + (k + 1) % sizes[c]); E.push([first[c] + k, first[c] + (k + 1) % sizes[c], 1]); }
     [[0, 1], [1, 2], [0, 3], [3, 4], [1, 4]].forEach(function (l) { adj[first[l[0]] + 1].push(first[l[1]]); E.push([first[l[0]] + 1, first[l[1]], 0]); });
-    var idx = 0, index = [], low = [], on = [], stack = [], clock = 0, vis = [], found = [];
+    var idx = 0, index = [], low = [], on = [], stack = [], clock = 0, vis = [], found = [], dep = [];
     function go(v) {
-      index[v] = low[v] = idx++; vis[v] = clock++; stack.push(v); on[v] = true;
+      index[v] = low[v] = idx++; vis[v] = clock++; dep[v] = stack.length; stack.push(v); on[v] = true;
       adj[v].forEach(function (w) { if (index[w] === undefined) { go(w); low[v] = Math.min(low[v], low[w]); } else if (on[w]) low[v] = Math.min(low[v], index[w]); });
       if (low[v] === index[v]) { var w; do { w = stack.pop(); on[w] = false; found[w] = clock; } while (w !== v); clock++; }
     }
     for (k = 0; k < n; k++) if (index[k] === undefined) go(k);
-    return { n: n, sizes: sizes, comp: comp, slot: slot, E: E, vis: vis, found: found, clock: clock, cx: [-0.62, 0.02, 0.64, -0.34, 0.36], cz: [-0.32, -0.58, -0.12, 0.5, 0.52], cr: [0.25, 0.2, 0.29, 0.16, 0.24] };
+    return { n: n, sizes: sizes, comp: comp, slot: slot, E: E, vis: vis, found: found, dep: dep, clock: clock, cx: [-0.62, 0.02, 0.64, -0.34, 0.36], cz: [-0.32, -0.58, -0.12, 0.5, 0.52], cr: [0.25, 0.2, 0.29, 0.16, 0.24] };
   })();
   function dsTarjan(t) { // TheAlgorithms/C++: Tarjan walks the graph depth first; when a strongly connected component is found its cycle lifts, lights and starts to turn
     var T = 11000, ph = (t % T) / T, now = ph * (TJ.clock + 4), i, X = [], Y = [], Z = [], st = [];
@@ -3013,7 +3013,7 @@ import * as THREE from './vendor/three.module.min.js';
       var b = k / 3 * TAU + 0.5, tx = 0.95 * Math.cos(b), tz = 0.95 * Math.sin(b), ty = 0.25 + 0.3 * k, act = k === call ? on : 0;
       for (i = 0; i < 40; i++) { var a3 = i / 40 * TAU + t * 0.001 * (1 + 3 * act), r3 = 0.09 + 0.02 * k; P(tx + r3 * Math.cos(a3), ty + r3 * Math.sin(a3) * (k === 1 ? 1 : 0.3), tz + r3 * Math.sin(a3) * (k === 1 ? 0 : 1), act ? AM : BL, i % 10 ? 0.018 : 0.04, 0.6 + 1.2 * act); }
       L(0, 0.6, 0, tx, ty, tz, act ? AM : BL, 0.12 + 0.7 * act);
-      if (act) for (i = 0; i < 6; i++) { var u = clamp((ph - 0.1) / 0.7 * 2 % 1 - i * 0.04, 0, 1), v = ph < 0.45 ? u : 1 - u; P(tx * v, mix(0.6, ty, v), tz * v, ph < 0.45 ? WH : AM, 0.036, 1.6); }
+      for (i = 0; i < 6; i++) { var u = clamp((ph - 0.1) / 0.7 * 2 % 1 - i * 0.04, 0, 1), v = ph < 0.45 ? u : 1 - u; P(tx * v, mix(0.6, ty, v), tz * v, ph < 0.45 ? WH : AM, 0.036, act ? 1.6 : 0); }
     }
   }
 
@@ -3024,7 +3024,7 @@ import * as THREE from './vendor/three.module.min.js';
       P(x, y, 0, c, c === BL ? 0.02 : 0.034, k); L(x, 0.1, 0, x, y, 0, c, 0.12 * k);
       if (i) L(px, py, 0, x, y, 0, c, 0.7 * k);
       px = x; py = y;
-      for (j = 1; j < 4; j++) if (x < wx - 0.25 * j) P(x, y, -0.16 * j, AM, 0.014, 0.35 / j); // the stretches already tested, left behind as it walks on
+      for (j = 1; j < 4; j++) P(x, y, -0.16 * j, AM, 0.014, x < wx - 0.25 * j ? 0.35 / j : 0); // the stretches already tested, left behind as it walks on
     }
     for (j = 0; j < 2; j++) { var z = j ? 0.1 : -0.1; L(wx - 0.25, 0.1, z, wx - 0.25, 1.0, z, WH, 0.6); L(wx + 0.25, 0.1, z, wx + 0.25, 1.0, z, AM, 0.6); L(wx - 0.25, 1.0, z, wx + 0.25, 1.0, z, WH, 0.6); L(wx - 0.25, 0.1, z, wx + 0.25, 0.1, z, WH, 0.6); L(wx + 0.1, 0.1, z, wx + 0.1, 1.0, z, AM, 0.35); }
     for (j = 0; j < 2; j++) { var y2 = j ? 1.0 : 0.1; L(wx - 0.25, y2, -0.1, wx - 0.25, y2, 0.1, WH, 0.6); L(wx + 0.25, y2, -0.1, wx + 0.25, y2, 0.1, AM, 0.6); }
@@ -3041,7 +3041,7 @@ import * as THREE from './vendor/three.module.min.js';
     for (k = 0; k < 3; k++) {
       var g = lanes[k], px = 0, py = 0.5, pz = 0, stack = Math.floor((t * 0.0016 + k * 4) % 8);
       for (i = 1; i <= 14; i++) { var w2 = i / 14, s2 = smooth(w2), x = g[0] * w2, y = mix(0.5, g[1], s2), z = g[2] * s2; L(px, py, pz, x, y, z, g[3], 0.3); px = x; py = y; pz = z; }
-      for (i = 0; i < stack; i++) P(g[0] + 0.06, g[1] - 0.06 + 0.028 * i, g[2], g[3], 0.03, 0.9); // what each path has handled so far
+      for (i = 0; i < 8; i++) P(g[0] + 0.06, g[1] - 0.06 + 0.028 * i, g[2], g[3], 0.03, i < stack ? 0.9 : 0); // what each path has handled so far
     }
   }
 
@@ -3062,19 +3062,21 @@ import * as THREE from './vendor/three.module.min.js';
 
   function dsSeeds(t) { // Math 163 Study Game: a seed head grown one seed at a time at the golden angle; the arms that appear come in Fibonacci numbers, 21 one way and 34 the other
     var n = Math.round(720 * DQ), T = 10000, ph = (t % T) / T, grown = n * smooth(ph / 0.55), fam = Math.floor(t / T) % 2 ? 21 : 34, i, px = 0, py = 0, pz = 0;
-    for (i = 0; i < n && i < grown; i++) {
-      var r = Math.sqrt((i + 0.5) / n), a = i * 2.39996 + t * 0.00006, arm = i % fam < 3 && ph > 0.6, fresh = 1 - smooth((grown - i) / 40);
-      P(r * Math.cos(a), 0.2 + 0.6 * (1 - r * r), r * Math.sin(a), arm ? AM : fresh > 0 ? WH : BL, 0.018 + 0.03 * r + 0.04 * fresh, arm ? 1.5 : 0.5 + fresh);
+    for (i = 0; i < n; i++) {
+      var r = Math.sqrt((i + 0.5) / n), a = i * 2.39996 + t * 0.00006, arm = i % fam < 3 && ph > 0.6, fresh = 1 - smooth((grown - i) / 40), is = i < grown; // a seed not grown yet waits, very faint, where it will be
+      P(r * Math.cos(a), 0.2 + 0.6 * (1 - r * r), r * Math.sin(a), !is ? BL : arm ? AM : fresh > 0 ? WH : BL, is ? 0.018 + 0.03 * r + 0.04 * fresh : 0.012, !is ? 0.1 : arm ? 1.5 : 0.5 + fresh);
     }
     for (i = 0; i <= 70; i++) { var th = i / 70 * 4.6 * Math.PI, r2 = 0.012 * Math.pow(1.618034, th * 2 / Math.PI); if (r2 > 1) break; var x = r2 * Math.cos(th + t * 0.00006), z = r2 * Math.sin(th + t * 0.00006), y = 0.24 + 0.6 * (1 - r2 * r2); if (i) L(px, py, pz, x, y, z, AM, 0.7); px = x; py = y; pz = z; } // the golden spiral through it
   }
 
   var SK = Array.prototype.map.call(document.querySelectorAll('#skills .skill-grid li'), function (li) { return li.textContent.split(',').length; }); if (!SK.length) SK = [3, 6, 5, 5, 3, 3, 7, 6];
+  var SKS = (function () { var o = [Math.round(90 * DQ)], k; for (k = 0; k < SK.length; k++) o.push(o[k] + Math.round((36 + 12 * k) * DQ) + SK[k]); return o; })(); // the number of the first point of each ring (after the hub's points), and one past the last
+  function skTilt(k, t) { return k * 0.42 + 0.35 * Math.sin(t * 0.00025 + k * 0.8); } function skTwist(k, t) { return k * 0.785 + t * 0.00012; }
   function dsStack(t) { // Skills: one ring for each row of the table under it, carrying one bead for each thing in that row; the rings take turns to light
     var k, i, T = 1500, act = Math.floor(t / T) % SK.length, e = pulse((t % T) / T, 0.05, 0.8);
     ball(0, 0.85, 0, 0.08, Math.round(90 * DQ), WH, 0.016, 0.9, t * 0.0004);
     for (k = 0; k < SK.length; k++) {
-      var R = 0.2 + 0.09 * k, tilt = k * 0.42 + 0.35 * Math.sin(t * 0.00025 + k * 0.8), tw = k * 0.785 + t * 0.00012, on = k === act ? e : 0, m = Math.round((36 + 12 * k) * DQ), ct = Math.cos(tilt), sn = Math.sin(tilt), cw = Math.cos(tw), sw2 = Math.sin(tw);
+      var R = 0.2 + 0.09 * k, tilt = skTilt(k, t), tw = skTwist(k, t), on = k === act ? e : 0, m = Math.round((36 + 12 * k) * DQ), ct = Math.cos(tilt), sn = Math.sin(tilt), cw = Math.cos(tw), sw2 = Math.sin(tw);
       for (i = 0; i < m + SK[k]; i++) {
         var bead = i >= m, a = bead ? (i - m) / SK[k] * TAU + t * 0.0005 * (k % 2 ? 1 : -1) * (1 + on) : i / m * TAU, x1 = R * Math.cos(a), z1 = R * Math.sin(a) * ct;
         P(x1 * cw + z1 * sw2, 0.85 - R * Math.sin(a) * sn, -x1 * sw2 + z1 * cw, bead ? (on ? AM : WH) : on ? AM : BL, bead ? 0.05 : 0.012, bead ? 1 + on : 0.35 + on);
@@ -3088,7 +3090,7 @@ import * as THREE from './vendor/three.module.min.js';
     if (t - keyed < 2500) down = held ? 1 : 0;
     L(0, 0.1, 0, 0, 0.9, 0, WH, 0.7); hoop(0, 0.1, 0, 0.3, 48, BL, 0.016, 0.7); hoop(0, 0.1, 0, 0.6, 72, BL, 0.012, 0.4);
     for (i = 0; i < 80; i++) { var a = i * 0.5 + t * 0.002, r = 0.02 + 0.07 * (1 - i / 80); P(r * Math.cos(a), 0.1 + 0.8 * i / 80, r * Math.sin(a), down ? AM : BL, 0.016, 0.5 + down); }
-    for (i = 0; i < MORSE.length; i++) if (MORSE[i][0]) { var R = ((u - MORSE[i][2] + MORSE.total) % MORSE.total) * 0.085; if (R < 1) hoop(0, 0.9 - R * 0.35, 0, R, 64, AM, MORSE[i][1] > 1 ? 0.04 : 0.02, 1.5 * (1 - R)); }
+    for (i = 0; i < MORSE.length; i++) if (MORSE[i][0]) { var R = Math.min(1, ((u - MORSE[i][2] + MORSE.total) % MORSE.total) * 0.085); hoop(0, 0.9 - R * 0.35, 0, R, 64, AM, MORSE[i][1] > 1 ? 0.04 : 0.02, 1.5 * (1 - R)); }
     P(0, 0.9, 0, AM, 0.06 + 0.14 * down, 1 + 2 * down);
   }
 
@@ -3224,13 +3226,100 @@ import * as THREE from './vendor/three.module.min.js';
   }
   // ----- Hand-overs between two light-drawn scenes: nothing is cut. Every point of the scene being left travels to become a point of the next one, and each pair of scenes makes the trip its own way (WAYS). -----
   function held2() { return { p: new Float32Array(DN * 3), c: new Float32Array(DN * 3), s: new Float32Array(DN), lp: new Float32Array(DL * 6), lc: new Float32Array(DL * 6), n: 0, l: 0 }; }
-  var mA = held2(), mB = held2(), va = new THREE.Vector3(), vb = new THREE.Vector3(), vo = new THREE.Vector3(), wu = 0, wk = 1; // wu: how far along this point is (set by the way); wk: its brightness on the way
+  var mA = held2(), mB = held2(), va = new THREE.Vector3(), vb = new THREE.Vector3(), vo = new THREE.Vector3(), vS = new THREE.Vector3(), wt = 0, wu = 0, wk = 1; // wu: how far along this point is (set by the way); wk: its brightness on the way
   function grab(A, t, into) { dn = ln = 0; A.draw(t); into.n = dn; into.l = ln; into.p.set(dP.subarray(0, dn * 3)); into.c.set(dC.subarray(0, dn * 3)); into.s.set(dS.subarray(0, dn)); into.lp.set(lP.subarray(0, ln * 6)); into.lc.set(lC.subarray(0, ln * 6)); }
   function stag(m, key, w) { return smooth(m * (1 + w) - key * w); } // each point sets off at its own moment: key 0 goes first, key 1 last; w is how spread out the departures are
   function spinY(o, ang) { var c = Math.cos(ang), s2 = Math.sin(ang), x = o.x; o.x = x * c + o.z * s2; o.z = -x * s2 + o.z * c; return o; }
-  var WAYS = { // name of the scene being left > name of the next. Each gets (m, i, n, a, b, o): m 0 to 1, point i of n, from a to b, answer in o. Unlisted pairs use '*'.
-    '*': function (m, i, n, a, b, o) { wu = stag(m, hashNoise(i * 1.7) + 0.5, 0.6); o.lerpVectors(a, b, wu); o.y += 0.25 * Math.sin(Math.PI * wu); }
+  function seg(u, a, b) { return clamp((u - a) / (b - a), 0, 1); }
+  function back(u) { u = clamp(u, 0, 1) - 1; return 1 + 2.70158 * u * u * u + 1.70158 * u * u; } // arrives, swings a little past, and settles
+  var SD = [[0, 0]].concat([0, 1, 2, 3, 4, 5].map(function (j) { var b = j / 6 * TAU + 0.4; return [0.88 * Math.cos(b), 0.88 * Math.sin(b)]; })), LANES = [[0.95, 0.74, -0.45], [1.0, 0.42, 0], [0.95, 0.1, 0.45]]; // where Agent City's hub and six agents stand; where the Lead Autoresponder's three ways out end
+  // Every pair of neighbouring scenes changes its own way, and each way says something true about the two works. Unlisted pairs use '*'. A way gets (m, i, n, a, b, o): m 0 to 1, point i of n, from a to b, answer in o.
+  var WAYS = {
+    '*': function (m, i, n, a, b, o) { wu = stag(m, hashNoise(i * 1.7) + 0.5, 0.6); o.lerpVectors(a, b, wu); o.y += 0.25 * Math.sin(Math.PI * wu); },
+    // Route Engine into Industrial AI Notebook: "skyline readout". A bar of light crosses San Diego and takes the city with it: every roof and street is picked up as the bar reaches it and rides the bar. Then the bar comes back and prints the sensor trace, setting each point down as it passes its place. A skyline is a signal, height against distance, and the bar reads it.
+    'city>rec': function (m, i, n, a, b, o) {
+      var xb = m < 0.5 ? -1.15 + 4.6 * m : 1.15 - 4.6 * (m - 0.5), pick = clamp((a.x + 1.15) / 4.6, 0, 0.49), drop = 0.5 + (1.15 - clamp(b.x, -1.1, 1.1)) / 4.6;
+      if (m < pick) { o.copy(a); wu = 0; } else if (m < drop) { var q = smooth((m - pick) / (drop - pick)); o.set(xb, mix(a.y, b.y, q), mix(a.z, b.z, q)); wu = q; wk = 1.7; } else { o.copy(b); wu = 1; wk = 1 + 2.5 * Math.exp(-(m - drop) * (m - drop) / 0.0006); }
+    },
+    // Industrial AI Notebook into Mini Maps. The lanes of the signal swing round their left end like the blades of a fan until they are spokes: time along a lane becomes distance from the centre, which is what Dijkstra measures. Then each sample drops onto a node, nearest first, the order Dijkstra settles them.
+    'rec>mm': function (m, i, n, a, b, o) {
+      var lane = clamp((a.z + 0.6) / 1.2, 0, 1), r = (a.x + 1) / 2, c = smooth(seg(m, 0, 0.6)), th = (lane - 0.5) * TAU * 0.92 * c, R = r * (2 - c);
+      o.set(c - 1 + R * Math.cos(th), a.y, (1 - c) * a.z + R * Math.sin(th)); wu = smooth(seg(m, 0.5, 1) * 1.35 - 0.35 * r); o.lerp(b, wu);
+    },
+    // Mini Maps into TheAlgorithms/C++: "push, pop". Mini Maps walks a graph as a wave; Tarjan walks it depth first, with a stack. This replays the real run: each point is taken from the cone and pushed onto a tower at the moment its node is first visited, at the depth the stack really had, and each strongly connected component pops off together at the moment the run finds it and closes into its ring.
+    'mm>gears': function (m, i, n, a, b, o) {
+      var k = i % 51, p = k < 23 ? k : TJ.E[k - 23][0], tau = -1.5 + (TJ.clock + 3) * m, u1 = smooth((tau - TJ.vis[p] + 1.5) / 1.5), u2 = smooth((tau - TJ.found[p]) / 1.5);
+      vS.set(0, 0.1 + 0.05 * TJ.dep[p], 0);
+      if (u2 > 0) { o.copy(vS).lerp(b, u2); o.y += 0.28 * Math.sin(Math.PI * u2); } else { o.copy(a).lerp(vS, u1); o.y += 0.18 * Math.sin(Math.PI * u1); }
+      wu = u2; wk = 1 + (u2 > 0 ? 2 * Math.sin(Math.PI * u2) : 1.2 * u1);
+    },
+    // TheAlgorithms/C++ into Agent City. Tarjan's result has a second half: draw each strongly connected component in to one node and what is left is the condensed graph, which has no cycles. The five cycles do exactly that, and the five nodes then open into the hub and its agents.
+    'gears>ac': function (m, i, n, a, b, o) {
+      var c = 0, best = 9, q, dd; for (q = 0; q < 5; q++) { dd = (a.x - TJ.cx[q]) * (a.x - TJ.cx[q]) + (a.z - TJ.cz[q]) * (a.z - TJ.cz[q]); if (dd < best) { best = dd; c = q; } }
+      var g = smooth(seg(m, 0, 0.38)), out = smooth(seg(m, 0.52, 1) * 1.25 - 0.25 * (hashNoise(i * 2.1) + 0.5));
+      o.set(mix(a.x, TJ.cx[c], g), mix(a.y, 0.5, g), mix(a.z, TJ.cz[c], g)); o.lerp(b, out); wu = out; wk = 1 + 1.5 * g * (1 - out);
+    },
+    // Agent City into Surf Alert: "seven drops". The hub and its six agents drop into the water. Seven rings spread from where they landed and cross, and the sea lights up where a ring front passes: every point of it rides the real sum of the seven ripples until they die away and leave the swell.
+    'ac>surf': function (m, i, n, a, b, o) {
+      if (m < 0.2 && i < mA.n) { var f = m / 0.2; o.set(a.x, mix(a.y, 0.3, f * f), a.z); wu = 0; wk = 1 + 1.5 * f * f; return; }
+      var R = 1.75 * seg(m, 0.18, 0.84), y = 0, dmin = 9, q, dx, dz, d;
+      for (q = 0; q < 7; q++) { dx = b.x - SD[q][0]; dz = b.z - SD[q][1]; d = Math.sqrt(dx * dx + dz * dz); if (d < dmin) dmin = d; if (R > d) y += 0.045 * Math.sin(18 * (d - R)) * Math.exp(-6 * (R - d)); }
+      wu = smooth((R - dmin) / 0.12); o.set(b.x, mix(0.3, b.y, wu) + y * (1 - smooth(seg(m, 0.8, 1))), b.z); wk = wu * (1 + 2.2 * Math.exp(-(R - dmin) * (R - dmin) / 0.006));
+    },
+    // Surf Alert into Kia-bot. The sheet of swell curls up at its edges and closes into a ball standing on the waterline: the wave becomes the voice that reports it. The swell's bumps stay on the ball's skin as it closes.
+    'surf>kb': function (m, i, n, a, b, o) {
+      var c = smooth(seg(m, 0, 0.72));
+      if (c < 0.02) o.copy(a); else { var rho = 1 / (Math.PI * c), lon = a.x * Math.PI * c, lat = a.z / 0.7 * (Math.PI / 2) * c, r2 = rho + (a.y - 0.3); o.set(r2 * Math.cos(lat) * Math.sin(lon), 0.3 + rho - r2 * Math.cos(lat) * Math.cos(lon), r2 * Math.sin(lat) * mix(1.4, 1, c)); }
+      wu = smooth(seg(m, 0.64, 1) * 1.2 - 0.2 * (hashNoise(i * 1.9) + 0.5)); o.lerp(b, wu);
+    },
+    // Kia-bot into Quant Backtest Lab. The ball of voice spins and is paid out like tape from a reel: each point lets go when its turn comes and is laid down left to right, so a sound over time becomes a price over time.
+    'kb>qb': function (m, i, n, a, b, o) {
+      var key = (b.x + 1) / 2, u = clamp(m * 1.9 - 0.9 * key, 0, 1), turn = 7 * Math.min(m, 0.9 * key / 1.9) + 1.5 * smooth(m * 4) * (1 - smooth(u * 3));
+      o.copy(a); o.y -= 0.6; spinY(o, turn); o.y += 0.6; wu = smooth(u); o.lerp(b, wu); wk = 1 + 1.5 * Math.sin(Math.PI * wu);
+    },
+    // Quant Backtest Lab into Lead Autoresponder: "tape through the reader". The price line is pulled to the right through the ring, flattening to a thread as it nears it, and comes out the other side split onto the three ways out. Both works read a stream in the order it arrives and never look ahead. The scene's own messages follow the tape's tail in from the left.
+    'qb>la': function (m, i, n, a, b, o) {
+      var X = a.x + 2.3 * m, sw = Math.max((0.95 - a.x) / 2.3, (b.x + 1.15) / 2.3), q = LANES[i % 5 === 0 ? 2 : i % 2];
+      if (m >= sw) { o.copy(b); wu = 1; wk = smooth((m - sw) / 0.08); return; }
+      wu = 0;
+      if (X < 0) { var nr = smooth(seg(X, -0.5, 0)); o.set(X, mix(a.y, 0.5, nr), a.z * (1 - nr)); wk = 1 + 2 * nr * nr; }
+      else { var w = Math.min(1, X / 0.95), s2 = smooth(w); o.set(q[0] * w, mix(0.5, q[1], s2), q[2] * s2); wk = (1 + 2 * (1 - w)) * (1 - smooth(seg(w, 0.8, 1))); }
+    },
+    // Lead Autoresponder into Market Debrief. The three ways out wind into a whirlpool about the dial's centre, the inside turning faster than the rim, and settle as a year of prices round the dial.
+    'la>md': function (m, i, n, a, b, o) {
+      var s = smooth(m), ay = a.y - 0.95, by = b.y - 0.95, ra = Math.hypot(a.x, ay), rb = Math.hypot(b.x, by), ta = Math.atan2(ay, a.x), d = Math.atan2(by, b.x) - ta; d -= TAU * Math.ceil(d / TAU);
+      var r = mix(ra, rb, s), th = ta + (d - TAU) * s - 2.4 * Math.sin(Math.PI * s) * (1 - clamp(r, 0, 1));
+      o.set(r * Math.cos(th), 0.95 + r * Math.sin(th), mix(a.z, b.z, s)); wu = s;
+    },
+    // Market Debrief into Math 163 Study Game. The dial is laid down flat like a coin, all in one piece; then its rings turn against each other, like the rings of a combination lock, until every tick sits at the golden angle from the last.
+    'md>mg': function (m, i, n, a, b, o) {
+      var c = smooth(seg(m, 0, 0.5)) * Math.PI / 2, y0 = a.y - 0.95, fz = -y0 * Math.sin(c) + a.z * Math.cos(c), fy = mix(0.95, 0.5, c / (Math.PI / 2)) + y0 * Math.cos(c) + a.z * Math.sin(c);
+      var s = smooth(seg(m, 0.45, 1)), rf = Math.hypot(a.x, fz), rb = Math.hypot(b.x, b.z), tf = Math.atan2(fz, a.x), d = Math.atan2(b.z, b.x) - tf; d -= TAU * Math.round(d / TAU); d += (Math.floor(rb * 6) % 2 ? 1 : -1) * TAU * 0.5;
+      var r = mix(rf, rb, s), th = tf + d * s; o.set(r * Math.cos(th), mix(fy, b.y, s), r * Math.sin(th)); wu = s;
+    },
+    // Math 163 Study Game into Skills: "armillary". The seed head sorts itself into eight flat growth rings; then the rings turn up one by one, each as one rigid hoop on its own gimbal with a stop, into a sphere of nested rings. The course runs from Greek geometry to Renaissance algebra, and that is the instrument of the whole span. Eight rings, eight rows of the table.
+    'mg>tools': function (m, i, n, a, b, o) {
+      var ib = mB.n ? i % mB.n : 0, k = 0; wu = smooth(m);
+      if (ib < SKS[0]) { o.lerpVectors(a, b, wu); return; } // the small ball at the centre
+      while (k < SK.length - 1 && ib >= SKS[k + 1]) k++;
+      var R = 0.2 + 0.09 * k, tilt = skTilt(k, wt), tw = skTwist(k, wt), cw = Math.cos(tw), sn2 = Math.sin(tw), x1 = b.x * cw - b.z * sn2, z1 = b.x * sn2 + b.z * cw, alpha = Math.atan2(z1 * Math.cos(tilt) - (b.y - 0.85) * Math.sin(tilt), x1); // where on its ring this point sits, read back off the tilted, twisted ring
+      var th = Math.atan2(a.z, a.x), d = alpha - th; d -= TAU * Math.round(d / TAU);
+      var s1 = stag(seg(m, 0, 0.4), k / 8, 0.5), ug = seg(m, 0.33, 0.82) * 1.8 - 0.8 * k / 8, g = back(ug), al = th + d * smooth(seg(m, 0.6, 1)), r = mix(Math.hypot(a.x, a.z), R, s1);
+      var fx = r * Math.cos(al), fz = r * Math.sin(al), ct = Math.cos(tilt * g), st2 = Math.sin(tilt * g), zz = fz * ct, c2 = Math.cos(tw * g), s3 = Math.sin(tw * g);
+      o.set(fx * c2 + zz * s3, mix(a.y, 0.85, s1) - fz * st2, -fx * s3 + zz * c2); wk = 1 + 1.6 * Math.exp(-(ug - 0.9) * (ug - 0.9) / 0.012);
+    },
+    // Skills into Contact. The rings wind in onto the mast, inner ring first, run up it, and are sent from the top: what I know, keyed out as the message.
+    'tools>tk': function (m, i, n, a, b, o) {
+      var ra = Math.hypot(a.x, a.z), u = clamp(m * 1.7 - 0.7 * clamp(ra / 0.85, 0, 1), 0, 1), inn = smooth(seg(u, 0, 0.36)), up = smooth(seg(u, 0.3, 0.62)), out = smooth(seg(u, 0.56, 1));
+      var th = Math.atan2(a.z, a.x) + 5 * inn, r = mix(ra, 0.015, inn); o.set(r * Math.cos(th), mix(a.y, 0.9, up), r * Math.sin(th)); o.lerp(b, out); wu = out; wk = 1 + 2 * up * (1 - out);
+    }
   };
+  WAYS['city>rec'].prop = function (m) { var x = m < 0.5 ? -1.15 + 4.6 * m : 1.15 - 4.6 * (m - 0.5), k = 1.5 * smooth(m * 12) * smooth((1 - m) * 12); if (k < 0.02) return; L(x, 0, -1.05, x, 0, 1.05, AM, k); L(x, 0.95, -1.05, x, 0.95, 1.05, AM, k); L(x, 0, -1.05, x, 0.95, -1.05, AM, k); L(x, 0, 1.05, x, 0.95, 1.05, AM, k); }; // the bar
+  WAYS['mm>gears'].prop = function (m) { var k = Math.sin(Math.PI * m); if (k < 0.02) return; L(0, 0.08, 0, 0, 0.92, 0, BL, 0.5 * k); hoop(0, 0.08, 0, 0.07, 24, BL, 0.014, k); }; // where the stack stands
+  WAYS['gears>ac'].prop = function (m) { var k = 1.4 * smooth(seg(m, 0.2, 0.38)) * (1 - smooth(seg(m, 0.5, 0.66))); if (k < 0.02) return; [[0, 1], [1, 2], [0, 3], [3, 4], [1, 4]].forEach(function (e) { L(TJ.cx[e[0]], 0.5, TJ.cz[e[0]], TJ.cx[e[1]], 0.5, TJ.cz[e[1]], AM, k); }); for (var q = 0; q < 5; q++) P(TJ.cx[q], 0.5, TJ.cz[q], AM, 0.13, k); }; // the condensed graph: five nodes, and the same one-way links the full graph had between its cycles
+  WAYS['qb>la'].prop = function (m) { var k = 1.3 * smooth(m * 10) * (1 - smooth(seg(m, 0.72, 0.9))), i, j, q, px, py, pz; if (k < 0.02) return; for (i = 0; i < 40; i++) { var an = i / 40 * TAU; P(0, 0.5 + 0.15 * Math.sin(an), 0.15 * Math.cos(an), WH, i % 5 ? 0.016 : 0.032, k); } for (j = 0; j < 3; j++) { q = LANES[j]; px = 0; py = 0.5; pz = 0; for (i = 1; i <= 10; i++) { var w = i / 10, s2 = smooth(w); L(px, py, pz, q[0] * w, mix(0.5, q[1], s2), q[2] * s2, BL, 0.35 * k); px = q[0] * w; py = mix(0.5, q[1], s2); pz = q[2] * s2; } } }; // the reader's ring, there from the start so the tape has something to go through, and the three ways out of it
+  WAYS['ac>surf'].prop = function (m) { var R = 1.75 * seg(m, 0.18, 0.84), k = 1.4 * smooth(seg(m, 0.18, 0.24)) * (1 - seg(m, 0.3, 0.8)), q; if (k < 0.02) return; for (q = 0; q < 7; q++) { hoop(SD[q][0], 0.3, SD[q][1], R, 56, WH, 0.016, k); hoop(SD[q][0], 0.3, SD[q][1], R * 0.6, 40, BL, 0.012, k * 0.6); } }; // the rings from the seven landings
+  WAYS['tools>tk'].prop = function (m) { var k = smooth(seg(m, 0.05, 0.3)); L(0, 0.1, 0, 0, 0.9, 0, WH, 0.7 * k * (1 - smooth(seg(m, 0.8, 1)))); }; // the mast is there to be climbed before the rest of the station is
   var mG = new THREE.Group(); mG.visible = false; city.add(mG); [new THREE.Points(dGeo, dMat), new THREE.LineSegments(lGeo, lMat)].forEach(function (o) { o.frustumCulled = false; mG.add(o); }); // the hand-over's own stage
   function dsCity() { // San Diego as points, so the solid model can take part in a hand-over: every building is its roof outline, every street a line
     var i, k, S, c, s2, x = [0, 0, 0, 0], z = [0, 0, 0, 0], e;
@@ -3241,14 +3330,28 @@ import * as THREE from './vendor/three.module.min.js';
     }
     for (i = 0; i < edges.length; i++) { e = edges[i]; L(nx[e.a], 0.004, nz[e.a], nx[e.b], 0.004, nz[e.b], BL, 0.45); P((nx[e.a] + nx[e.b]) / 2, 0.004, (nz[e.a] + nz[e.b]) / 2, BL, 0.016, 0.7); }
   }
+  var qBoard = new THREE.Quaternion();
+  function toStage(v) { v.multiplyScalar(K).applyQuaternion(qBoard); v.y += BY; return spinY(v, -mG.rotation.y); } // from the Galton board's own frame to the hand-over's stage
+  function dsPile() { // the ending's board, as the pile its balls come to rest in: one point for each ball of the run that is loaded
+    qBoard.copy(qTurn).multiply(qTilt);
+    for (var i = 0; i < GNB; i++) { toStage(gRest(i, gV)); P(gV.x, gV.y, gV.z, WH, 0.016, 1.2); }
+  }
+  var BOARD = { name: 'board', draw: dsPile };
+  WAYS['tk>board'] = function (m, i, n, a, b, o) { // Contact into the ending. The last signal goes up the mast and comes down as the first experiment: every point takes one ball's real path through the pegs, bounce for bounce, into its place in the pile
+    var bi = i % GNB, h = hashNoise(i * 3.1);
+    if (m < 0.25) { var f0 = smooth(m * 4); o.copy(a); o.y += f0 * (1.1 + 0.8 * (h + 0.5)); wu = 0; wk = 1 - 0.7 * f0; return; } // sent: straight up and out of sight
+    var u = clamp((m - 0.42) * 2.4 - 0.3 * bi / GNB, 0, 1); wu = smooth((m - 0.25) * 8); wk = (0.3 + 0.7 * wu) * (1 - smooth((m - 0.95) / 0.04)); // they wait over the board while it comes back together, then set off in the run's own order; at the very end the steel balls stand in the same places
+    if (u < 0.28) { var f = u / 0.28, g = 1 - f; toStage(o.set(h * 1.1 * g, GTHROAT + 0.04 + (1.1 + 0.9 * (hashNoise(i * 7.7) + 0.5)) * g * g, 0.03)); return; } // down out of the sky into the throat
+    toStage(gPos(bi, (u - 0.28) / 0.72 * GFALL, o));
+  };
   var CITY = { name: 'city', draw: dsCity, solid: true }; // solid: it lives in the city's own frame, and its points only show once the hand-over is under way
-  function srcOf(st) { return !st ? null : st.asm ? (st.asm.draw && st.asm.g ? st.asm : null) : st.f === 0 && kit && (st.chapter || st.scene) ? CITY : null; }
+  function srcOf(st) { return !st ? null : st.asm ? (st.asm.draw && st.asm.g ? st.asm : null) : st.fin ? (parts.length ? BOARD : null) : st.f === 0 && kit && (st.chapter || st.scene) ? CITY : null; }
   function morph(A, B, m, t, yaw) {
-    grab(A, t, mA); grab(B, t, mB);
+    mG.rotation.y = yaw + 0.5; wt = t; grab(A, t, mA); grab(B, t, mB);
     var inA = A.solid ? smooth(m * 6) : 1, inB = B.solid ? smooth((1 - m) * 6) : 1, hA = A.solid ? 0.15 : 0, hB = B.solid ? 0.15 : 0; // a solid model's points are born in place as the model itself goes, and only then set off
     m = clamp((m - hA) / (1 - hA - hB), 0, 1);
     var way = WAYS[A.name + '>' + B.name] || WAYS['*'], n = Math.min(DN, Math.max(mA.n, mB.n)), i, q, ia, ib, fa = 1 - smooth(m * 2.5), fb = smooth(m * 2.5 - 1.5), back = -(yaw + 0.5);
-    mG.visible = n > 0; mG.rotation.y = yaw + 0.5;
+    mG.visible = n > 0;
     for (i = 0; i < n; i++) {
       ia = mA.n ? i % mA.n : 0; ib = mB.n ? i % mB.n : 0;
       if (mA.n) va.set(mA.p[ia * 3], mA.p[ia * 3 + 1], mA.p[ia * 3 + 2]); else va.set(0, 0.5, 0);
@@ -3265,6 +3368,7 @@ import * as THREE from './vendor/three.module.min.js';
     var l0 = ln;
     for (i = 0; i < mB.l && fb > 0.002 && ln < DL; i++, ln++) for (q = 0; q < 6; q++) { lP[ln * 6 + q] = mB.lp[i * 6 + q]; lC[ln * 6 + q] = mB.lc[i * 6 + q] * fb; }
     if (B.solid) for (i = l0; i < ln; i++) { vo.set(lP[i * 6], lP[i * 6 + 1], lP[i * 6 + 2]); spinY(vo, back); lP[i * 6] = vo.x; lP[i * 6 + 2] = vo.z; vo.set(lP[i * 6 + 3], lP[i * 6 + 4], lP[i * 6 + 5]); spinY(vo, back); lP[i * 6 + 3] = vo.x; lP[i * 6 + 5] = vo.z; }
+    if (way.prop) way.prop(m, t); // the way's own prop: a scan line, a mast, the condensed graph
     dsOut();
   }
   var camL = new THREE.Vector3();
@@ -3557,7 +3661,7 @@ import * as THREE from './vendor/three.module.min.js';
     var fA = 1, fB = 0, m = 1 - lift, nudge = 0, cur = null, prev = null, cbNow = 0;
     for (var ci = 0; ci < stops.length; ci++) {
       var st = stops[ci], cb; st.top = st.el.getBoundingClientRect().top + lag;
-      cb = st.chapter ? clamp((H - st.top) / H, 0, 1) : clamp((H * 0.9 - st.top) / (H * 0.55), 0, 1);
+      cb = st.chapter ? clamp((H - st.top) / H, 0, 1) : clamp((H * 0.9 - st.top) / (st.fin ? Math.max(H * 0.55, H * 0.9 - st.top + document.documentElement.scrollHeight - H - sc - 30) : H * 0.55), 0, 1); // the ending's stop lasts until the page runs out, so its change plays while the board is on screen
       if (!st.chapter && ci && stops[ci - 1].chapter) cb = Math.min(cb, clamp(-stops[ci - 1].top / (H * 0.3), 0, 1)); // the first stop inside a chapter waits until the chapter's own arrival has finished
       if (cb <= 0) continue;
       cur = st; prev = ci ? stops[ci - 1] : null; fA = prev ? prev.f : 0; fB = st.f; cbNow = cb;
@@ -3586,9 +3690,11 @@ import * as THREE from './vendor/three.module.min.js';
     var mp = !cross ? m : !prev ? 1 : rides ? (cbNow < 0.3 ? 0 : 1) : smooth((cbNow - 0.08) / 0.5);
     var fade = cross && prev && rides ? (cbNow < 0.3 ? 1 - smooth(cbNow / 0.3) : smooth((cbNow - 0.3) / 0.12)) : 1;
     var sA = srcOf(prev), sB = srcOf(cur), mo = !REDUCE && !NAV.on && !!sA && !!sB && sA !== sB && m > 0.001 && m < 0.999; // part way between two scenes that can both be drawn in points: one becomes the other
-    if (mo && !cross && pl0.k === 1 && pl1.k === 1) { mp = m < 0.5 ? 0 : 1; fade = smooth(Math.abs(m - 0.5) * 10); } // phones, where each scene rides the page under its own name: the first half of the change plays where the old scene was, the second where the new one will be
+    var pour = mo && sB === BOARD, jump = pour ? 0.25 : 0.5;
+    if (mo && !cross && pl0.k === 1 && pl1.k === 1) { mp = m < jump ? 0 : 1; fade = smooth(Math.abs(m - jump) * 10); }
+    if (pour) { tb = smooth((m - 0.25) / 0.22); gT = GNB * GREL + GFALL + 1; } // the ending: the board is back together before the points come down through it, and its own run is held finished so the steel balls can stand in where the points land // phones, where each scene rides the page under its own name: the first half of the change plays where the old scene was, the second where the new one will be
     var alpha = mix(1, mix(pl0.a, pl1.a, m) * fade, d);
-    var zUp = cross && cbNow > 0.02 && cbNow < 0.985 ? '2' : ''; if (zUp !== zNow) cv.style.zIndex = zNow = zUp; // in front of the title card while the card is on screen; behind the page the rest of the time
+    var zUp = (cross && cbNow > 0.02 && cbNow < 0.985) || (mo && !cross && pl0.k === 0 && pl1.k === 0 && sA !== CITY && sB !== CITY && m > 0.12 && m < 0.9) ? '2' : ''; if (zUp !== zNow) cv.style.zIndex = zNow = zUp; // in front of the title card while the card is on screen, and in front of the page while one light-drawn scene crosses to the other side to become the next (the points would pass behind the cards and be lost); behind the page the rest of the time
     // The model always stays behind the page, so headings and title cards are never covered.
     if (NAV.on) alpha = smooth(NAV.k);
     cv.style.opacity = alpha;
@@ -3654,7 +3760,7 @@ import * as THREE from './vendor/three.module.min.js';
       markFor = shown + ':' + plannedAt; mark++;
       for (var xi = 0; xi < shown; xi++) { explored[xi].mark = mark; seenNode[explored[xi].a] = seenNode[explored[xi].b] = mark; }
     }
-    gOff = ride ? rT - sc : 0; galton(now, dt, (tb > 0 ? smooth((tb - 0.8) / 0.2) : cur ? 0 : 1 - smooth(en * 4)) * smooth((t - partsAt - 900) / 600) * (NAV.on ? 0 : 1), peak, tb > 0 ? 0 : fe);
+    gOff = ride ? rT - sc : 0; galton(now, dt, (pour ? smooth((m - 0.95) / 0.04) : tb > 0 ? smooth((tb - 0.8) / 0.2) : cur ? 0 : 1 - smooth(en * 4)) * smooth((t - partsAt - 900) / 600) * (NAV.on ? 0 : 1), peak, tb > 0 ? 0 : fe);
     if (tb > 0) fly(0, 1, t, 1, 1 - tb); else fly(cur ? 1 : en, cur ? 0 : lift, t, cur ? (wc > 0.001 ? 1 : 0) : 1, cur ? 1 - wc : 0);
     fittings(cur ? 1 : en, cur ? 0 : lift, cur ? wc : 1); raise(wc); // the turbine's parts stay on as the city's streets, and leave when the city does
     camL.copy(camera.position); city.worldToLocal(camL); dMat.uniforms.uS.value = S * 6 * renderer.getPixelRatio(); // points are sized in the model's own units
