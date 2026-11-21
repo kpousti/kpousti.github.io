@@ -363,6 +363,7 @@ h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6
 .skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 56px; margin: 0; padding: 0; list-style: none; }
 .skill-grid li { display: grid; grid-template-columns: 28px 136px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 16px 0; font-size: 0.94rem; }
 .skill-grid b { font-family: var(--font-mono); font-weight: 400; font-size: 12.5px; letter-spacing: 0.02em; color: var(--bright); }
+.skill-grid li.lit b, .skill-grid li.lit::before { color: var(--accent); } /* the row whose ring is lit in the model beside the heading: the ring and the row are the same thing */
 
 /* Away + contact */
 .beyond { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin: 0; padding: 0; list-style: none; }
@@ -3017,18 +3018,38 @@ import * as THREE from './vendor/three.module.min.js';
     }
   }
 
-  function dsAgents(t) { // Agent City: a hub that schedules six agents; each goes out on its own arc to do its job and comes back to report
-    var i, j;
+  // Agent City: an illustration that runs a real priority queue. Sample jobs arrive with an urgency; the hub keeps them in a binary heap and always hands the most urgent to the next free agent, who goes out, does it, and comes back.
+  // The funnel over the hub is that heap, level by level, the root at its tip: a job joins at the rim and is sifted down toward the tip, the root is taken and the last job sifted back up the funnel.
+  var AQ = (function () {
+    var STEP = 240, r, s, heap, ag, born;
+    function reset() { r = rng(77); s = -1; heap = []; born = []; ag = [0, 1, 2, 3, 4, 5].map(function () { return { from: -99, len: 1, p: 0 }; }); }
+    function up(i) { while (i > 0) { var q = (i - 1) >> 1; if (heap[q] <= heap[i]) break; var x = heap[q]; heap[q] = heap[i]; heap[i] = x; x = born[q]; born[q] = born[i]; born[i] = x; i = q; } }
+    function down(i) { for (;;) { var a = 2 * i + 1, b = a + 1, m = i; if (a < heap.length && heap[a] < heap[m]) m = a; if (b < heap.length && heap[b] < heap[m]) m = b; if (m === i) break; var x = heap[m]; heap[m] = heap[i]; heap[i] = x; x = born[m]; born[m] = born[i]; born[i] = x; i = m; } }
+    function tick() {
+      s++; var j;
+      if (r() < 0.16 + 0.46 * Math.max(0, Math.sin(s * 0.045)) && heap.length < 48) { heap.push(r()); born.push(s); up(heap.length - 1); } // work comes in waves: the queue builds, then drains
+      for (j = 0; j < 6; j++) if (s >= ag[j].from + ag[j].len && heap.length) { ag[j] = { from: s, len: 14 + Math.floor(r() * 10), p: heap[0] }; var last = heap.pop(), lb = born.pop(); if (heap.length) { heap[0] = last; born[0] = lb; down(0); } } // a free agent takes the most urgent job
+      for (j = 1; j < heap.length; j++) console.assert(heap[(j - 1) >> 1] <= heap[j], 'Agent City: the queue is not a heap'); // self-check: every job is at least as urgent as the two under it
+    }
+    reset();
+    return function (t) { var want = Math.floor(t / STEP); if (want < s) reset(); if (want - s > 4000) s = want - 4000 - 1; while (s < want) tick(); return { heap: heap, born: born, ag: ag, s: s, f: t / STEP - want }; }; // the state at time t: always the same for the same t
+  })();
+  function aqAt(i, o) { var lv = Math.floor(Math.log2(i + 1)), k = i + 1 - (1 << lv), a = (k + 0.5) / (1 << lv) * TAU + 0.3 * lv, r = 0.04 + 0.078 * lv; return o.set(r * Math.cos(a), 0.79 + 0.068 * lv, r * Math.sin(a)); } // where slot i of the heap is drawn: level by level, each level a wider ring
+  function dsAgents(t) {
+    var Q = AQ(t), i, j, n = Q.heap.length;
     ball(0, 0.5, 0, 0.22, Math.round(260 * DQ), WH, 0.02, 0.8, t * 0.0003);
-    for (i = 0; i < 48; i++) { var a = i / 48 * TAU + t * 0.0002; P(0.36 * Math.cos(a), 0.5, 0.36 * Math.sin(a), i % 4 ? BL : AM, i % 4 ? 0.014 : 0.03, 1); } // the schedule: a ring of ticks turning round the hub
+    for (i = 0; i < 48; i++) { // the queue, drawn as the heap it is: a funnel of rings over the hub, the root at the tip. The brighter and larger, the more urgent; a job that has just joined flares; each line joins a job to its parent
+      var on = i < n, urg = on ? 1 - Q.heap[i] : 0, fresh = on ? 1 - clamp((Q.s + Q.f - Q.born[i]) / 3, 0, 1) : 0;
+      aqAt(i, vS); P(vS.x, vS.y, vS.z, on ? (i ? AM : WH) : BL, on ? 0.022 + 0.03 * urg + 0.03 * fresh + (i ? 0 : 0.035) : 0.011, on ? 0.7 + urg + fresh + (i ? 0 : 0.9) : 0.3);
+      if (on && i) { var x0 = vS.x, y0 = vS.y, z0 = vS.z; aqAt((i - 1) >> 1, vS); L(x0, y0, z0, vS.x, vS.y, vS.z, AM, 0.35); } else if (on) L(vS.x, vS.y, vS.z, 0, 0.72, 0, WH, 0.8); // the root is next into the hub
+    }
     for (j = 0; j < 6; j++) {
-      var b = j / 6 * TAU + 0.4, ax = 0.88 * Math.cos(b), az = 0.88 * Math.sin(b), ay = 0.3 + 0.12 * Math.sin(t * 0.001 + j * 1.7), ph = (t * 0.00022 + j / 6) % 1, out = ph < 0.5, px = 0, py = 0.5, pz = 0;
-      ball(ax, ay, az, 0.09, Math.round(70 * DQ), out ? BL : AM, 0.018, out ? 0.7 : 1.2, -t * 0.0006);
-      for (i = 1; i <= 16; i++) { var u = i / 16, x = ax * u, z = az * u, y = mix(0.5, ay, u) + 0.35 * Math.sin(Math.PI * u); L(px, py, pz, x, y, z, BL, 0.3); px = x; py = y; pz = z; }
-      for (i = 0; i < 3; i++) { var w = clamp((ph % 0.5) * 2 - i * 0.06, 0, 1), v = out ? w : 1 - w; P(ax * v, mix(0.5, ay, v) + 0.35 * Math.sin(Math.PI * v), az * v, out ? WH : AM, 0.042 - i * 0.009, 1.5); }
+      var b = j / 6 * TAU + 0.4, ax = 0.88 * Math.cos(b), az = 0.88 * Math.sin(b), ay = 0.3 + 0.12 * Math.sin(t * 0.001 + j * 1.7), A = Q.ag[j], w = (Q.s + Q.f - A.from) / A.len, busy = w < 1, out = w < 0.5, px = 0, py = 0.5, pz = 0;
+      ball(ax, ay, az, 0.09, Math.round(70 * DQ), busy ? (out ? BL : AM) : BL, 0.018, busy ? (out ? 0.8 : 1.3) : 0.35, -t * 0.0006); // idle agents wait dim; one that is coming back with its job done glows
+      for (i = 1; i <= 16; i++) { var u = i / 16, x = ax * u, z = az * u, y = mix(0.5, ay, u) + 0.35 * Math.sin(Math.PI * u); L(px, py, pz, x, y, z, BL, busy ? 0.45 : 0.18); px = x; py = y; pz = z; }
+      for (i = 0; i < 3; i++) { var g = clamp((w % 0.5) * 2 - i * 0.06, 0, 1), v = out ? g : 1 - g; P(ax * v, mix(0.5, ay, v) + 0.35 * Math.sin(Math.PI * v), az * v, out ? WH : AM, 0.042 - i * 0.009 + (out ? 0.03 * (1 - A.p) : 0), busy ? 1.5 : 0); } // the job going out (larger if urgent), the report coming back
     }
   }
-
   function dsSurf(t) { // Surf Alert: the swell as a field of light with a set rolling through, and the buoy that reports it
     var nx = Math.round(64 * Math.sqrt(DQ)), nz = Math.round(34 * Math.sqrt(DQ)), i, j;
     for (j = 0; j < nz; j++) for (i = 0; i < nx; i++) {
@@ -3110,8 +3131,12 @@ import * as THREE from './vendor/three.module.min.js';
   var SK = Array.prototype.map.call(document.querySelectorAll('#skills .skill-grid li'), function (li) { return li.textContent.split(',').length; }); if (!SK.length) SK = [3, 6, 5, 5, 3, 3, 7, 6];
   var SKS = (function () { var o = [Math.round(90 * DQ)], k; for (k = 0; k < SK.length; k++) o.push(o[k] + Math.round((36 + 12 * k) * DQ) + SK[k]); return o; })(); // the number of the first point of each ring (after the hub's points), and one past the last
   function skTilt(k, t) { return k * 0.42 + 0.35 * Math.sin(t * 0.00025 + k * 0.8); } function skTwist(k, t) { return k * 0.785 + t * 0.00012; }
-  function dsStack(t) { // Skills: one ring for each row of the table under it, carrying one bead for each thing in that row; the rings take turns to light
-    var k, i, T = 1500, act = Math.floor(t / T) % SK.length, e = pulse((t % T) / T, 0.05, 0.8);
+  var skRows = document.querySelectorAll('#skills .skill-grid li'), skLit = -1, skAt = -1e9, skPick = -1;
+  function skMark(k) { if (k === skLit) return; if (skLit >= 0 && skRows[skLit]) skRows[skLit].classList.remove('lit'); if (k >= 0 && skRows[k]) skRows[k].classList.add('lit'); skLit = k; } // which row of the table is lit with its ring
+  Array.prototype.forEach.call(skRows, function (li, k) { li.addEventListener('pointerenter', function () { skPick = k; }); li.addEventListener('pointerleave', function () { if (skPick === k) skPick = -1; }); }); // point at a row and its ring lights
+  function dsStack(t) { // Skills: one ring for each row of the table under it, carrying one bead for each thing in that row. The rings take turns to light, and the row each one stands for lights with it
+    var k, i, T = 1500, act = skPick >= 0 ? skPick : Math.floor(t / T) % SK.length, e = skPick >= 0 ? 1 : pulse((t % T) / T, 0.05, 0.8);
+    skAt = t; skMark(e > 0.4 ? act : -1);
     ball(0, 0.85, 0, 0.08, Math.round(90 * DQ), WH, 0.016, 0.9, t * 0.0004);
     for (k = 0; k < SK.length; k++) {
       var R = 0.2 + 0.09 * k, tilt = skTilt(k, t), tw = skTwist(k, t), on = k === act ? e : 0, m = Math.round((36 + 12 * k) * DQ), ct = Math.cos(tilt), sn = Math.sin(tilt), cw = Math.cos(tw), sw2 = Math.sin(tw);
@@ -3817,6 +3842,7 @@ import * as THREE from './vendor/three.module.min.js';
     camL.copy(camera.position); city.worldToLocal(camL); dMat.uniforms.uS.value = S * 6 * renderer.getPixelRatio(); // points are sized in the model's own units
     for (var ai = 0; ai < ASM.length; ai++) if (ASM[ai].g) showAsm(ASM[ai], mo && (ASM[ai] === sA || ASM[ai] === sB) ? 0 : (prev && prev.asm === ASM[ai] ? 1 - m : 0) + (cur && cur.asm === ASM[ai] ? m : 0), t, yaw, !(cur && cur.asm === ASM[ai]));
     mG.visible = false; if (mo) morph(sA, sB, m, t, yaw);
+    if (skLit >= 0 && t - skAt > 250) skMark(-1); // the Skills model is no longer showing: no row stays lit
     var tubeSegs = Math.round((route.length - 1) * PER * smooth(draw));
     routeMeshes.forEach(function (m) { m.geometry && m.geometry.setDrawRange(0, tubeSegs * RADIAL * 6); });
     pinB.visible = story ? sp >= 0.2 : draw >= 1;
