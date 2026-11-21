@@ -53,10 +53,18 @@ Click the plant and it folds down flat and stands up again. Reduced motion: the 
 - Agent City (`AQ`, `dsAgents`): an illustration that runs a real priority queue. Sample jobs arrive in waves, each with an urgency; the hub keeps them in a binary heap and hands the most urgent to the next free agent, who goes out, does it and comes back. The funnel of rings over the hub is the heap itself, level by level, with the root at the tip feeding the hub and a line from every job to its parent. The state is worked out from the clock alone, so it is the same every time for the same moment. Checked over 20,000 steps: the job handed out was always the most urgent one waiting, the queue ran between 0 and 34 jobs and never filled its 48 places. The page also checks the heap rule on every step.
 - Skills (`dsStack`): the ring that lights now lights its own row of the table in the accent colour (number and label), so ring and row are visibly the same thing. Point at a row and its ring lights. No new words.
 
-**Left for later** (found by the auditor or the approver, not done):
-- Nine CSS transitions animate colour, background or width (`.tabs a`, `.bar-cta`, `.btn`, `.links a`, `.bar-map`, `.feature-head a`, `.pin-step b`, `.contact-cards a`, `.tab-ink`), against the "only transform and opacity" rule. They are the hover fades on links and buttons.
-- About 120 lines of motion code for the old scene models (`tickRec` to `tickTK`) are no longer used.
-- A scorer for the Lead Autoresponder dots, the approver's third pick: only worth building if the project really scores messages that way, which is Kia's to say.
+**Cleared the day after (2026-11-21), on "do all the things you couldn't do before":**
+- **The fold was checked for tiles passing through each other, and they were.** `node blender/check_fold.mjs` replays the fold with the page's own code on the poses in `models/fold.bin` and tests every pair of the 42 moving pieces. First run: 41 pairs passed through each other, up to 14 cm deep, mostly the strips cutting through the cabinet on their way across. Now the strips and the cabinet's lid are carried: lifted clear, turned on the way, set down from straight above, one strip at a time and each at its own height, a beam only after its two posts. Walls that meet at a corner swing less far past their stop. Worst case now: 1.1 cm, where two walls share a corner. The script fails if anything goes deeper than 2 cm.
+- **CSS now animates only transform and opacity.** The hover fades on tabs, buttons and links (colour, border, background) are immediate; the tab underline is sized by scale, not width.
+- **The old scene models' motion code is gone from the page** (115 lines). `models/scenes.bin` and its scripts are still in the repo, unused.
+- **3D backtest scene (`dsQuant`) runs the same real walk-forward as its card** (`walkForward`, one function for both): prices below, and above them what the rule earned after costs against simply holding, as the test stretch steps on six times. A new path each time round; it loses about as often as it wins. The app's cost sliders change it too.
+- **3D signal ribbon (`dsSignal`) draws the baseline's real band** on its front lane (the rolling z-score from `detect`), with a mark where the baseline itself raises the alarm. The fixed box is gone.
+- **JavaScript off: checked.** Every heading, paragraph and card is readable; the diagrams are blank, the Map button and colour picker are absent.
+
+**Still open:**
+- **Safari and a real iPhone are not checked by me.** This Mac has no iPhone simulator (it needs Xcode), and Safari can only be looked at from here, not driven. Kia's iPhone is the test.
+- The Lead Autoresponder card demo is unchanged. A scorer made up for the picture would misdescribe how the project classifies messages; it needs Kia to say how it really does.
+- On a first fast scroll of the whole page about 1 frame in 100 is slow on a computer (the worst about a third of a second), where each model first appears. Not new.
 - The creator's other idea for the Transformer, the line folding into a flatbed truck that drives onto the map, was not built: a scripted vehicle is the risky shape.
 
 ## The opening model is a Galton board that prices an option (2026-11-20)

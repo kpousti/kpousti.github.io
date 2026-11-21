@@ -94,14 +94,14 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-
 .mark { display: flex; align-items: center; font-family: var(--font-display); font-weight: 600; font-size: 1.08rem; color: var(--bright); white-space: nowrap; }
 .tabs { position: relative; display: flex; gap: 4px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
-.tabs a { display: flex; align-items: center; padding: 0 12px; font-size: 14px; color: var(--text-dim); white-space: nowrap; transition: color var(--t-fast); }
+.tabs a { display: flex; align-items: center; padding: 0 12px; font-size: 14px; color: var(--text-dim); white-space: nowrap; }
 .tabs a:hover, .tabs a.active { color: var(--bright); }
 /* The line under the active tab. JS sets --x, --w and --o on .tabs. */
 .tab-ink {
-  position: absolute; left: 0; bottom: 0; height: 2px; width: var(--w, 0px); transform: translateX(var(--x, 0px)); opacity: var(--o, 0);
-  background: var(--accent); transition: transform var(--t-med) var(--ease-out), width var(--t-med) var(--ease-out), opacity var(--t-fast); pointer-events: none;
+  position: absolute; left: 0; bottom: 0; height: 2px; width: 1px; transform-origin: 0 50%; transform: translateX(var(--x, 0px)) scaleX(var(--w, 0)); opacity: var(--o, 0); /* one pixel wide, stretched to the tab's width: only transform and opacity are animated on this page */
+  background: var(--accent); transition: transform var(--t-med) var(--ease-out), opacity var(--t-fast); pointer-events: none;
 }
-.bar-cta { align-self: center; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 500; color: var(--bright); white-space: nowrap; transition: border-color var(--t-fast), color var(--t-fast); }
+.bar-cta { align-self: center; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 500; color: var(--bright); white-space: nowrap; }
 .bar-cta:hover { border-color: var(--accent); color: var(--accent); }
 /* Thin line along the top edge showing how far down the page you are. */
 .progress {
@@ -148,12 +148,12 @@ h1 {
 .hero-role em { font-style: normal; color: var(--accent); }
 .hero-pitch { max-width: 52ch; color: var(--text-dim); font-size: 1.08rem; margin: 16px 0 0; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.btn { padding: 12px 22px; border-radius: 999px; border: 1px solid var(--line); color: var(--bright); font-weight: 500; transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast); }
+.btn { padding: 12px 22px; border-radius: 999px; border: 1px solid var(--line); color: var(--bright); font-weight: 500; }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn.primary:hover { background: var(--bright); border-color: var(--bright); color: var(--on-accent); }
 .links { display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; margin-top: 32px; }
-.links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
+.links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
 .links a:hover { color: var(--accent); border-color: var(--accent); }
 /* The readout under the Galton board: script places it, and it is hidden from assistive tech (the numbers change many times a second). */
 .hud { position: fixed; left: 0; top: 0; z-index: 1; margin: 0; padding: 9px 14px; border-radius: 12px; background: rgba(var(--ink-rgb), 0.62); display: grid; gap: 2px; justify-items: center; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; letter-spacing: 0.01em; color: var(--text-dim); white-space: nowrap; pointer-events: none; opacity: 0; will-change: transform, opacity; }
@@ -176,7 +176,7 @@ h1 {
 .cue::after { content: ""; width: 1px; height: 32px; background: var(--line); }
 
 /* The route map: the page dims, downtown stands alone, and each section is a label on its landmark. Built by the script; see "The route engine as navigation". */
-.bar-map { align-self: center; display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: none; color: var(--text-dim); font: 500 13px var(--font-body, inherit); cursor: pointer; transition: border-color var(--t-fast), color var(--t-fast); }
+.bar-map { align-self: center; display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: none; color: var(--text-dim); font: 500 13px var(--font-body, inherit); cursor: pointer; }
 .bar-map:hover { border-color: var(--accent); color: var(--accent); }
 .bar-map:focus-visible, .navmap button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 900px) { .bar-map { padding: 8px; } .bar-map span { display: none; } }
@@ -318,7 +318,7 @@ h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6
 @keyframes blink { 50% { opacity: 0.25; } }
 .feature-body { position: relative; padding: 20px 24px 24px; }
 .feature-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
-.feature-head a { padding: 8px 0; margin: -8px 0; font-family: var(--font-mono); font-size: 12px; color: var(--accent); border-bottom: 1px solid transparent; transition: border-color 0.2s; white-space: nowrap; }
+.feature-head a { padding: 8px 0; margin: -8px 0; font-family: var(--font-mono); font-size: 12px; color: var(--accent); border-bottom: 1px solid transparent; white-space: nowrap; }
 .feature-head a:hover { border-color: var(--accent); }
 .feature-body p { margin: 8px 0 0; font-size: 0.94rem; }
 
@@ -343,8 +343,8 @@ h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6
 .pin.live .pin-stage { position: sticky; top: calc(var(--bar-h) + 10px); height: calc(100vh - var(--bar-h) - 20px); height: calc(100svh - var(--bar-h) - 20px); }
 .pin-title { font-family: var(--font-display); font-weight: 600; font-stretch: 92%; font-size: clamp(1.6rem, 3vw, 2.3rem); line-height: 1.08; letter-spacing: -0.02em; color: var(--bright); margin: 0 0 26px; text-wrap: balance; }
 .pin-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 18px; }
-.pin-step { padding-left: 16px; border-left: 2px solid var(--line); font-size: 0.95rem; color: var(--text); opacity: 0.38; transition: opacity var(--t-med), border-color var(--t-med); }
-.pin-step b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.02em; color: var(--text-dim); margin-bottom: 4px; transition: color var(--t-med); }
+.pin-step { padding-left: 16px; border-left: 2px solid var(--line); font-size: 0.95rem; color: var(--text); opacity: 0.38; transition: opacity var(--t-med); }
+.pin-step b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.02em; color: var(--text-dim); margin-bottom: 4px; }
 .pin-step.on { opacity: 1; border-color: var(--accent); }
 .pin-step.on b { color: var(--accent); }
 .pin:not(.live) .pin-step { opacity: 1; }
@@ -376,7 +376,7 @@ h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6
 .beyond i { color: var(--bright); }
 .beyond b { display: block; text-align: left; font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; color: var(--bright); margin-bottom: 6px; }
 .contact-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0; padding: 0; list-style: none; }
-.contact-cards a { display: block; padding: 12px 0 0; transition: border-color var(--t-fast); }
+.contact-cards a { display: block; padding: 12px 0 0; }
 .contact-cards a::before { display: block; margin-bottom: 12px; }
 .contact-cards a:hover { border-color: var(--accent); }
 .contact-cards span { display: block; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--text-dim); margin-bottom: 8px; }
@@ -1042,6 +1042,22 @@ var detect = (function () {
   }
   return function (k) { if (!at) build(); return at(k); }; // sample k: its value, the baseline's band there, and what each detector says
 })();
+// A real walk-forward on synthetic prices, for the backtest card and the 3D scene. The first 40% is only ever fitted on. Then six test stretches: before each, the trend rule's lookback (5, 10 or 20 steps)
+// is chosen on everything before it, and the rule is traded on the stretch, deciding on the last close and paying the cost on every change of position. Nothing is tuned to win.
+function walkForward(seed, cost) {
+  var r = rng(seed), n = 240, FOLDS = 6, t0 = 96, tl = (n - t0) / FOLDS, LOOK = [5, 10, 20], px = {}, i, f, drift = 0, p = 100, es = 1, eb = 1, out = { n: n, t0: t0, tl: tl, folds: FOLDS, px: [], strat: [], bench: [], pick: [] };
+  for (i = -20; i < n; i++) { if ((i + 20) % 30 === 0) drift = (r() - 0.5) * 0.006; p *= 1 + drift + (r() + r() + r() - 1.5) * 0.016; px[i] = p; if (i >= 0) out.px.push(p); } // a random walk whose drift changes every 30 steps; the first 20 are history for the averages
+  function trade(L, a, b) { var eq = 1, pos = 0, got = [], k, q, ma, want; for (k = a; k < b; k++) { for (ma = 0, q = 1; q <= L; q++) ma += px[k - q]; want = px[k - 1] > ma / L ? 1 : 0; if (want !== pos) { eq *= 1 - cost; pos = want; } if (pos) eq *= px[k] / px[k - 1]; got.push(eq); } return got; }
+  for (i = 0; i < t0; i++) { out.strat.push(1); out.bench.push(1); }
+  for (f = 0; f < FOLDS; f++) {
+    var a = t0 + f * tl, best = LOOK[0], bv = -1, o;
+    LOOK.forEach(function (L) { var q = trade(L, 1, a); if (q[q.length - 1] > bv) { bv = q[q.length - 1]; best = L; } });
+    o = trade(best, a, a + tl); out.pick.push(best);
+    for (i = a; i < a + tl; i++) { out.strat.push(es * o[i - a]); out.bench.push(eb * px[i] / px[a - 1]); }
+    es = out.strat[out.strat.length - 1]; eb = out.bench[out.bench.length - 1];
+  }
+  return out;
+}
 var BT = { cost: 0.0007 }; // what one change of position costs in the backtest demo: the Walkforward app's fee and slippage sliders set it (2 + 5 hundredths of a percent to start)
 
 // ---------- Pointer: the 3D model leans toward it, and the route re-plans to the corner nearest it ----------
@@ -1197,7 +1213,7 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
     links.forEach(function (a) { a.classList.toggle('active', !!current && a === current.link); });
     if (current) { // slide the pill under the active tab
       tabs.style.setProperty('--x', current.link.offsetLeft + 'px');
-      tabs.style.setProperty('--w', current.link.offsetWidth + 'px');
+      tabs.style.setProperty('--w', current.link.offsetWidth);
       tabs.style.setProperty('--o', '1');
       if (current !== last && tabs.scrollWidth > tabs.clientWidth) { // on phones, keep the active tab in view
         tabs.scrollTo({ left: current.link.offsetLeft - 24, behavior: REDUCE ? 'auto' : 'smooth' });
@@ -1459,23 +1475,8 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   };
 
   // Quant Backtest Lab: a synthetic equity curve drawn across walk-forward train and test windows.
-  demos.backtest = { // a real walk-forward on synthetic prices, and a new price path every loop. The first 40% is only ever fitted on. Then six test stretches: before each, the trend rule's lookback (5, 10 or 20 steps)
-    // is chosen on everything before it, and the rule is traded on the stretch, deciding on the last close and paying the cost on every change of position. Amber is what the rule earned, grey is holding. It loses about as often as it wins.
-    run: function (s, seed) {
-      var r = rng(seed), n = 240, FOLDS = 6, t0 = 96, tl = (n - t0) / FOLDS, LOOK = [5, 10, 20], px = {}, i, f, drift = 0, p = 100, es = 1, eb = 1, cost = BT.cost;
-      for (i = -20; i < n; i++) { if ((i + 20) % 30 === 0) drift = (r() - 0.5) * 0.006; p *= 1 + drift + (r() + r() + r() - 1.5) * 0.016; px[i] = p; } // a random walk whose drift changes every 30 steps; the first 20 are history for the averages
-      function trade(L, a, b) { var eq = 1, pos = 0, out = [], k, q, ma, want; for (k = a; k < b; k++) { for (ma = 0, q = 1; q <= L; q++) ma += px[k - q]; want = px[k - 1] > ma / L ? 1 : 0; if (want !== pos) { eq *= 1 - cost; pos = want; } if (pos) eq *= px[k] / px[k - 1]; out.push(eq); } return out; }
-      s.strat = []; s.bench = []; s.seed = seed; s.cost = cost; s.t0 = t0 / n; s.folds = FOLDS;
-      for (i = 0; i < t0; i++) { s.strat.push(1); s.bench.push(1); }
-      for (f = 0; f < FOLDS; f++) {
-        var a = t0 + f * tl, best = LOOK[0], bv = -1, o;
-        LOOK.forEach(function (L) { var q = trade(L, 1, a); if (q[q.length - 1] > bv) { bv = q[q.length - 1]; best = L; } });
-        o = trade(best, a, a + tl);
-        for (i = a; i < a + tl; i++) { s.strat.push(es * o[i - a]); s.bench.push(eb * px[i] / px[a - 1]); }
-        es = s.strat[s.strat.length - 1]; eb = s.bench[s.bench.length - 1];
-      }
-      var all = s.strat.concat(s.bench); s.lo = Math.min.apply(null, all); s.hi = Math.max(s.lo + 0.02, Math.max.apply(null, all));
-    },
+  demos.backtest = { // the walk-forward itself is walkForward(), further up: the same run the 3D scene beside the project's name draws. A new price path every loop. Amber is what the rule earned, grey is holding. It loses about as often as it wins.
+    run: function (s, seed) { var r = walkForward(seed, BT.cost), all = r.strat.concat(r.bench); s.strat = r.strat; s.bench = r.bench; s.seed = seed; s.cost = BT.cost; s.t0 = r.t0 / r.n; s.folds = r.folds; s.lo = Math.min.apply(null, all); s.hi = Math.max(s.lo + 0.02, Math.max.apply(null, all)); },
     init: function (s) { this.run(s, 21); },
     draw: function (ctx, w, h, t, s) {
       var cyc = REDUCE ? 0 : Math.floor(t / 9000); if (s.seed !== 21 + cyc || s.cost !== BT.cost) this.run(s, 21 + cyc);
@@ -2749,9 +2750,8 @@ import * as THREE from './vendor/three.module.min.js';
     }
     kit.hub.instanceMatrix.needsUpdate = kit.hub.instanceColor.needsUpdate = kit.ferrule.instanceMatrix.needsUpdate = kit.ring.instanceMatrix.needsUpdate = true;
   }
-  // ----- Scene models. (The older ones, blender/build_scenes.py -> models/scenes.bin, are no longer loaded: every scene but Experience is drawn in light.) Originally: each scene has its own object, built from real parts. The parts fly together as the scene arrives and apart as it leaves, and each model has its own motion. -----
+  // ----- Scene models. Every scene but Experience is drawn in light (further down). Experience is the one built of parts: the pop-up plant. (The older part-built scenes, blender/build_scenes.py -> models/scenes.bin, are no longer loaded and their motions are gone from the page.) -----
   function pulse(c, a, b) { return smooth((c - a) / 0.04) * (1 - smooth((c - b) / 0.04)); }
-  var qL = new THREE.Quaternion(), LY = new THREE.Vector3(0, 1, 0), LZ = new THREE.Vector3(0, 0, 1), INKC = new THREE.Color(0.35, 0.5, 0.9);
   // ----- The pop-up plant (Experience). The San Diego model's base plate is 34 tiles and 8 strips, each with the city on one face and the factory on the other. Each has two poses, lying in the plate and standing in an approval line,
   // and moves between them as one rigid body about one fixed axis, the way a hinged part does (a screw: one turn about the axis, and a slide along it), never a straight drift with a spin. FOLD.u: 0 the plate, 1 the line. -----
   var sQ = new THREE.Quaternion(), sT = new THREE.Vector3();
@@ -2773,155 +2773,43 @@ import * as THREE from './vendor/three.module.min.js';
   })();
   var FOLD = { u: 1, on: false, k: 0 }, FLASH = new THREE.Color(2.3, 1.75, 0.8);
   // When each group of tiles moves, as a share of the whole fold: the conveyor's bed first, then its skirts, the bench, the cabinet, the gantries, and last the tiles that only turn over to be the shop floor.
-  var STAGE = { bed: [0.05, 0.28, 0], skirt: [0.13, 0.4, 0], top: [0.2, 0.44, 0], bench: [0.26, 0.52, 0], cab: [0.36, 0.62, 0], captop: [0.56, 0.76, 0], post: [0.46, 0.76, 0.34], leg: [0.5, 0.8, 0.34], beam: [0.62, 0.87, 0.3], floor: [0.5, 0.9, 0.24] }; // start, end, and how high it is carried on the way (the far-flying strips and the tiles that turn over in place)
-  function swing(x) { x = clamp(x, 0, 1) - 1; return 1 + 2.2 * x * x * x + 1.2 * x * x; } // to its stop, about six degrees past on a quarter turn, and back
+  var STAGE = { bed: [0.05, 0.28, 0], skirt: [0.13, 0.4, 0], top: [0.2, 0.44, 0], bench: [0.26, 0.52, 0], cab: [0.36, 0.62, 0], captop: [0.68, 0.87, 0, 0.66], post: [0.44, 0.64, 0, 1.0], leg: [0.5, 0.72, 0, 1.32], beam: [0.7, 0.88, 0, 1.48], floor: [0.5, 0.9, 0.24] };
+  // start; end; how far a tile that turns over where it lies is lifted on the way; and, for a piece that is carried (the strips, which travel across the plate, and the cabinet's lid, which has walls round it), the height it is carried at.
+  // A carried piece is lifted clear of everything, turned on the way, and set down from straight above. Checked by replaying the fold and testing every pair of tiles for passing through each other.
+  function swing(x, c) { x = clamp(x, 0, 1) - 1; return 1 + (c + 1) * x * x * x + c * x * x; } // to its stop, a little past, and back. c 1.2: about five degrees past on a quarter turn; 0.8: two
   function tickFold(t, A) {
     var u = FOLD.u, i, j, P, st, g, x, lag;
     if (A === pokeAsm) u *= 1 - Math.sin(Math.PI * clamp((t - poke) / 3600, 0, 1)); // clicked: it folds back down into the plate and stands up again
     for (i = 0; i < A.parts.length; i++) {
       P = A.parts[i]; P.tint = PLAIN; if (!P.sw) continue;
       g = P.n[1]; st = STAGE[g];
-      lag = g === 'floor' ? 0.2 * clamp(Math.hypot(P.p.x, P.p.z + 0.2) / 1.5, 0, 1) : g === 'cab' ? 0.04 * (+P.n[2] === 0 ? 0 : +P.n[2] === 1 ? (+P.n[3] === 1 ? 1 : 2) : 3) : g === 'bench' ? (+P.n[2] === 2 ? 0 : +P.n[2] === 4 ? 0.04 : 0.08) : g === 'skirt' ? 0.03 * (+P.n[3] - 3) + (+P.n[2] === 4 ? 0.05 : 0) : g === 'bed' || g === 'top' ? 0.035 * (+P.n[3] % 3) : 0.035 * +P.n[2]; // inside a group: column by column, back before front, nearest the line first
+      lag = g === 'floor' ? 0.2 * clamp(Math.hypot(P.p.x, P.p.z + 0.2) / 1.5, 0, 1) : g === 'cab' ? 0.04 * (+P.n[2] === 0 ? 0 : +P.n[2] === 1 ? (+P.n[3] === 1 ? 1 : 2) : 3) : g === 'bench' ? (+P.n[2] === 2 ? 0 : +P.n[2] === 4 ? 0.04 : 0.08) : g === 'skirt' ? 0.03 * (+P.n[3] - 3) + (+P.n[2] === 4 ? 0.05 : 0) : g === 'bed' || g === 'top' ? 0.035 * (+P.n[3] % 3) : g === 'post' ? 0.07 * +P.n[2] : g === 'leg' ? 0.08 * +P.n[2] : 0.04 * +P.n[2]; // inside a group: column by column, back before front, nearest the line first; the strips go one at a time, each well behind the last, and a beam only after its two posts
       x = seg(u, st[0] + lag, st[1] + lag - (g === 'floor' ? 0.2 : 0));
-      screwAt(P.sw, P.p, P.q, P.p2, swing(x), P.cp, P.cq);
-      P.cp.y += st[2] * Math.sin(Math.PI * x) + 0.014 * Math.sin(Math.PI * seg(u, 0, 0.07)); // carried over what already stands; and at the very start every tile lifts a hair off the chassis: the plate cracks along its seams
+      if (st[3]) { var go = smooth(seg(x, 0.22, 0.78)); P.cp.set(mix(P.p.x, P.p2.x, go), mix(mix(P.p.y, st[3] + (g === 'captop' ? 0 : 0.075 * +P.n[2]), smooth(seg(x, 0, 0.3))), P.p2.y, smooth(seg(x, 0.7, 1))), mix(P.p.z, P.p2.z, go)); P.cq.copy(P.q).slerp(P.q2, smooth(seg(x, 0.1, 0.72))); } // carried: up (each strip at its own height, so no two cross), across, turned on the way, and down
+      else { screwAt(P.sw, P.p, P.q, P.p2, swing(x, g === 'cab' || g === 'bench' ? 0.8 : 1.2), P.cp, P.cq); P.cp.y += st[2] * Math.sin(Math.PI * x); } // hinged: about its one axis, a little past its stop and back (less past where two walls meet at a corner)
+      P.cp.y += 0.014 * Math.sin(Math.PI * seg(u, 0, 0.07)); // at the very start every tile lifts a hair off the chassis: the plate cracks along its seams
       if (x > 0.7 && x < 1) P.tint = tint.copy(PLAIN).lerp(FLASH, Math.exp(-(x - 0.9) * (x - 0.9) / 0.004)); // brass catches the light as it locks
       else if (u < 0.08) P.tint = tint.copy(PLAIN).lerp(FLASH, 0.8 * (1 - u / 0.08)); // and all along the seams at the moment the plate cracks
     }
     // what comes out once the line stands: the press heads telescope down from the beams, the hand stamps and ink pads rise out of the bench, the beacon's mast goes up
     var run = smooth(seg(u, 0.97, 1)), c = (t * 0.00011) % 1, stp = A.by.stamp, hd = A.by.head, cards = A.by.card, pad = A.by.pad, bc = A.by.beacon[0], down = [0, 0];
-    for (j = 0; j < 2; j++) { stp[j].cs = swing(seg(u, 0.84 + 0.03 * j, 0.93 + 0.03 * j)); pad[j].cs = swing(seg(u, 0.86 + 0.03 * j, 0.95 + 0.03 * j)); }
+    for (j = 0; j < 2; j++) { stp[j].cs = swing(seg(u, 0.84 + 0.03 * j, 0.93 + 0.03 * j), 1.2); pad[j].cs = swing(seg(u, 0.86 + 0.03 * j, 0.95 + 0.03 * j), 1.2); }
     stp[0].cp.y += 0.08 * run * (1 - pulse(c, 0.06, 0.2)); stp[1].cp.y += 0.08 * run * (1 - pulse(c, 0.66, 0.8)); // by hand: one job, stamped, carried across, stamped again
     cards[0].cp.x += 0.4 * smooth((c - 0.26) / 0.34); cards[0].cs = run * smooth(c / 0.04) * (1 - smooth((c - 0.92) / 0.06));
     for (i = 1; i < cards.length; i++) { // automated: jobs ride the belt and each press fires as one passes under it
       var w = (t * 0.00032 + i / (cards.length - 1)) % 1, cx = 0.04 + 1.12 * w; cards[i].cp.x = cx; cards[i].cs = run * smooth(w / 0.05) * smooth((1 - w) / 0.05);
       for (j = 0; j < hd.length; j++) down[j] = Math.max(down[j], 1 - smooth(Math.abs(cx - hd[j].p.x) / 0.05));
     }
-    for (j = 0; j < hd.length; j++) { g = smooth(seg(u, 0.86 + 0.03 * j, 0.95 + 0.03 * j)); hd[j].cs = g > 0.001 ? 1 : 0; (hd[j].sv = hd[j].sv || new THREE.Vector3()).set(1, Math.max(0.02, g * (1 + 0.19 * run * down[j])), 1); }
+    for (j = 0; j < hd.length; j++) { g = smooth(seg(u, 0.89 + 0.03 * j, 0.96 + 0.03 * j)); hd[j].cs = g > 0.001 ? 1 : 0; (hd[j].sv = hd[j].sv || new THREE.Vector3()).set(1, Math.max(0.02, g * (1 + 0.19 * run * down[j])), 1); }
     A.by.chassis[0].cs = REDUCE ? 1 : 0; // the city's own plate is the base; with reduced motion the plant stands alone, on its own
-    g = smooth(seg(u, 0.88, 0.97)); bc.cs = g > 0.001 ? 1 : 0; (bc.sv = bc.sv || new THREE.Vector3()).set(1, Math.max(0.02, g), 1); bc.tint = run > 0.5 && (t % 1400) < 700 ? HOT : PLAIN;
+    g = smooth(seg(u, 0.91, 0.98)); bc.cs = g > 0.001 ? 1 : 0; (bc.sv = bc.sv || new THREE.Vector3()).set(1, Math.max(0.02, g), 1); bc.tint = run > 0.5 && (t % 1400) < 700 ? HOT : PLAIN;
   }
   function sig(k) { var a = Math.floor(k), f = k - a; return mix(signalValue(a), signalValue(a + 1), f); } // the same synthetic sensor signal the project's own demo plots
-  function tickRec(t, A) { // the pen follows the live signal; the trace it has drawn scrolls down the paper, and anomalies are marked in amber
-    var k0 = t * 0.004, dots = A.by.dot, i;
-    A.by.pen[0].cp.x += clamp(sig(k0), -0.5, 1.1) * 0.2 - 0.06;
-    for (i = 0; i < dots.length; i++) { var j = +dots[i].n[2], v = sig(k0 - (j + 1) * 1.6); dots[i].cp.x += clamp(v, -0.5, 1.1) * 0.2 - 0.06; dots[i].tint = v > 0.6 ? HOT : INKC; dots[i].cs = v > 0.6 ? 1.8 : 1; }
-    var nd = A.by.needle[0]; nd.cq.multiply(qL.setFromAxisAngle(LY, -0.9 + 1.8 * clamp(0.3 + sig(k0) * 0.6, 0, 1)));
-  }
-  function tickGears(t, A) { // Tarjan finds one strongly connected component at a time: when a train is found it lights up and starts to turn, every gear in it meshing with its neighbours
-    var g = A.by.gear, T = 12000, cyc = Math.floor(t / T), ph = (t % T) / T, i;
-    for (i = 0; i < g.length; i++) {
-      var P = g[i], comp = +P.n[2], teeth = +P.n[3], dir = +P.n[4], at = 0.12 + comp * 0.17, found = ph > at;
-      var turned = cyc * (1 - at) * T + Math.max(0, ph - at) * T; // how long this train has been turning in all: it never jumps back
-      P.cq.multiply(qL.setFromAxisAngle(LY, dir * turned * 0.0011 * 12 / teeth)); P.tint = found ? HOT : PLAIN;
-    }
-  }
   function swell(x, z, t) { return (0.045 * Math.sin(x * 3.1 - t * 0.0012) + 0.028 * Math.sin(z * 4.2 + x * 1.3 - t * 0.0017)) * (1 + 1.3 * Math.sin(Math.PI * clamp((t - setWave) / 6000, 0, 1))); } // click the water and a set comes through: bigger waves for a few seconds
-  function afloat(P, t, o) { // where a floating thing sits and how it tilts on the swell
-    var x = P.p.x, z = P.p.z, e = 0.05, hx = (swell(x + e, z, t) - swell(x - e, z, t)) / (2 * e), hz = (swell(x, z + e, t) - swell(x, z - e, t)) / (2 * e);
-    o.setFromUnitVectors(LY, vT.set(-hx, 1, -hz).normalize()); return swell(x, z, t);
-  }
-  function tickSurf(t, A) { // a swell rolls through; the buoy and the board ride it, and the buoy's anemometer spins
-    var w = A.by.w, i, q2 = pb.q;
-    for (i = 0; i < w.length; i++) { w[i].cp.y += afloat(w[i], t, q2); w[i].cq.premultiply(q2); }
-    var b = A.by.buoy[0], cups = A.by.cups[0], h = afloat(b, t, q2);
-    b.cp.y += h + 0.03; b.cq.premultiply(q2);
-    cups.cp.sub(b.p).applyQuaternion(q2).add(b.p); cups.cp.y += h + 0.03; cups.cq.premultiply(q2).multiply(qL.setFromAxisAngle(LY, t * 0.006));
-    var bd = A.by.board[0]; h = afloat(bd, t, q2); bd.cp.y += h + 0.012; bd.cq.premultiply(q2);
-  }
-  var LX = new THREE.Vector3(1, 0, 0), DULL = new THREE.Color(0.45, 0.5, 0.62), COOLB = new THREE.Color(0.45, 0.8, 1.9);
-  function tickMM(t, A) { // Dijkstra on the board's own pins and strings, weights being string lengths: pins are settled in order of distance and the shortest-path tree lights up
-    var pins = A.by.pin, strs = A.by.str, i;
-    if (!A.dj) { // run the real algorithm once
-      var N = pins.length, at = [], dist = [], done = [], via = [], order = [];
-      pins.forEach(function (P) { at[+P.n[2]] = P; });
-      for (i = 0; i < N; i++) dist[i] = Infinity;
-      dist[0] = 0;
-      for (var step = 0; step < N; step++) {
-        var best = -1; for (i = 0; i < N; i++) if (!done[i] && (best < 0 || dist[i] < dist[best])) best = i;
-        done[best] = true; order[best] = step;
-        strs.forEach(function (S) { var a = +S.n[2], b = +S.n[3], o = a === best ? b : b === best ? a : -1; if (o < 0 || done[o]) return; var w = at[a].p.distanceTo(at[b].p); if (dist[best] + w < dist[o]) { dist[o] = dist[best] + w; via[o] = S; } });
-      }
-      A.dj = { order: order, via: via, n: N };
-    }
-    var k = Math.floor(clamp(((t % 10000) / 10000) / 0.75, 0, 1) * (A.dj.n + 0.99));
-    for (i = 0; i < pins.length; i++) { var id = +pins[i].n[2], on = A.dj.order[id] < k; pins[i].tint = id === 0 ? HOT : on ? PLAIN : DULL; pins[i].cs = A.dj.order[id] === k - 1 ? 1.5 : 1; }
-    for (i = 0; i < strs.length; i++) strs[i].tint = DULL;
-    for (i = 0; i < A.dj.n; i++) if (A.dj.via[i] && A.dj.order[i] < k) A.dj.via[i].tint = HOT;
-  }
-  function tickAC(t, A) { // gentle water; each agent walks its boardwalk in to the hub to report, and back out
-    var w = A.by.w, ag = A.by.agent, i, q2 = pb.q;
-    for (i = 0; i < w.length; i++) w[i].cp.y += 0.4 * swell(w[i].p.x, w[i].p.z, t) - 0.03;
-    for (i = 0; i < ag.length; i++) { var u = 0.5 - 0.5 * Math.cos(t * 0.0006 + i * 1.3), P = ag[i]; P.cp.x = P.p.x * mix(1, 0.3, u); P.cp.z = P.p.z * mix(1, 0.3, u); P.cp.y += 0.006 * Math.abs(Math.sin(t * 0.012 + i)); }
-  }
-  function tickKB(t, A) { // a small desk robot: the ring of bars rises and falls like speech; it turns its head to the tool it is calling, that tool's cable lights and the tool does its job; it blinks
-    var bars = A.by.bar, i, call = Math.floor(t / 2600) % 3, ph = (t % 2600) / 2600, on = pulse(ph, 0.1, 0.8);
-    for (i = 0; i < bars.length; i++) { var j = +bars[i].n[2]; bars[i].sv = vR.set(1, 0.25 + 0.9 * Math.abs(Math.sin(t * 0.004 + j * 0.9) * Math.sin(t * 0.0013 + j * 0.37)), 1).clone(); }
-    for (i = 0; i < 3; i++) A.by.cable[i].tint = +A.by.cable[i].n[2] === call ? HOT : DULL;
-    var turn = [-1.1, 2.1, 1.1][call] * smooth((ph - 0.04) / 0.2) * (1 - smooth((ph - 0.8) / 0.18)), blink = 1 - 0.9 * pulse((t % 3100) / 3100, 0.02, 0.05);
-    qL.setFromAxisAngle(LY, turn); A.by.head[0].cq.premultiply(qL); // the head's neck is on the model's own upright axis, so its eyes swing round the same axis
-    for (i = 0; i < 2; i++) { var E = A.by.eye[i]; E.cp.applyQuaternion(qL); E.cq.premultiply(qL); E.sv = vR.set(1, blink, 1).clone(); E.tint = on > 0.5 ? HOT : PLAIN; }
-    A.by.tip[0].tint = on > 0.5 && Math.sin(t * 0.012) > 0 ? HOT : PLAIN;
-    A.by.drawer[0].cp.addScaledVector(vT.set(-0.48, 0, -0.88).normalize(), -0.07 * (call === 0 ? on : 0)); // the drawer slides open toward the front
-    A.by.hand[0].cq.multiply(qL.setFromAxisAngle(LZ, t * 0.0012 + (call === 1 ? on * 3 : 0)));
-    A.by.lens[0].cq.multiply(qL.setFromAxisAngle(LZ, call === 2 ? 0.5 * Math.sin(ph * Math.PI * 4) * on : 0));
-  }
-  function tickQB(t, A) { // walk-forward: the window steps along the curve; inside it the model trains on the blue stretch and is tested on the amber one
-    var bars = A.by.bar, win = A.by.win[0], T2 = 2200, step = Math.floor(t / T2) % 6, f = smooth(((t % T2) / T2 - 0.7) / 0.3), x = -0.66 + 0.266 * (step + f) - (step === 5 ? f * 0.266 * 6 : 0), i;
-    win.cp.x = x;
-    for (i = 0; i < bars.length; i++) { var d = bars[i].p.x - x; bars[i].tint = d < -0.235 || d > 0.235 ? PLAIN : d < 0.115 ? COOLB : HOT; }
-  }
-  function tickLA(t, A) { // each envelope drops into the hopper, falls through the neck, and the flipper sends it to one of three trays; the amber tray goes to a person
-    var env = A.by.env, i, T3 = 5400, lead = 0, lu = 0;
-    for (i = 0; i < env.length; i++) {
-      var u = ((t / T3) + i / env.length) % 1, bin = i % 3, bx = (bin - 1) * 0.42, P = env[i], a = smooth(u / 0.3), b = smooth((u - 0.3) / 0.2), c = smooth((u - 0.5) / 0.3);
-      var x0 = 0.25 * hashNoise(i * 4.1), z0 = 0.2 * hashNoise(i * 2.7);
-      P.cp.set(mix(mix(x0, 0, a), bx, c), mix(mix(mix(1.25, 0.98, a), 0.56, b), 0.06 + 0.012 * Math.floor(i / 3), c), mix(z0, 0, a));
-      P.cq.setFromEuler(eA.set(mix(1.2, 0, c) * Math.sin(u * 20 + i), u * 6 * (1 - c), mix(0.9, 0, c) * Math.cos(u * 17)));
-      P.cs = smooth(u / 0.05) * (1 - smooth((u - 0.93) / 0.06));
-      if (u > 0.4 && u < 0.62 && u > lu) { lu = u; lead = bin - 1; }
-    }
-    A.by.flipper[0].cq.multiply(qL.setFromAxisAngle(LZ, -0.45 * lead));
-  }
-  function tickMD(t, A) { // a split-flap board: the flaps turn over, column by column, to draw the bars of a market day; an amber flap is a level reached
-    var fl = A.by.flap, i, day = Math.floor(t / 7000);
-    for (i = 0; i < fl.length; i++) {
-      var r = +fl[i].n[2], c = +fl[i].n[3], lvl = function (d) { return Math.floor(clamp(1.5 + 1.4 * Math.sin(c * 0.7 + d * 1.9) + 0.6 * Math.sin(c * 1.9 + d), 0, 3.99)); };
-      var was = r < lvl(day - 1) ? 1 : 0, now2 = r < lvl(day) ? 1 : 0, f = smooth(((t % 7000) - c * 260 - r * 90) / 500);
-      fl[i].cq.multiply(qL.setFromAxisAngle(LX, Math.PI * mix(was, now2, f)));
-    }
-  }
-  function tickMG(t, A) { // the top card flips over the rings from the question pile to the answer pile, then the next one goes
-    var f = smooth(((t % 2400) / 2400 - 0.15) / 0.6);
-    A.by.flip[0].cq.multiply(qL.setFromAxisAngle(LX, -f * 3.7));
-  }
-  function tickTools(t, A) { // each tool in turn comes off the board, catches the light and does its job: the wrench turns its bolt, the caliper's jaw slides, the screwdriver spins, the pliers open, the hex key turns, the meter's needle sweeps, the iron's tip heats
-    var T4 = 1600, k = Math.floor(t / T4) % 8, ph = (t % T4) / T4, e = smooth((ph - 0.06) / 0.22) * (1 - smooth((ph - 0.72) / 0.22)), w = Math.sin(ph * Math.PI * 6), i, P;
-    var lit = cT.setRGB(1 + 0.9 * e, 1 + 0.45 * e, 1).clone();
-    function act(P, on) { P.tint = on ? lit : PLAIN; if (on) P.cp.z += 0.03 * e; return P; }
-    for (i = 0; i < A.by.t.length; i++) {
-      P = A.by.t[i]; var j = +P.n[2]; act(P, j === k); if (j !== k) continue;
-      if (j === 0) P.cq.multiply(qL.setFromAxisAngle(LY, 0.3 * e * w));
-      if (j === 2) P.cq.multiply(qL.setFromAxisAngle(LZ, Math.PI * 6 * smooth(ph))); // three whole turns, so it ends where it began
-      if (j === 5) P.cq.multiply(qL.setFromAxisAngle(LZ, Math.PI / 2 * e));
-    }
-    act(A.by.jaw[0], k === 1).cp.y += k === 1 ? 0.11 * e : 0;
-    var open = k === 3 ? 0.16 * e * (0.5 - 0.5 * Math.cos(ph * Math.PI * 6)) : 0;
-    act(A.by.pl[0], k === 3).cq.multiply(qL.setFromAxisAngle(LY, -open)); act(A.by.pl[1], k === 3).cq.multiply(qL.setFromAxisAngle(LY, open));
-    act(A.by.needle[0], k === 6).cq.multiply(qL.setFromAxisAngle(LY, 0.8 - (k === 6 ? 1.6 * e * (0.8 + 0.2 * w) : 0)));
-    act(A.by.tip[0], k === 7); if (k === 7 && e > 0.3) A.by.tip[0].tint = HOT;
-  }
   var MORSE = (function () { // K I A in Morse: dash dot dash, dot dot, dot dash. Each entry is [key down?, length in dots]
     var out = [], total = 0; ['-.-', '..', '.-'].forEach(function (L, li) { L.split('').forEach(function (ch, ci) { out.push([1, ch === '-' ? 3 : 1]); out.push([0, ci < L.length - 1 ? 1 : 3]); }); });
     out[out.length - 1][1] = 9; out.forEach(function (q) { q.push(total); total += q[1]; }); out.total = total; return out;
   })();
-  function tickTK(t, A) { // the key taps out K I A, and a spark shows at the contact each time it closes
-    var u = (t / 150) % MORSE.total, down = 0, i;
-    for (i = 0; i < MORSE.length; i++) if (u >= MORSE[i][2] && u < MORSE[i][2] + MORSE[i][1]) down = MORSE[i][0];
-    if (t - keyed < 2500) down = held ? 1 : 0; // press and hold on the key and you are the operator; it goes back to K I A when you stop
-    A.kd = (A.kd || 0) + (down - (A.kd || 0)) * 0.5;
-    A.by.lever[0].cq.multiply(qL.setFromAxisAngle(LZ, 0.05 * A.kd - 0.02)); A.by.spark[0].cs = A.kd > 0.6 ? 1 + 0.6 * Math.sin(t * 0.09) : 0.0001;
-  }
   // ----- Light and data: most projects are drawn in points and lines of light that act out what the project does. One shared buffer; the scene on screen fills it every frame. -----
   var DQ = window.innerWidth < 700 ? 0.35 : 1, DN = Math.round(5600 * DQ), DL = 3000, dn = 0, ln = 0; // phones draw half as many points
   var dP = new Float32Array(DN * 3), dC = new Float32Array(DN * 3), dS = new Float32Array(DN), lP = new Float32Array(DL * 6), lC = new Float32Array(DL * 6);
@@ -2943,14 +2831,18 @@ import * as THREE from './vendor/three.module.min.js';
   function hoop(cx, cy, cz, r, n, c, s, k) { for (var i = 0; i < n; i++) { var a = i / n * TAU; P(cx + r * Math.cos(a), cy, cz + r * Math.sin(a), c, s, k); } }
 
   function dsSignal(t) { // Industrial AI Notebook: the sensor signal as a live ribbon, lane behind lane; what the Isolation Forest flags lifts out of it in amber
-    var k0 = t * 0.004, nx = Math.round(110 * DQ), lanes = 9, i, j, px = 0, py = 0;
+    var k0 = t * 0.004, nx = Math.round(110 * DQ), lanes = 9, i, j, px = 0, py = 0, ph2 = 0, pl2 = 0;
     for (j = 0; j < lanes; j++) for (i = 0; i < nx; i++) {
       var u = i / (nx - 1), kk = k0 - (1 - u) * 60 - j * 7, v = sig(kk), x = -1 + 2 * u, z = -0.6 + 1.2 * j / (lanes - 1), y = 0.35 + clamp(v, -0.5, 1.2) * 0.42, hot = detect(Math.round(kk)).model, front = j === lanes - 1;
       P(x, y, z, hot ? AM : BL, hot ? 0.05 : 0.022, (0.35 + 0.65 * u) * (front ? 1.6 : 0.8));
       if (hot && i % 2 === 0) L(x, y, z, x, 1.02, z, AM, 0.5 * u);
-      if (front) { if (i) L(px, py, z, x, y, z, WH, 0.9); px = x; py = y; }
+      if (front) { // on the front lane: the trace itself, and the baseline's own band round it (the rolling z-score, worked out by detect): it follows the last 40 readings, so a slow drift carries it along and never leaves it
+        var e = detect(Math.round(kk)), yh = 0.35 + clamp(e.hi, -0.5, 1.4) * 0.42, yl = 0.35 + clamp(e.lo, -0.7, 1.2) * 0.42;
+        if (i) { L(px, py, z, x, y, z, WH, 0.9); L(px, ph2, z, x, yh, z, BL, 0.55); L(px, pl2, z, x, yl, z, BL, 0.55); }
+        if (e.base) L(x, yl, z, x, yh, z, WH, 0.9); // where the baseline itself raises the alarm
+        px = x; py = y; ph2 = yh; pl2 = yl;
+      }
     }
-    for (j = 0; j < 2; j++) { var yb = 0.35 + (j ? 0.6 : -0.3) * 0.42; L(-1, yb, 0.6, 1, yb, 0.6, BL, 0.5); L(-1, yb, -0.6, 1, yb, -0.6, BL, 0.25); L(-1, yb, -0.6, -1, yb, 0.6, BL, 0.25); L(1, yb, -0.6, 1, yb, 0.6, BL, 0.25); } // the band the plain baseline trusts
   }
 
   var DJ = (function () { // a small weighted graph and a real run of Dijkstra's algorithm over it: every node's distance from the source, and the tree of shortest paths
@@ -3076,19 +2968,23 @@ import * as THREE from './vendor/three.module.min.js';
     }
   }
 
-  function dsQuant(t) { // Quant Backtest Lab: synthetic prices; a window steps forward along them, fitting on the white stretch and testing on the amber one that follows
-    var n = Math.round(150 * DQ), T2 = 2200, step = Math.floor(t / T2) % 6, f = smooth(((t % T2) / T2 - 0.7) / 0.3), wx = -0.72 + 0.25 * (step + f), i, j, px = 0, py = 0;
-    for (i = 0; i < n; i++) {
-      var u = i / (n - 1), x = -1 + 2 * u, y = 0.15 + price(u * 40) * 1.1, dx = x - wx, c = dx < -0.25 || dx > 0.25 ? BL : dx < 0.1 ? WH : AM, k = c === BL ? 0.5 : 1.3;
-      P(x, y, 0, c, c === BL ? 0.02 : 0.034, k); L(x, 0.1, 0, x, y, 0, c, 0.12 * k);
-      if (i) L(px, py, 0, x, y, 0, c, 0.7 * k);
-      px = x; py = y;
-      for (j = 1; j < 4; j++) P(x, y, -0.16 * j, AM, 0.014, x < wx - 0.25 * j ? 0.35 / j : 0); // the stretches already tested, left behind as it walks on
+  var WF = null, wfKey = '';
+  function dsQuant(t) { // Quant Backtest Lab: the real walk-forward (walkForward, the same run its card draws), on a new synthetic price path each time round. Below, the prices: white is what the rule has been fitted on, amber the stretch being tested now.
+    // Above, what that earned: amber the rule after costs, white simply holding, both starting level at the line. The frame is the stretch under test, and it steps on six times. Whichever ends higher, ends higher.
+    var T = 13000, cyc = Math.floor(t / T), ph = (t % T) / T, key = cyc + '|' + BT.cost, i, k;
+    if (key !== wfKey) { WF = walkForward(301 + cyc, BT.cost); wfKey = key; WF.lo = Math.min.apply(null, WF.px); WF.hi = Math.max.apply(null, WF.px); WF.sw = 0.2 / Math.max(0.04, Math.max.apply(null, WF.strat.concat(WF.bench).map(function (v) { return Math.abs(v - 1); }))); }
+    var n = WF.n, stp = DQ < 1 ? 3 : 1, prog = clamp(ph / 0.78, 0, 1) * WF.folds, fold = Math.min(WF.folds - 1, Math.floor(prog)), from = WF.t0 + fold * WF.tl, upto = WF.t0 + prog * WF.tl, px = 0, py = 0, pe = 0, pb = 0, X = function (q) { return -1 + 2 * q / (n - 1); };
+    for (i = 0; i < n; i += stp) {
+      var x = X(i), y = 0.1 + (WF.px[i] - WF.lo) / (WF.hi - WF.lo) * 0.4, fit = i < from, now = !fit && i <= upto, c = fit ? WH : now ? AM : BL, ey = 0.8 + (WF.strat[i] - 1) * WF.sw, by = 0.8 + (WF.bench[i] - 1) * WF.sw, on = i >= WF.t0 && i <= upto;
+      P(x, y, 0, c, now ? 0.034 : 0.02, fit ? 0.7 : now ? 1.4 : 0.35); P(x, ey, 0, AM, 0.024, on ? 1.2 : 0); P(x, by, 0, WH, 0.018, on ? 0.7 : 0); // every point is always there, dark until its moment, so a hand-over finds them in place
+      if (i) { L(px, py, 0, x, y, 0, c, fit ? 0.5 : now ? 0.9 : 0.25); if (on && i > WF.t0) { L(px, pe, 0, x, ey, 0, AM, 0.9); L(px, pb, 0, x, by, 0, WH, 0.45); } }
+      px = x; py = y; pe = ey; pb = by;
     }
-    for (j = 0; j < 2; j++) { var z = j ? 0.1 : -0.1; L(wx - 0.25, 0.1, z, wx - 0.25, 1.0, z, WH, 0.6); L(wx + 0.25, 0.1, z, wx + 0.25, 1.0, z, AM, 0.6); L(wx - 0.25, 1.0, z, wx + 0.25, 1.0, z, WH, 0.6); L(wx - 0.25, 0.1, z, wx + 0.25, 0.1, z, WH, 0.6); L(wx + 0.1, 0.1, z, wx + 0.1, 1.0, z, AM, 0.35); }
-    for (j = 0; j < 2; j++) { var y2 = j ? 1.0 : 0.1; L(wx - 0.25, y2, -0.1, wx - 0.25, y2, 0.1, WH, 0.6); L(wx + 0.25, y2, -0.1, wx + 0.25, y2, 0.1, AM, 0.6); }
+    var xa = X(from), xb = X(Math.min(n - 1, from + WF.tl)), x0 = X(WF.t0);
+    L(x0, 0.8, 0, 1, 0.8, 0, BL, 0.4); L(x0, 0.06, 0, x0, 1.04, 0, BL, 0.3); // level: where both start; and the line before which nothing is traded
+    for (k = 0; k < 2; k++) { var z = k ? 0.1 : -0.1; L(xa, 0.06, z, xa, 1.04, z, AM, 0.6); L(xb, 0.06, z, xb, 1.04, z, AM, 0.6); L(xa, 1.04, z, xb, 1.04, z, AM, 0.6); L(xa, 0.06, z, xb, 0.06, z, AM, 0.6); }
+    for (k = 0; k < 2; k++) { var y2 = k ? 1.04 : 0.06; L(xa, y2, -0.1, xa, y2, 0.1, AM, 0.6); L(xb, y2, -0.1, xb, y2, 0.1, AM, 0.6); }
   }
-
   function dsLeads(t) { // Lead Autoresponder: messages stream in, are read at one point, and leave on three paths: answered, scheduled, or handed to a person
     var n = Math.round(110 * DQ), i, k, lanes = [[0.95, 0.74, -0.45, BL], [1.0, 0.42, 0, WH], [0.95, 0.1, 0.45, AM]];
     for (i = 0; i < 48; i++) { var a = i / 48 * TAU + t * 0.0012; P(0, 0.5 + 0.15 * Math.sin(a), 0.15 * Math.cos(a), WH, i % 6 ? 0.016 : 0.034, 1); }
@@ -3244,18 +3140,18 @@ import * as THREE from './vendor/three.module.min.js';
 
   var ASM = [ // the model's name in the file; the stops it belongs to (a chapter's id, or a project's number in page order); camera height; size; its motion; lit: it faces the camera, so it gets the front light
     { name: 'fold', at: ['experience'], elev: 0.42, fit: 1.0, tick: tickFold, fold: true },
-    { name: 'rec', draw: dsSignal, at: [1], elev: 0.42, fit: 1.0, tick: tickRec },
-    { name: 'mm', draw: dsDijkstra, at: [2], elev: 0.5, fit: 1.0, tick: tickMM, lit: true },
-    { name: 'gears', draw: dsTarjan, at: [3], elev: 0.5, fit: 1.1, tick: tickGears, lit: true },
-    { name: 'ac', draw: dsAgents, at: ['builds', 4], elev: 0.45, fit: 1.0, tick: tickAC },
-    { name: 'surf', draw: dsSurf, at: [5], elev: 0.38, fit: 1.05, tick: tickSurf },
-    { name: 'kb', draw: dsVoice, at: [6], elev: 0.3, fit: 1.05, tick: tickKB },
-    { name: 'qb', draw: dsQuant, at: [7], elev: 0.25, fit: 1.0, tick: tickQB },
-    { name: 'la', draw: dsLeads, at: [8], elev: 0.3, fit: 0.95, tick: tickLA, lit: true },
-    { name: 'md', draw: dsMarket, at: [9], elev: 0.12, fit: 0.95, tick: tickMD, lit: true },
-    { name: 'mg', draw: dsSeeds, at: [10], elev: 0.6, fit: 1.0, tick: tickMG },
-    { name: 'tools', draw: dsStack, at: ['skills'], elev: 0.3, fit: 1.05, tick: tickTools, lit: true },
-    { name: 'tk', draw: dsBeacon, at: ['contact'], elev: 0.3, fit: 1.35, tick: tickTK }
+    { name: 'rec', draw: dsSignal, at: [1], elev: 0.42, fit: 1.0 },
+    { name: 'mm', draw: dsDijkstra, at: [2], elev: 0.5, fit: 1.0, lit: true },
+    { name: 'gears', draw: dsTarjan, at: [3], elev: 0.5, fit: 1.1, lit: true },
+    { name: 'ac', draw: dsAgents, at: ['builds', 4], elev: 0.45, fit: 1.0 },
+    { name: 'surf', draw: dsSurf, at: [5], elev: 0.38, fit: 1.05 },
+    { name: 'kb', draw: dsVoice, at: [6], elev: 0.3, fit: 1.05 },
+    { name: 'qb', draw: dsQuant, at: [7], elev: 0.25, fit: 1.0 },
+    { name: 'la', draw: dsLeads, at: [8], elev: 0.3, fit: 0.95, lit: true },
+    { name: 'md', draw: dsMarket, at: [9], elev: 0.12, fit: 0.95, lit: true },
+    { name: 'mg', draw: dsSeeds, at: [10], elev: 0.6, fit: 1.0 },
+    { name: 'tools', draw: dsStack, at: ['skills'], elev: 0.3, fit: 1.05, lit: true },
+    { name: 'tk', draw: dsBeacon, at: ['contact'], elev: 0.3, fit: 1.35 }
   ];
   fetch('./models/fold.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) { // the one scene still built of parts: the Experience chapter's pop-up plant. Every other scene is drawn in light and needs no file
     var h = readModel(buf), T = h.T;
@@ -3783,7 +3679,7 @@ import * as THREE from './vendor/three.module.min.js';
     if (ride !== riding) { riding = ride; cv.style.position = ride ? 'absolute' : 'fixed'; }
     if (rT !== rideT) { rideT = rT; cv.style.transform = 'translate3d(0,' + rT + 'px,0)'; }
     if (ride) CY += sc - rT;
-    HIT.x = CX; HIT.y = ride ? CY - (sc - rT) : CY; HIT.s = alpha > 0.3 ? S : 0; HIT.asm = cur && m > 0.5 ? cur.asm || null : null; HIT.turb = (!cur && en < 0.5) || (!!cur && !!cur.fin && m > 0.5); HIT.t = t; if (held && HIT.asm && HIT.asm.tick === tickTK) keyed = t;
+    HIT.x = CX; HIT.y = ride ? CY - (sc - rT) : CY; HIT.s = alpha > 0.3 ? S : 0; HIT.asm = cur && m > 0.5 ? cur.asm || null : null; HIT.turb = (!cur && en < 0.5) || (!!cur && !!cur.fin && m > 0.5); HIT.t = t; if (held && HIT.asm && HIT.asm.name === 'tk') keyed = t;
     if (!REDUCE && sc < 40) idle += 0.0006; // a slow turn while it sits in the hero
     var yaw = 0.62 + idle + sS * 0.0009 + q * 4.2 + gx * 0.18 * Math.max(1 - en, d), elev = mix(mix(mix(0.13, 0.06, peak), 0.6, en), mix(ELEV[fA], ELEV[fB], m), d) - gy * 0.08 * Math.max(1 - en, d);
     if (NAV.on) yaw = 0.62 + 0.22 * Math.sin(now * 0.00013) + gx * 0.18; // the map sways a little so it reads as a model, and holds still enough to aim at
@@ -3870,8 +3766,8 @@ import * as THREE from './vendor/three.module.min.js';
       if (NAV.on || !HIT.s || (e.target.closest && e.target.closest('a, button, input, select, textarea, canvas[data-demo], .themes'))) return;
       if (Math.hypot(e.clientX - HIT.x, e.clientY - HIT.y) > HIT.s * 0.95) return;
       if (HIT.turb) gAgain(performance.now()); // click the board: every ball goes back up and a new run starts
-      else if (HIT.asm && HIT.asm.tick === tickTK) { held = true; keyed = HIT.t; }
-      else if (HIT.asm && HIT.asm.tick === tickSurf) setWave = HIT.t;
+      else if (HIT.asm && HIT.asm.name === 'tk') { held = true; keyed = HIT.t; }
+      else if (HIT.asm && HIT.asm.name === 'surf') setWave = HIT.t;
       else if (HIT.asm && HIT.t - poke > 1100) { pokeAsm = HIT.asm; poke = HIT.t; }
     }, { passive: true });
     ['pointerup', 'pointercancel'].forEach(function (ev) { window.addEventListener(ev, function () { held = false; }, { passive: true }); });
