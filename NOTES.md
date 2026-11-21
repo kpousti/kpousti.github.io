@@ -15,6 +15,7 @@ Kia liked the opening film and asked for the whole page to feel like it: a full-
 - **Kia's trial works only through the connector, not on the website.** Higgsfield's help pages say the opposite in general (Unlimited on the website only, the connector always spends credits), so the website was tried first: signed in as Kia in the app's browser panel, Nano Banana Pro, Unlimited mode on, one 2K image. Higgsfield answered with an upgrade offer: "Your Free Trial Plus features and credits work only in the Higgsfield MCP. Upgrade to generate here on higgsfield.ai". The offer was closed; nothing was bought and nothing was generated. The account shows "Ultra Plan" with 10 credits.
 - **And through the connector, Unlimited works only in Claude chat, Claude Cowork and ChatGPT, not in the Code tab.** Kia signed the connector in (`/mcp`) and the Code-tab session asked for an Unlimited quote: "Unlimited generations are not available in the app you are using. They are available in: Claude chat, Claude Cowork, ChatGPT." Paid quotes in the Code tab: a 2K Nano Banana Pro image 2 credits, a 720p 8-second Seedance 2.5 clip 56 credits; the account has 10. Nothing was generated.
 - The free route is therefore: Kia adds Higgsfield as a custom connector on his Claude account (Settings, Connectors, Add custom connector, `https://mcp.higgsfield.ai/mcp`), opens a normal chat, and pastes a brief (`film/src/higgsfield-briefs.md`, not in git). The Code-tab session can then read the finished generations through the connector (reading is free) and download the clips into `film/src/`.
+- **Set aside for now** (Kia, 2026-11-21, after the above): "Skip Higgsfield for now". All seven films stay Blender ones and About keeps the sea at sunset. The trial runs to Nov 24 if he wants the barrel later: the brief is ready to paste.
 - Useful to know for the briefs: Seedance 2.5 takes a first frame and a last frame (`start_image`, `end_image`, mode `omni_reference`), and the connector has `upscale_video` (it costs credits).
 - **Trial video is 720p, up to 8 seconds.** That is exactly phone size (720 x 1280 when shot tall) but softer than full HD on a computer.
 - Higgsfield's pages say trials need a card and renew into a paid plan when they end. Kia was told to check his Subscription page before Nov 24.
@@ -60,7 +61,7 @@ For scale: the opening film is 7.2 MB on a computer and 3.7 MB on a phone. A vis
 - Scroll speed with the films is not measured yet: it needs the graphics chip free of renders.
 - Safari and a real iPhone cannot be tested from this Mac. iPhones do not report connection type, so they always load the films.
 - About now sits about nine screens down (opening film, the pinned word scene, then its own film). `.reel.live { height: 300vh }` in the page sets every film's length.
-- The Higgsfield wave barrel and Kia's pick per section are still to do.
+- The Higgsfield wave barrel is set aside (see above); About uses the sea at sunset.
 
 ## The opening is a film played by the scrollbar (2026-11-21)
 
