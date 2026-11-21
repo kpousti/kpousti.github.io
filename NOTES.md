@@ -41,27 +41,36 @@ Kia liked the opening film and asked for the whole page to feel like it: a full-
 
 **Laying the pictures on a backdrop** (`blender/film_flatten.py`; the two sea films have their own sky and skip this). The films were first rendered with no background, like the opening one. That made each file about twice as heavy: a see-through picture stores exactly how clear every soft, out-of-focus edge is (one armillary frame: 170 KB see-through, 82 KB plain). So each frame is laid over a dark studio backdrop (the page's dark blue, a little lighter in the middle, a trace of dusk low down) and saved as a plain picture. The untouched renders stay in `film/src/<name>-<set>/`, outside git, so the backdrop or quality can be changed without rendering again.
 
-**Page weight** (the rule: note the cost). Each film loads only when the visitor scrolls within two screens of it, and not at all with reduced motion, data saving or a slow connection. Measured so far (the rest are filled in as they finish rendering):
+**Page weight** (the rule: note the cost). Each film loads only when the visitor scrolls within two screens of it, and not at all with reduced motion, data saving or a slow connection. Measured on disk:
 
 | Film | Computer (120 pictures, 1920 x 1080) | Phone (80 pictures, 720 x 1280) |
 |---|---|---|
+| About: sea at sunset | 6.8 MB | 2.2 MB |
 | Experience: turbine | 8.3 MB | 3.3 MB |
-| Skills: armillary | 8.8 MB | rendering |
-| About: sea at sunset | rendering | rendering |
-| Projects: circuit city | rendering | rendering |
-| Side builds: phone | rendering | rendering |
-| Contact: signal lamp | rendering | rendering |
-| Ending: steel balls | rendering | rendering |
+| Projects: circuit city | 9.9 MB | 3.0 MB |
+| Side builds: phone | 2.4 MB | 0.9 MB |
+| Skills: armillary | 8.8 MB | 3.9 MB |
+| Contact: signal lamp | 4.5 MB | 1.8 MB |
+| Ending: steel balls | 5.6 MB | 2.5 MB |
+| **All seven** | **46.4 MB** | **17.6 MB** |
 
-For scale: the opening film is 7.2 MB on a computer and 3.7 MB on a phone. A visitor who scrolls the whole page on a computer will download all of them.
+For scale: the opening film is 7.2 MB on a computer and 3.7 MB on a phone. A visitor who scrolls the whole page downloads all of them: about 46 MB on a computer and 18 MB on a phone, on top of the page and the opening film. That is a lot for a phone on mobile data, and iPhones do not report data saving, so they always load the films.
+The circuit film is the heaviest (its lit traces are fine detail); it is saved at quality 54 instead of 64, which took it from 10.8 MB to 9.9 MB with no visible loss in a full-size crop.
 
-**Checked.** In a private headless Chrome (its own throwaway profile, not the preview window), at 1440 x 900 and 393 x 659: each finished reel takes its room, fades in once pinned, plays, fades out, and hands over to the chapter's title card with the live model riding in; no sideways scroll; no page errors and no failed requests for the finished films. With reduced motion and with JavaScript off the film sections take no room, the text reads and links click. `node blender/check_fold.mjs` passes (deepest 1.1 cm). Stills of the turbine and armillary films were looked at on both sizes, and a full-size crop at the saved quality is clean.
+**Checked** (2026-11-21, with all seven films in, in a private headless Chrome with its own throwaway profile, not the preview window).
+- 1440 x 900 and 393 x 659: every reel takes its room, fades in once pinned, plays, fades out and hands over to the chapter's title card with the live model riding in; the closing film fills the screen from inside the last chapter's column; no sideways scroll; no page errors and no failed requests.
+- Stills of every film were looked at on the page, and full-size crops of the armillary and circuit films at their saved quality are clean.
+- Scroll speed over the whole page, on the real graphics chip: at 1440 x 900 (2x) the typical frame is 16.7 ms, 9 frames of 1,057 took over 50 ms and 4 over 100 ms (worst 317 ms, where a model first appears: the known first-pass cost). At 393 x 659 (3x) with the processor slowed four times: typical 16.7 ms, 3 frames of 1,506 over 50 ms, none over 100 ms (worst 67 ms).
+- Arriving by a link to a section (`#skills`, `#experience`): the chapter lands under the bar and stays there; films above it stay collapsed for that visit. Reloading part way down on a computer: the page comes back to the same place.
+- Reduced motion and JavaScript off: the film sections take no room, the text reads and links click. `node blender/check_fold.mjs` passes (deepest 1.1 cm).
 
-**Not done, not checked.** - Five films were still rendering when this was written (one at a time: this Mac's graphics memory holds a single full-size render).
-- Scroll speed with the films is not measured yet: it needs the graphics chip free of renders.
-- Safari and a real iPhone cannot be tested from this Mac. iPhones do not report connection type, so they always load the films.
-- About now sits about nine screens down (opening film, the pinned word scene, then its own film). `.reel.live { height: 300vh }` in the page sets every film's length.
+**Not done, not checked.**
+- Safari and a real iPhone cannot be tested from this Mac. Kia's iPhone is the test, after a "ship it".
+- About now sits about nine screens down (opening film, the pinned word scene, then its own film). `.reel.live { height: 300vh }` in the page sets every film's length; it is one number to shorten them all.
+- While a film plays, the tab bar still highlights the section before it.
 - The Higgsfield wave barrel is set aside (see above); About uses the sea at sunset.
+- Seen in passing, not from this work and not changed: at phone size, reloading part way down returns the page near the top. It does the same with the films switched off.
+- Rendering on this Mac: one full-size Cycles render at a time (two share the graphics chip badly, three run it out of memory); drafts run on the processor. The seven films took about four hours of rendering in all.
 
 ## The opening is a film played by the scrollbar (2026-11-21)
 
