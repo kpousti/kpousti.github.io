@@ -4,3 +4,7 @@ photos-inbox/
 .playwright-mcp/
 *.blend1
 .mcp.json
+blender/__pycache__/
+film/src/
+film/draft-*/
+film/*/draft-*/

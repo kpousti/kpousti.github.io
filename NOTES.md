@@ -4,6 +4,61 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## A film into every section (2026-11-21, later the same day)
+
+Kia liked the opening film and asked for the whole page to feel like it: a full-screen film moment into each topic, in the style of the "Websites in 2026" video (Relats, Active Theory), using his Higgsfield subscription as much as is useful over three days. He loosened "every visual must tie to my work" for these films only.
+
+**What Kia chose** (multiple choice): About, a wave barrel. Experience, the gas turbine. Projects, a circuit board as a city at night. Side builds, a phone coming apart. Skills, a brass armillary. Contact, a signal lamp over the Pacific. The ending, steel balls through brass pegs in macro.
+
+**Higgsfield: what the trial really allows** (checked on Higgsfield's help pages and Kia's own Subscription page, 2026-11-21).
+- Kia's trial gives "Unlimited" use of a list of models from Nov 21 to Nov 24, 2026: images at 2K (Nano Banana Pro, Nano Banana 2 and 2.1, Seedream 5.0 Pro, GPT Image 2, 2.5 and 2.6) and video at 720p (Seedance 2.0 Std and Seedance 2.5; this is what Kia called "Cadence"), plus text to speech.
+- **Unlimited applies only on the higgsfield.ai website.** The connector (`.mcp.json`, `https://mcp.higgsfield.ai/mcp`) always spends credits, trial or not. So the connector is not used; it still shows "needs sign-in" in the chat and can stay that way.
+- **Trial video is 720p, up to 8 seconds.** That is exactly phone size (720 x 1280 when shot tall) but softer than full HD on a computer.
+- Higgsfield's pages say trials need a card and renew into a paid plan when they end. Kia was told to check his Subscription page before Nov 24.
+- **Kia's decisions:** (1) Claude drives the higgsfield.ai website in the app's browser panel, after Kia signs in there himself; (2) Higgsfield is for the seven section films only: the live maths (the option-pricing board, A*, Dijkstra, Tarjan, the backtest) stays live; (3) where a section has both a Blender film and a Higgsfield clip, Kia picks; the wave barrel is Higgsfield regardless.
+- Until those clips exist, all seven films are Blender ones, which Kia liked for the opening. One is a stand-in: Blender makes a convincing open sea but not a breaking barrel, so About opens on the sea at sunset until the Higgsfield barrel replaces it. Prompts for the barrel and the lamp are in the session's shared notes (`section-films-handover.md`). `blender/film_from_video.py` turns a clip into the page's pictures (checked on a test clip): `Blender -b --python blender/film_from_video.py -- film/src/wave.mp4 wave`.
+
+**The films** (all one look: dark studio, a warm key light and a cool rim, one object, one continuous move that ends very close; no words, no logos, no faces):
+- **About: the sea at sunset** (`blender/film_wave.py`, Blender's own ocean and sky). From high over the water looking down the sun's path, down to the swell, ending through a long lens on the sun going into the sea. The sun sinks and the swell rolls as you scroll. This is the stand-in for the wave barrel.
+- **Experience: the gas turbine** (`blender/film_turbine.py`, on `blender/turbine.blend`). The 477-part cutaway engine turns, slides apart along its shaft, and the camera travels from the compressor over the heat-tinted combustor cans to one row of turbine blades. The page's blades were 26 flat faces each, which fell apart in close-up, so the film builds real ones: a cambered aerofoil section, twisted root to tip, on a root platform (321 blades).
+- **Skills: the brass armillary** (`blender/film_armillary.py`, built entirely in the script). Eight rings, as the Skills table has eight rows, each hung in the next on two pins. It starts closed, a flat disc facing the camera, opens ring by ring into a sphere, and ends on the polished ball at the centre with every ring mirrored in it. The script works out which straight line toward the centre stays farthest from all eight rings (19 degrees clear) and flies in along it, so no band crosses the lens.
+- **Contact: the signal lamp** (`blender/film_lamp.py`, built in the script). A brass lamp on a tripod at a sea wall, the Pacific at blue hour behind. It flashes short, long, short as the camera closes in, then stays on; the film ends square on to its ribbed glass.
+- **The ending: steel balls** (`blender/film_galton.py` with a fourth argument `balls`, on `blender/galton.blend`). The opening's own board and ball rule, seen through a macro lens: in at the first pegs, down the rows with the stream, ending on the finished pile. The balls are let go twice as often as on the page (seen this close the page's pace looks sparse) and are rounder.
+- **Projects: the circuit board city** (`blender/film_circuit.py`, built in the script from a seeded layout). Chips are the blocks, capacitors the towers; 46 buses of copper traces carry pulses of light that move as you scroll. Down from above, low along a clear street, ending on the corner of the main chip.
+- **Side builds: the phone** (`blender/film_phone.py`, built in the script). A generic phone with no maker's marks and the page's dusk colours on its screen opens into glass, display, frame, cameras, logic board, battery and back; the camera comes round and ends on the main chip.
+- `blender/filmkit.py` holds what the film scripts share: arguments, metals, light, sky and sea, camera keys, the render loop, and the small-parts builders. Every film script takes the same arguments (`-- d` or `-- p`, then optional frames, samples, and a size percentage for quick drafts).
+
+**How the page plays them** (`REELS`, `reels()` in the page; CSS `.reel`). `<section class="reel" data-film="name" data-frames="120" data-frames-p="80">` before a chapter draws `film/<name>/d/0001.webp ...` on computers and `film/<name>/p/` on phones.
+- At load the page asks, headers only, whether a reel's first picture exists. Only then, and only if the reel is still below the screen, does it take its room (300vh). So nothing on screen ever jumps; a visitor who reloads half way down simply gets no reels above where they are.
+- Pictures load when the visitor is within two screens of the reel, four at a time, and are let go four screens away. The next five in the direction of travel are unpacked ahead of the scroll. A picture that has not arrived is stood in for by the nearest earlier one.
+- The film fades in once its stage is pinned and fades out before it lets go, crossing with the live 3D model exactly as the opening film does; while a film has the whole screen the 3D is not drawn. Then the chapter's own title card rises and its strips slide off as before, with the model riding in on it. The film never covers words.
+- No reels with reduced motion, data saving or a 2g/3g connection, and without JavaScript the sections take no room. A tab click or the route map lands on the chapter itself, below its film.
+- Note: iPhones do not report connection type or data saving, so on an iPhone the films always load, on any connection.
+
+**Laying the pictures on a backdrop** (`blender/film_flatten.py`; the two sea films have their own sky and skip this). The films were first rendered with no background, like the opening one. That made each file about twice as heavy: a see-through picture stores exactly how clear every soft, out-of-focus edge is (one armillary frame: 170 KB see-through, 82 KB plain). So each frame is laid over a dark studio backdrop (the page's dark blue, a little lighter in the middle, a trace of dusk low down) and saved as a plain picture. The untouched renders stay in `film/src/<name>-<set>/`, outside git, so the backdrop or quality can be changed without rendering again.
+
+**Page weight** (the rule: note the cost). Each film loads only when the visitor scrolls within two screens of it, and not at all with reduced motion, data saving or a slow connection. Measured so far (the rest are filled in as they finish rendering):
+
+| Film | Computer (120 pictures, 1920 x 1080) | Phone (80 pictures, 720 x 1280) |
+|---|---|---|
+| Experience: turbine | 8.3 MB | 3.3 MB |
+| Skills: armillary | 8.8 MB | rendering |
+| About: sea at sunset | rendering | rendering |
+| Projects: circuit city | rendering | rendering |
+| Side builds: phone | rendering | rendering |
+| Contact: signal lamp | rendering | rendering |
+| Ending: steel balls | rendering | rendering |
+
+For scale: the opening film is 7.2 MB on a computer and 3.7 MB on a phone. A visitor who scrolls the whole page on a computer will download all of them.
+
+**Checked.** In a private headless Chrome (its own throwaway profile, not the preview window), at 1440 x 900 and 393 x 659: each finished reel takes its room, fades in once pinned, plays, fades out, and hands over to the chapter's title card with the live model riding in; no sideways scroll; no page errors and no failed requests for the finished films. With reduced motion and with JavaScript off the film sections take no room, the text reads and links click. `node blender/check_fold.mjs` passes (deepest 1.1 cm). Stills of the turbine and armillary films were looked at on both sizes, and a full-size crop at the saved quality is clean.
+
+**Not done, not checked.** - Five films were still rendering when this was written (one at a time: this Mac's graphics memory holds a single full-size render).
+- Scroll speed with the films is not measured yet: it needs the graphics chip free of renders.
+- Safari and a real iPhone cannot be tested from this Mac. iPhones do not report connection type, so they always load the films.
+- About now sits about nine screens down (opening film, the pinned word scene, then its own film). `.reel.live { height: 300vh }` in the page sets every film's length.
+- The Higgsfield wave barrel and Kia's pick per section are still to do.
+
 ## The opening is a film played by the scrollbar (2026-11-21)
 
 Kia sent a video of "Websites in 2026" (Relats, Active Theory and others) and asked to mimic their cinematic scrolling, and to use Higgsfield and "Cadence 2.0". What those sites do is play a film made in advance, one picture per step of the scrollbar. "Cadence 2.0" is, as far as I can find, Seedance 2.0: ByteDance's video model, offered on Higgsfield. Kia chose both kinds of footage (a Blender film now, AI clips for section breaks later) and both places (the opening, and a break between sections).
