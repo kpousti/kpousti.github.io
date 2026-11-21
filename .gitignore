@@ -3,3 +3,4 @@ shots/
 photos-inbox/
 .playwright-mcp/
 *.blend1
+.mcp.json

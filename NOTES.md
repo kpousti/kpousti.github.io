@@ -4,6 +4,23 @@ Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## The opening is a film played by the scrollbar (2026-11-21)
+
+Kia sent a video of "Websites in 2026" (Relats, Active Theory and others) and asked to mimic their cinematic scrolling, and to use Higgsfield and "Cadence 2.0". What those sites do is play a film made in advance, one picture per step of the scrollbar. "Cadence 2.0" is, as far as I can find, Seedance 2.0: ByteDance's video model, offered on Higgsfield. Kia chose both kinds of footage (a Blender film now, AI clips for section breaks later) and both places (the opening, and a break between sections).
+
+**Built: the opening film** (`blender/film_galton.py`, pictures in `film/d` for computers and `film/p` for phones).
+One continuous camera move over the Galton board, rendered in Blender's film renderer (real reflections, depth of field), 120 pictures at 1920 x 1080 for computers and 80 at 720 x 1280 for phones (a first try at 1280 x 720 looked soft on a high-resolution screen): the whole board; in close on the hopper's throat; down the pegs with the balls in slow motion; low along the bins as the pile fills into the bell curve; back and up the other side while each row lights gold as the tree is priced; the whole board again.
+The balls follow the page's own rule (same peg spacing, timing and stacking, one random bounce per row), with their own seeded stream. The pictures have no background, so the page's sky shows through and the film works on every colour option.
+
+**How the page plays it** (`FILM` and `film()` in the page). The fly-through section is now 330vh tall when the film can be used. The pictures load four at a time, quietly, after the page is up. Until every one is there the live fly-through plays as before; the film takes over only while that section is off screen. At the two ends it cross-fades with the live board (one fades out exactly as the other fades in), and through those cross-fades the film's picture is moved and scaled so that its board lies exactly on the live one, on any size of screen (`filmFit`: it reads where the board is from the picture's own transparency). While the film has the screen the live model is not drawn. The next few pictures in the direction of travel are unpacked ahead of the scroll.
+No film with reduced motion, when the visitor asks to save data, or on a 2g or 3g connection: the live fly-through stays.
+
+**Page weight** (the rule: note the cost). The film is 7.2 MB on a computer (120 pictures, about 60 KB each) and 3.7 MB on a phone (80 pictures, about 46 KB each), on top of the page itself. It is downloaded in the background after the page is up, and not at all with reduced motion, data saving, or a slow connection. Measured in the page: no errors on either size; 3 slow frames in a full scroll of the page on a computer, none on a phone-sized screen slowed four times.
+
+**Kia's verdict and what he asked for next (same day):** he liked the transition, the zoom and how clean it looks, and wants the whole page like it: a film moment into each topic, as cool as possible, not required to relate to the page's content, in the style of the video he sent, using his Higgsfield subscription as much as possible over the next three days.
+
+**Higgsfield.** It is not on Kia's Claude account as a connector. `.mcp.json` in this folder (kept out of git) points Claude Code at `https://mcp.higgsfield.ai/mcp`; it loads only when a chat starts, and Kia has to approve it and sign in there. So the whole-page film work was handed to a new chat.
+
 ## Every scene change is its own move, and one is a Transformer (2026-11-20)
 
 Kia asked for every scene change to be "insanely cool" and different from the others, every diagram to be unique and clever, one change to work "like a Transformer", and for three agents to run it: one that goes over everything, one that invents, one that approves or sends the ideas back.
