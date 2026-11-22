@@ -1,8 +1,76 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`7c7c6a8`, the route film), on your "ship it"; the live page was checked byte for byte against the tested one and all five films answer. Only notes are newer than that.
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`7c7c6a8`, the route film), on your "ship it"; the live page was checked byte for byte against the tested one and all five films answer. The top section below is newer and not pushed.
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
+
+## An opening, and films that each arrive and let go their own way (2026-11-22, small hours). Not pushed
+
+After the route film shipped you asked for the page to be "much smoother… so smooth and buttery", for the transitions between the films to be unique, for an intro animation ("honestly the most insane part"), and for four agents: one to go through the site on all levels, one to bring ideas from the most successful websites, one to test only the intro, one to judge the animations. You also said yes to removing the three films the page no longer plays.
+
+**The agents** (their write-ups and stills are outside the repo, in the sessions' shared notes folder):
+- **Reviewer** (`polish-review.md`). Verdict: not yet. Its main finding, by scrolling at a steady pace instead of looking at held stills: the five film-to-chapter hand-overs only worked if the visitor stopped inside the film. At a continuous scroll the picture slid off as a slab, pieces of the name lingered, and the chapter's heading was never seen. It also found: the page finishing a film too fast (the whole film in 0.6 s); a swipe that starts on a phone demo scrolling the demo and not the page; the two giant words overlapping; the second giant-word line unreadable with reduced motion or without script; the Map button pushing the tabs across when it arrived.
+- **Ideas scout** (`ideas-scout.md`). Read award case studies (Igloo Inc, Codrops write-ups, Lando Norris, Stripe, Vercel's guidelines) and proposed seven openings. Its first choice, "Nine flips": your name has ten characters, a Galton board with ten bins has nine rows of pegs, so each letter can be the ball for its own bin. It tried it as stills first.
+- **Intro tester** (`intro-test.md`). Passed the opening on its timeline, landing order, hand-over to the hero, skipping, ten screen sizes, every "must not play" rule, Safari's engine and cost. Found five faults, all fixed (see "What the test agents changed").
+- **Animation judge** (`animation-judgement.md`). Scored every animation at three scroll speeds. The film hand-overs passed ("coherent, 60 frames a second at every pace"). Its verdict on the first version of the opening: "the best idea on the page and the least presence". The opening was reworked from its notes, and nine of its eleven smaller points were applied.
+
+**The opening.** Plays on the first visit of the day (every load in the preview, and any time the address ends in `?intro`).
+1. The page is a dark drawing sheet with a Galton board drawn on it: ten bins, nine rows of pegs, standing on the backdrop's horizon. It starts close in on the top pegs and pulls back as things come down.
+2. Steel balls pour through it. Every bounce is a real coin flip, so the pile is different on every load. Each peg lights as it is struck, and the pile heaps up toward the bell curve.
+3. The letters of your name fall through the same pegs, each to its own bin: the letter for bin k goes right exactly k times out of nine, in an order drawn afresh each time. An amber ball takes the space between the two words; the pegs a letter touches light amber. They land, with a little weight, along the curve the pile was heading for: K i a, the amber ball, P o u s t i.
+4. That curve is drawn in amber under the name, left to right, and the name stands on it for a moment.
+5. The sheet parts along the curve. The lower half slides down with the balls, the upper half goes up, the sunset comes through a bell-shaped opening, and the letters fly to the heading together in a low arc. On wide screens the drawn pegs travel to the real board and fade as it grows in round them. The bar returns and the lines under the name arrive one after another.
+- About 3.3 seconds to the open page. Any scroll, tap or key finishes it at once. It does not play with reduced motion, without script, on a link to a place further down the page, in a tab that is not showing, on a slow or data-saving connection (where the browser says so), or twice in a day on the live site.
+- The letters are the heading's own letters, moved and then handed back, so the page ends exactly as it does without the opening (the tester compared every letter's box against a load without it). Everything is worked out before it starts and given to the browser as animations of position and opacity (no frame loop), so it stays smooth while the 3D scene is starting up.
+- Safety nets, in the first script: if the opening has not started 2.5 seconds after the page began (a slow line, or a script that failed), the sheet comes off and the page shows as it loads; at 6.5 seconds the sheet comes off whatever happened and the name is put back. Any error inside the opening does the same at once.
+- What is whose: the letters through the board are the scout's idea; the steel balls, the pile and the parting along the bell curve are mine; the camera, the pegs lighting under the balls, the amber curve and the drawn pegs travelling to the real board came from the judge's notes.
+
+**The films.** Each has its own way in (while it comes up the screen) and its own way out (over the last quarter of its travel, while it is still pinned), both drawn on the film's own canvas and both following the scrollbar, so they play at the visitor's pace, run backwards when the page is scrolled back, and never leave pieces behind.
+
+| Film | Way in | Way out |
+|---|---|---|
+| Turbine, into Experience | a twelve-bladed rotor that closes up into the picture | the blades are drawn into the hub, one after another |
+| Route, into Projects | blocks found row by row, outlined in the search's blue | searched away in a front that spreads from the pin at the goal |
+| Phone, into Side builds | comes up like a sheet on a phone: round corners and a grabber | pulls back into a card and is flicked up, the way an app is closed |
+| Armillary, into Skills | brass hoops that fill out, from the outside in | hoops that turn and thin to lines of brass, from the middle out |
+| Lamp, into Contact | shutter slats turning face-on, a line of warm light on each | one bloom of light, then the slats turn edge-on |
+
+- The pictures now play over the first 66% of a film's travel (was 78%); the chapter's name comes up over the last picture and goes again; the picture comes apart over 76 to 99%, and the chapter is uncovered in place with its heading on screen, at any scroll speed. A chapter that a film leads into has no title card of its own any more: the film is its title card. About, which has no film, keeps its strips.
+- The name now sits on a veil at the top of the last picture. Before, the whole picture was dimmed by half to carry it.
+- The lamp film, which is brighter than the page, starts dimmed toward the page.
+
+**The page finishing a film by itself.** It now eases up from rest over 0.4 s, holds 0.45 of a screen a second (0.6 on phones), which the film's pictures can keep up with, and slows over the last tenth of a screen. Going back up it is quicker and stops where the film is fully off the screen. Fixed in passing: in the first five seconds after the page loaded it could start by itself with no input.
+
+**Smaller things from the review**
+- A swipe or wheel that starts on a phone demo scrolls the page. A tap inside a phone starts that phone's own scrolling, until it leaves the screen.
+- "graphs" and "routes" are never on screen together; and without script or with reduced motion both lines are ordinary text and can be read.
+- Chapter headlines arrive word by word, each word rising from behind its own line.
+- The Map button's place is in the bar from the first paint. The colour picker steps aside once you scroll, on computers too, so it is not over the films.
+- The city under the giant word sits a little higher, so less of it is cut off.
+- Hero links have a larger place to tap. The browser's blank before the first paint is dark.
+- The three unused films are out of the repo (`c0854f9`); their scripts stay, so any of them can be rendered again.
+
+**What the test agents changed**
+- Intro tester: the name was meant to stand for a moment before the sheet parts, but a timing slip cut the last letters off mid-air on every load (fixed, and the wait is now real). On a slow line the opening could start after its safety timer and tumble over the visible page (it now gives up cleanly, and the safety nets above were added). A script error mid-way could leave the name hidden (every error now puts it back; four thrown-error cases tested). The sky could be painted for a moment before the sheet (the sheet is now the first thing in the page). A phone's address bar sliding away left a strip uncovered (the lower half now reaches past the bottom).
+- Animation judge, applied: the opening rework above; the page finishing a film now eases up from rest over 0.4 s and no longer starts with a jolt, and is quicker going back up; the live board stays solid until the opening film is mostly in, so the two are no longer both see-through half way; on phones the readout goes out under the board and comes back above it and no longer slides across the pegs; About's title is never covered by the city (the model goes out behind the card and comes back in front once the title has passed); the route film's way out is a narrow front spreading from the pin, with each block outlined at full size as the search reaches it; the lamp film's way in can be seen (a line of warm light on each slat as it turns); a film's chapter name is at full strength for longer; a longer gap between "graphs" and "routes"; the name moves with the phone film's card as it is flicked away; the ending's board comes back together over more of the scroll.
+- Animation judge, not applied: matching the live board's colours to the opening film's first picture (black and brass against navy and steel; needs either a re-render or new materials, and is the one visible join left at the top of the page).
+
+**Checked** (private headless Chrome on the real graphics chip at 1440 x 900 and 393 x 659, and Safari's engine through Playwright at Mac and iPhone size; all on the final version)
+- No page errors and no failed requests at either size or in either engine, through the opening and every film's way in, name card and way out.
+- The opening by stills at real speed and at one-third speed, both sizes, both engines.
+- Things going wrong: an error thrown inside the opening at four different points always ends with the sheet off and the name readable; on a line the browser reports as slow the opening does not play.
+- The page finishing a film: one push in lands exactly where a tab click lands the chapter (both sizes); a push back up lands 0.62 of a screen above the film; nothing moves without a recent wheel, touch or key; a tab click from inside a film lands on its section.
+- Reduced motion and JavaScript off: no opening, no film takes room, the hero's links can be clicked, every heading is there.
+- Scroll speed over the whole page: computer, typical frame 16.7 ms, worst 33, none over 50. Phone at 3x with the processor slowed four times: typical 16.7 ms, 1 of 1,164 over 50.
+- The page is no longer than before: 33.1 screens on a computer, 53.3 on a phone.
+- `node --check` on the page's three scripts, `node blender/check_fold.mjs` and `node blender/dump_city.mjs` pass.
+
+**Not checked, and one thing seen once**
+- A real iPhone and real Safari. Safari's engine on this Mac is not the device.
+- One Safari-engine walk stood still for about two and a half minutes on the jump into the armillary film while other tests were using the machine. Three further walks, and two runs of that jump alone, did not repeat it. If the real iPhone ever hangs there, that is where to look first.
+- The test agents' own timing figures were taken while each other's tests were running.
+
+**Not done** (your call; none is needed for this to ship): the board in the phone's first screen; the readout as a fixed title block; one left edge for bar, hero and chapters; the board's colours matching the opening film; the scout's amber bead on the progress line.
 
 ## The route film opens Projects (2026-11-21, night). Shipped as `7c7c6a8`
 
@@ -42,7 +110,7 @@ After the flow changes shipped, Kia was offered four next steps in a multiple ch
 
 **Not done, not checked**
 - Safari and a real iPhone, as before.
-- Three films' pictures are now in the repo unused: the sunset (`film/wave`), the closing balls (`film/balls`) and the circuit city (`film/circuit`), 30 MB in all, with their scripts. Kia has not said to remove them.
+- (Since removed, 2026-11-22.) Three films' pictures are now in the repo unused: the sunset (`film/wave`), the closing balls (`film/balls`) and the circuit city (`film/circuit`), 30 MB in all, with their scripts. Kia has not said to remove them.
 - The search is shown at an even pace, one street at a time. That is its true order, not its true timing (the real run takes well under a millisecond).
 - The ordinary buildings are the kit's plain low blocks; the windows and the shallow focus carry them, but they are not detailed models.
 
