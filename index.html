@@ -3634,9 +3634,9 @@ import * as THREE from './vendor/three.module.min.js';
   var NET = navigator.connection || {}, CINE = !REDUCE && !NET.saveData && !/2g|3g/.test(NET.effectiveType || ''), FILM = { tf: '', tiny: null, n: PHONE ? 80 : 120, dir: PHONE ? './film/p/' : './film/d/', img: [], got: 0, loaded: false, ok: false, at: -1, a: -1, cv: document.getElementById('film'), ctx: null };
   if (FLY && FILM.cv && CINE) {
     flyEl.classList.add('filmed'); FILM.ctx = FILM.cv.getContext('2d'); if (PHONE) { FILM.cv.width = 720; FILM.cv.height = 1280; }
-    var filmNext = 0, filmGet = function () { // four at a time, in order
-      if (filmNext >= FILM.n) return; var i = filmNext++, im = new Image(); im.decoding = 'async';
-      im.onload = function () { FILM.img[i] = im; if (++FILM.got === FILM.n) FILM.loaded = true; filmGet(); }; im.onerror = function () { filmNext = FILM.n; }; // one missing picture: no film, the live fly-through stays
+    var filmNext = 0, filmGet = function (again) { // four at a time, in order; again: a picture the server refused, asked for a second time (the live site answers about one request in 800 with a 503)
+      if (again === undefined && filmNext >= FILM.n) return; var i = again === undefined ? filmNext++ : again, im = new Image(); im.decoding = 'async';
+      im.onload = function () { FILM.img[i] = im; if (++FILM.got === FILM.n) FILM.loaded = true; filmGet(); }; im.onerror = function () { if (again === undefined) filmGet(i); else filmNext = FILM.n; }; // still missing after a second try: no film, the live fly-through stays
       im.src = FILM.dir + ('000' + (i + 1)).slice(-4) + '.webp';
     }, filmStart = function () { setTimeout(function () { for (var q = 0; q < 4; q++) filmGet(); }, 1200); };
     if (document.readyState === 'complete') filmStart(); else window.addEventListener('load', filmStart);
@@ -3700,9 +3700,9 @@ import * as THREE from './vendor/three.module.min.js';
     return o;
   }
   // shortcut: a film the visitor has already passed keeps fetching and shares the line with the one ahead, so on a slow line (10 Mbit/s) at a brisk scroll the heaviest film can still run behind for part of its play; stop a passed film's fetches if slow lines turn out to matter
-  function reelGet(R) { // eight at a time, coarse first: over the internet a film is in step with the scrollbar on a few of its pictures within a second and gains the rest as they arrive (fetched in order and four at a time, a brisk scroll left it up to fifty pictures behind; the live site answers a batch in about a third of a second whatever its size)
-    if (!R.on || R.next >= R.n) return; var i = (R.ord || (R.ord = reelOrder(R.n)))[R.next++], im = new Image(); im.decoding = 'async';
-    im.onload = function () { if (R.on) { R.img[i] = im; reelGet(R); } }; im.onerror = function () { R.next = R.n; };
+  function reelGet(R, again) { // eight at a time, coarse first: over the internet a film is in step with the scrollbar on a few of its pictures within a second and gains the rest as they arrive (fetched in order and four at a time, a brisk scroll left it up to fifty pictures behind; the live site answers a batch in about a third of a second whatever its size)
+    if (!R.on || (again === undefined && R.next >= R.n)) return; var i = again === undefined ? (R.ord || (R.ord = reelOrder(R.n)))[R.next++] : again, im = new Image(); im.decoding = 'async';
+    im.onload = function () { if (R.on) { R.img[i] = im; reelGet(R); } }; im.onerror = function () { if (R.on) reelGet(R, again === undefined ? i : undefined); }; // a picture the server refused is asked for once more, then passed over (its neighbour stands in); one refusal used to stop the whole film loading
     im.src = R.dir + ('000' + (i + 1)).slice(-4) + '.webp';
   }
   function reels(lag) { // every frame: plays whichever section film is on screen. Answers how much of the screen a film has (0 to 1)

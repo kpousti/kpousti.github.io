@@ -1,10 +1,10 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-22 (`1e45720`, the opening and the films' own ways in and out), on your "ship it"; the live page was checked byte for byte against the tested one, all five films answer, and the three removed films are gone. Also live: the Contact line "Email is the fastest way to reach me." is a mail link.
-**Not shipped yet:** the first section below (no intro, films that dissolve into their chapters and keep up over the internet, rows that rise with the scroll, the board matched to its film). It is committed on this branch and waits for your "ship it".
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-22 (`7479fa5`: no intro, films that dissolve into their chapters and keep up over the internet, rows that rise with the scroll, the board matched to its film), on your "ship it"; the live page was checked byte for byte against the tested one, the five films and the opening film answer, `CNAME` is intact, and the films were timed on the live site itself. Also live: the Contact line "Email is the fastest way to reach me." is a mail link.
+**Not shipped yet:** one small fix found while timing the live site: a film asks once more for a picture the server refuses (see "After shipping" in the first section below). It is committed on this branch and waits for your "ship it".
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
-## No intro, quiet hand-overs, and films that keep up with your scroll (2026-11-22, later). Not shipped yet
+## No intro, quiet hand-overs, and films that keep up with your scroll (2026-11-22, later). Shipped as `7479fa5`
 
 After the opening shipped you looked at the site on your phone and your Mac and wrote: "i dont like the intro animation for when you just start the website and i dont feel like the website flows very well". Asked in multiple choice, you answered: the intro, "Don't like the idea", and what you want is "No intro"; it does not flow at "Films into chapters" and "Inside the chapters", and "It lags when I scroll"; on "Both phone and Mac". Before that you had said "Yes, match them" to the live board and the opening film.
 
@@ -22,7 +22,8 @@ After the opening shipped you looked at the site on your phone and your Mac and 
 
 | Connection, and how fast the visitor scrolls | Before | Now |
 |---|---|---|
-| The live site itself, from this Mac, 2 screens a second | 47 to 53 behind; ended on picture 63 to 74 of 120 | can only be measured once shipped |
+| The live site itself, from this Mac, 2 screens a second | 47 to 53 behind; ended on picture 63 to 74 of 120 | 0 to 1 behind; ended on 120 (timed after shipping; the same at 3 screens a second) |
+| The live site at phone size, 2 screens a second | 5 to 16 behind; ended on 64 to 76 of 80 | 0 to 3 behind; ended on 80 (timed after shipping) |
 | A line made to behave like it (fast, but each batch of pictures waits a tenth of a second), 2 screens a second | 63 to 84 behind; ended on 32 to 52 | 1 to 3 behind; ended on 120 |
 | The same, 3 screens a second | 78 to 92 behind; ended on 21 to 36 | 3 to 7 behind; ended on 120 |
 | Home line, 30 Mbit/s, 2 screens a second | up to 86 behind; ended on 31 to 116 | 0 to 3 behind; ended on 120 |
@@ -43,9 +44,13 @@ After the opening shipped you looked at the site on your phone and your Mac and 
 - The page is no longer than before: 33.1 screens on a computer, 53.3 on a phone.
 - `node --check` on the page's three scripts, `node blender/check_fold.mjs` and `node blender/dump_city.mjs` pass.
 
+**After shipping** (`7479fa5` went live on your "ship it": the live page is byte for byte the tested one, every film answers, `CNAME` is intact)
+- Timed on the live site as a first-time visitor: at 2 and at 3 screens a second every film stayed within 0 to 1 pictures of the scrollbar and ended on its last picture (at phone size, within 0 to 3). Before: 47 to 53 behind and cut off at about picture 65.
+- Found while timing it: when the live site has to fetch a file fresh, it refuses about one request in 400 to 700 with a "503" (GitHub's own error page, marked "retry at once"). In each of the three runs where the pictures had to be fetched fresh, one film picture was refused; asking for it again straight away worked. On the page as shipped a refused picture stops that film fetching the rest: it keeps the pictures it has, plays more coarsely and still ends on its last picture; if it is one of the opening film's pictures, the live board plays in place of that film for the visit. (Before today the same refusal froze a film at that picture.)
+- **Fixed, not shipped yet** (the commit after `7479fa5`): both loaders ask once more for a refused picture. A section film then passes over it, its neighbour stands in, and the rest keep arriving; the opening film gives up only after a second refusal. Tested by refusing pictures on purpose: a middle picture once, a middle picture every time, a film's first picture once, one of the opening film's pictures once. All four failed on the shipped page and pass now.
+
 **Not checked**
 - A real iPhone and real Safari. Safari's engine on this Mac is not the device.
-- The new loading on the live site itself. It can only be measured there once this is shipped; the "before" figures are from the live site, the "after" figures from the same page on simulated connections.
 - Whether this was all of the lag you felt. If it still lags after this ships, open `kiapousti.com/?fps` on that device, scroll to where it lags, and tell me the lowest number and where.
 
 **Not done** (your call): the board in the phone's first screen; the readout as a fixed title block; one left edge for bar, hero and chapters; the scout's amber bead on the progress line.
