@@ -1,10 +1,10 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`25d6f8b`, the films that flow into their chapters), on your "ship it"; the top section below is newer and not pushed.
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`7c7c6a8`, the route film), on your "ship it"; the live page was checked byte for byte against the tested one and all five films answer. Only notes are newer than that.
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
-## The route film opens Projects (2026-11-21, night). Not pushed
+## The route film opens Projects (2026-11-21, night). Shipped as `7c7c6a8`
 
 After the flow changes shipped, Kia was offered four next steps in a multiple choice and picked this one: replace the circuit-board city, the weakest fit of the five films, with Route Engine itself.
 
