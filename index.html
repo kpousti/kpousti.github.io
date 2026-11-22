@@ -2533,7 +2533,7 @@ window.addEventListener('scroll', function () { if (!IOS_LIVE) return; var r = I
 })();
 
 // ---------- The opening. On the first visit of the day the page opens as a dark drawing sheet with a Galton board drawn on it: ten bins, because the name has ten characters, and so nine rows of pegs.
-// It starts close in on the top pegs and pulls back as things come down. Steel balls pour through, each going left or right at every peg on a real coin flip (the pegs light as they are struck), and pile up toward
+// It starts close in on the top pegs and pulls back as things come down, coming to rest on the pile and the name. Steel balls pour through, each going left or right at every peg on a real coin flip (the pegs light as they are struck), and pile up toward
 // the bell curve. Then the name falls through the same pegs: each letter is the ball for its own bin, so the letter for bin k goes right exactly k times out of nine, in an order drawn afresh on every load, and one
 // amber ball takes the space between the two words. The name lands along the curve the pile was heading for; that curve is drawn in amber under it; and the sheet parts along it: the lower half slides down with
 // the balls, the upper half goes up, the drawn pegs travel to the real board and fade into it (on wide screens), and the letters fly to the heading while the page arrives underneath.
@@ -2571,6 +2571,7 @@ function opening(h1, plain) { // plain: the letters' ordinary arrival, for when 
     for (k = 0; k <= n; k++) { g.moveTo(Math.round(binX(k) - b / 2) + 0.5, ay + rows * rp + 0.2 * b); g.lineTo(Math.round(binX(k) - b / 2) + 0.5, hy); }
     g.stroke(); g.fillStyle = 'rgba(' + INK + ',0.42)';
     for (r = 0; r < rows; r++) for (k = 0; k <= r; k++) { g.beginPath(); g.arc(pegX(r, k), ay + r * rp, wide ? 2.4 : 2, 0, 6.2832); g.fill(); }
+    var ZH = wide ? 1.35 : 1, hx = ax * (1 - ZH), hz = hy * (1 - ZH); // where the camera comes to rest: on wide screens closer than the whole board, about the middle of the floor, so the pile and the name are large when the name lands (the top rows of pegs are then off the top)
     // The curve the pile is heading for, through the top of each bin's share. The sheet's two halves meet along it and along the horizon.
     var pts = [[binX(-1.7), hy], [binX(-0.95), hy]], curve = [], q, f;
     for (k = 0; k < n; k++) pts.push([binX(k), hy - pile(share[k])]);
@@ -2580,18 +2581,19 @@ function opening(h1, plain) { // plain: the letters' ordinary arrival, for when 
       curve.push([p1[0] + (p2[0] - p1[0]) * t, Math.min(hy, 0.5 * (2 * p1[1] + (p2[1] - p0[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t * t + (3 * p1[1] - p0[1] - 3 * p2[1] + p3[1]) * t * t * t))]);
     }
     curve.push(pts[pts.length - 2]);
+    curve = curve.map(function (p) { return [ZH * p[0] + hx, ZH * p[1] + hz]; }); // as the camera shows it when it has come to rest
     A.style.clipPath = 'polygon(0px 0px,' + W + 'px 0px,' + W + 'px ' + (hy + 1) + 'px,' + curve.map(function (p) { return p[0].toFixed(1) + 'px ' + (p[1] + 1).toFixed(1) + 'px'; }).reverse().join(',') + ',0px ' + (hy + 1) + 'px)'; // the upper half reaches one pixel under the line, so nothing of the page shows between the two
     B.style.clipPath = 'polygon(0px ' + hy + 'px,' + curve.map(function (p) { return p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px'; }).join(',') + ',' + W + 'px ' + hy + 'px,' + W + 'px ' + (H + 400) + 'px,0px ' + (H + 400) + 'px)'; // and the lower half reaches past the bottom, for a phone whose address bar slides away meanwhile
     // The same curve as an amber line along the upper half's edge, behind a window that will slide across it from the left: the line is drawn in when the name has landed
-    var wx = curve[0][0] - 4, wy = hy - pile(most) - 8, ww = curve[curve.length - 1][0] - wx + 4, wh = hy - wy + 3, wipe = document.createElement('div'), cc = document.createElement('canvas'), cg = cc.getContext('2d');
+    var wx = curve[0][0] - 4, wy = hy - ZH * pile(most) - 8, ww = curve[curve.length - 1][0] - wx + 4, wh = hy - wy + 3, wipe = document.createElement('div'), cc = document.createElement('canvas'), cg = cc.getContext('2d');
     wipe.style.cssText = 'position:absolute;overflow:hidden;left:' + wx + 'px;top:' + wy + 'px;width:' + ww + 'px;height:' + wh + 'px;transform:translateX(-101%)'; cc.style.transform = 'translateX(101%)';
     cc.width = Math.round(ww * dpr); cc.height = Math.round(wh * dpr); cg.scale(dpr, dpr); cg.translate(-wx, -wy); cg.strokeStyle = TH.accent; cg.lineWidth = 2; cg.lineJoin = cg.lineCap = 'round'; cg.beginPath();
     for (q = 0; q < curve.length; q++) cg[q ? 'lineTo' : 'moveTo'](curve[q][0], curve[q][1] - 0.5); cg.stroke(); wipe.appendChild(cc); A.appendChild(wipe);
     // The camera: close on the top pegs at first, then back to the whole board as the balls come down. It moves the drawing and the balls as two layers; the letters, which belong to the page, have it worked into their own steps.
     var Z = wide ? 1.9 : 1.3, CAM = 1150, zx = ax * (1 - Z), zy = Math.max(bar + 36, 0.17 * H) - Z * ay, ck = [];
-    function cam(ms) { var u = clamp(ms / CAM, 0, 1), e = 1 - (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2); return [1 + (Z - 1) * e, zx * e, zy * e]; } // its scale and shift, ms after the start
-    for (i = 0; i <= 24; i++) { q = cam(i / 24 * CAM); ck.push({ transform: 'translate(' + q[1].toFixed(2) + 'px,' + q[2].toFixed(2) + 'px) scale(' + q[0].toFixed(4) + ')' }); }
-    [L, C].forEach(function (el) { el.style.transformOrigin = '0 0'; var a = el.animate(ck, { duration: CAM, fill: 'backwards' }); a.playbackRate = 1 / SLOW; anims.push(a); });
+    function cam(ms) { var u = clamp(ms / CAM, 0, 1), e = 1 - (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2); return [ZH + (Z - ZH) * e, hx + (zx - hx) * e, hz + (zy - hz) * e]; } // its scale and shift, ms after the start: from close on the top pegs to the framing it then holds
+    for (i = 0; i <= 24; i++) { q = cam(i / 24 * CAM); ck.push({ transform: 'translate(' + q[1].toFixed(2) + 'px,' + q[2].toFixed(2) + 'px) scale(' + q[0].toFixed(4) + ',' + q[0].toFixed(4) + ')' }); }
+    [L, C].forEach(function (el) { el.style.transformOrigin = '0 0'; var a = el.animate(ck, { duration: CAM, fill: 'both' }); a.playbackRate = 1 / SLOW; anims.push(a); });
     function dot(to, size, bg) { var d = document.createElement('i'); d.style.cssText = 'width:' + size + 'px;height:' + size + 'px;margin:' + -size / 2 + 'px;background:' + bg; to.appendChild(d); return d; }
     function fall(tf, bits, lift, h, land, R, t0abs, squash) { // the keyframes of one thing going down the pegs: it drops onto the top peg, at every row hops left or right in a small arc, leaning into it, and at last drops onto its place. h: ms a row; land: ms for the last drop; t0abs: when it sets off, for the letters, which carry the camera in their own steps
       var D = 9.7 * h + land + (squash ? 190 : 0), sx = ax, sy = ay - 0.9 * rp - lift, j = 0, x, y, d, kf = [];
@@ -2624,7 +2626,7 @@ function opening(h1, plain) { // plain: the letters' ordinary arrival, for when 
     }
     for (r = 0; r < rows; r++) for (k = 0; k <= r; k++) { // one light on each peg, bright when a ball has just struck it
       var seen = lit[r * (r + 1) / 2 + k]; if (!seen) continue;
-      var pk = [], pd = dot(L, wide ? 6 : 5, 'rgb(' + INK + ')'); pd.style.transform = at(pegX(r, k), ay + r * rp);
+      var pk = [], pd = dot(L, wide ? 15 : 12, 'radial-gradient(circle,rgba(255,226,170,1) 0,rgba(255,214,150,0.9) 28%,rgba(255,196,120,0) 72%)'); pd.style.transform = at(pegX(r, k), ay + r * rp);
       for (q = 0; q < NB; q++) pk.push({ opacity: +(0.85 * (seen[q] || 0)).toFixed(3) });
       pk.push({ opacity: 0 }); q = pd.animate(pk, { duration: NB * BK, fill: 'both' }); q.playbackRate = 1 / SLOW; anims.push(q);
     }
@@ -2643,10 +2645,10 @@ function opening(h1, plain) { // plain: the letters' ordinary arrival, for when 
         else {
           var bx = el.getBoundingClientRect(), O = [bx.left + bx.width / 2, bx.top + bx.height * 0.85], d = parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 0;
           tf = function (x, y, rot, cm, wx2, wy2) { var z = cm ? cm[0] : 1; return 'translate3d(' + ((cm ? z * x + cm[1] : x) - O[0]).toFixed(1) + 'px,' + ((cm ? z * y + cm[2] : y) - O[1]).toFixed(1) + 'px,0px) scale(' + (s0 * z * (wx2 || 1)).toFixed(4) + ',' + (s0 * z * (wy2 || 1)).toFixed(4) + ') rotate(' + rot + 'deg)'; };
-          F = fall(tf, steps, 3, HL, 60, Q, since + rel, true); play(el, F, rel); letters.push({ el: el, x: Q[0] - O[0], y: Q[1] - O[1], s: s0, d: d });
+          F = fall(tf, steps, 3, HL, 60, Q, since + rel, true); play(el, F, rel); letters.push({ el: el, x: ZH * Q[0] + hx - O[0], y: ZH * Q[1] + hz - O[1], s: s0 * ZH, d: d });
         }
         for (r = 0, j = 0; r < rows; r++) { // each peg it touches lights amber for a third of a second
-          hit = dot(L, wide ? 8 : 7, TH.accent); hit.style.transform = at(pegX(r, j), ay + r * rp);
+          hit = dot(L, wide ? 26 : 20, 'radial-gradient(circle,' + TH.accent + ' 0,' + TH.accent + ' 24%,rgba(' + TH.accentRgb + ',0) 72%)'); hit.style.transform = at(pegX(r, j), ay + r * rp);
           var fa = hit.animate([{ opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 0 }], { duration: 320, delay: rel + (0.7 + r) * HL, fill: 'both' }); fa.playbackRate = 1 / SLOW; anims.push(fa);
           if (steps[r]) j++;
         }
@@ -2663,11 +2665,13 @@ function opening(h1, plain) { // plain: the letters' ordinary arrival, for when 
       anims.forEach(function (a) { try { a.finish(); } catch (e) {} }); // everything is down
       var ms = quick ? 300 : 760, tz = function (x, y, z, s) { return 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + z.toFixed(1) + 'px) scale(' + s.toFixed(4) + ',' + s.toFixed(4) + ') rotate(0deg)'; };
       if (quick) box.classList.add('quick'); else if (SLOW > 1) for (k = 0; k < 4; k++) box.children[k].style.transitionDuration = 0.9 * SLOW + 's';
-      var bd = !quick && wide && window.KP_BOARD ? window.KP_BOARD() : null;
+      var bd = !quick && wide && window.KP_BOARD ? window.KP_BOARD() : null, held = function (dy) { return 'translate(' + hx.toFixed(2) + 'px,' + (hz + dy).toFixed(2) + 'px) scale(' + ZH + ',' + ZH + ')'; }, out = { duration: quick ? 300 : 900, easing: 'cubic-bezier(0.7,0,0.2,1)', fill: 'both' }, a;
+      a = C.animate([{ transform: held(0) }, { transform: held(1.01 * H) }], out); a.playbackRate = 1 / SLOW; fly.push(a); // the balls go down with the lower half
       if (bd && bd.hw > 20 && bd.h > 20) { // wide screens: the drawn pegs travel to the real board's pegs, top peg to top peg, and fade as the board grows in round them
-        var zx2 = bd.hw / ((rows - 1) / 2 * b), zy2 = bd.h / ((rows - 1) * rp), a = L.animate([{ transform: 'translate(0px,0px) scale(1,1)', opacity: 1 }, { opacity: 1, offset: 0.7 }, { transform: 'translate(' + (bd.x - zx2 * ax).toFixed(1) + 'px,' + (bd.y - zy2 * ay).toFixed(1) + 'px) scale(' + zx2.toFixed(4) + ',' + zy2.toFixed(4) + ')', opacity: 0 }], { duration: 900, easing: 'cubic-bezier(0.7,0,0.2,1)', fill: 'both' });
-        a.playbackRate = 1 / SLOW; fly.push(a);
-      }
+        var zx2 = bd.hw / ((rows - 1) / 2 * b), zy2 = bd.h / ((rows - 1) * rp);
+        a = L.animate([{ transform: held(0), opacity: 1 }, { opacity: 1, offset: 0.7 }, { transform: 'translate(' + (bd.x - zx2 * ax).toFixed(1) + 'px,' + (bd.y - zy2 * ay).toFixed(1) + 'px) scale(' + zx2.toFixed(4) + ',' + zy2.toFixed(4) + ')', opacity: 0 }], out);
+      } else a = L.animate([{ transform: held(0) }, { transform: held(-1.01 * H) }], out); // otherwise the drawn board goes up with the upper half
+      a.playbackRate = 1 / SLOW; fly.push(a);
       box.classList.add('part'); introOff();
       letters.forEach(function (T) { // the letters fly home together, in a low arc, and overshoot their size a touch as they arrive
         var a = T.el.animate(quick ? [{ transform: tz(T.x, T.y, 0, T.s), opacity: 1 }, { transform: tz(0, 0, T.d, 1), opacity: 1 }] : [{ transform: tz(T.x, T.y, 0, T.s), opacity: 1, easing: 'cubic-bezier(0.5,0,0.7,0.6)' }, { transform: tz(T.x * 0.42, T.y * 0.42 - 0.05 * H, T.d * 0.58, T.s + (1 - T.s) * 0.6), opacity: 1, offset: 0.5, easing: 'cubic-bezier(0.2,0.5,0.3,1)' }, { transform: tz(0, 0, T.d, 1.035), opacity: 1, offset: 0.86, easing: 'ease-in-out' }, { transform: tz(0, 0, T.d, 1), opacity: 1 }], { duration: ms, easing: quick ? 'cubic-bezier(0.65,0,0.35,1)' : 'linear', fill: 'both' });
