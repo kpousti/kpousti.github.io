@@ -6,6 +6,8 @@ If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
 ## A film into every section (2026-11-21, later the same day)
 
+**Shipped** to `main` and kiapousti.com on 2026-11-21 as `ec204f3`, on Kia's "ship it". Checked after the push: the live page is byte for byte the tested `index.html`, and the first and last picture of every film answer on both sizes. This line itself is a later, unpushed notes commit.
+
 Kia liked the opening film and asked for the whole page to feel like it: a full-screen film moment into each topic, in the style of the "Websites in 2026" video (Relats, Active Theory), using his Higgsfield subscription as much as is useful over three days. He loosened "every visual must tie to my work" for these films only.
 
 **What Kia chose** (multiple choice): About, a wave barrel. Experience, the gas turbine. Projects, a circuit board as a city at night. Side builds, a phone coming apart. Skills, a brass armillary. Contact, a signal lamp over the Pacific. The ending, steel balls through brass pegs in macro.
