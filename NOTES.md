@@ -1,10 +1,10 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`7c7c6a8`, the route film), on your "ship it"; the live page was checked byte for byte against the tested one and all five films answer. The top section below is newer and not pushed.
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-22 (`1e45720`, the opening and the films' own ways in and out), on your "ship it"; the live page was checked byte for byte against the tested one, all five films answer, the three removed films are gone, and the opening was seen playing on the live site at computer and phone size. Only notes are newer than that.
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
-## An opening, and films that each arrive and let go their own way (2026-11-22, small hours). Not pushed
+## An opening, and films that each arrive and let go their own way (2026-11-22). Shipped as `1e45720`
 
 After the route film shipped you asked for the page to be "much smoother… so smooth and buttery", for the transitions between the films to be unique, for an intro animation ("honestly the most insane part"), and for four agents: one to go through the site on all levels, one to bring ideas from the most successful websites, one to test only the intro, one to judge the animations. You also said yes to removing the three films the page no longer plays.
 
