@@ -1,8 +1,52 @@
 # Preview: http://localhost:8765
 
 Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-22 (`7479fa5`: no intro, films that dissolve into their chapters and keep up over the internet, rows that rise with the scroll, the board matched to its film), on your "ship it"; the live page was checked byte for byte against the tested one, the five films and the opening film answer, `CNAME` is intact, and the films were timed on the live site itself. Also live: the Contact line "Email is the fastest way to reach me." is a mail link.
-**Not shipped yet:** one small fix found while timing the live site: a film asks once more for a picture the server refuses (see "After shipping" in the first section below). It is committed on this branch and waits for your "ship it".
+**Not shipped yet**, both committed on this branch and waiting for your "ship it": films that play by themselves (the first section below), and one small fix found while timing the live site, a film asks once more for a picture the server refuses (see "After shipping" in the second section).
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
+
+## Films that play by themselves (2026-11-22, afternoon). Not shipped yet
+
+After `7479fa5` shipped you wrote: "i also want the animations especially the first one to be fluid and smooth without scrolling, right now i have to scroll to get through the animation but i want it along with all the others to go through once you scroll to it". Asked in multiple choice, you chose: how fast a film plays by itself, "Same as now"; where the first film sets you down, "On the word "graphs"".
+
+**How it was.** The first film (the camera flying into the Galton board, after your home screen) was tied to the scrollbar for 2.3 screens, and nothing played it for you. The five later films finished by themselves only if you scrolled all the way into one and stopped inside it.
+
+**How it is now**
+- Once a film has most of the screen (its top edge less than three tenths of the way down) and your scrolling comes to rest, the page carries on by itself at the film's pace: 0.65 of a screen a second on a computer, 0.8 on a phone, the pace the later films already had.
+- **The first film:** one small scroll past the home screen and the page glides through the film, on through the board turning into the network, and stops on the giant word "graphs". About 6 seconds on a computer, 5 on a phone. The two giant words and About are scrolled by hand, as before.
+- **A later film:** it comes up, plays, and sets you down where a tab click lands its chapter. About 2.5 seconds.
+- **Scrolling back up** plays a film backwards, half again quicker: from "graphs" back to the home screen in under 5 seconds (on a phone it stops on the home screen's lower half, where the board stands).
+- **Your scroll always wins.** A wheel, a finger or a key that scrolls takes over on that frame, and when you stop the film goes on. A mouse click, a tab, a button, the map, or a key that does not scroll (Tab, for someone using the keyboard) stops it, and it stays stopped until you scroll again. A finger resting on the screen holds it.
+- **It never starts** while the lines above a film still have the screen, without a recent scroll (a reload part way down, dragging the scrollbar), or with reduced motion. After it lands it waits for you.
+
+**Made smooth**
+- The first film's long frames were all in its first and last tenth, where it takes over from the live board and hands back. The cause: the page measured where the board sits in each of those pictures the first time it showed it. It now does that ahead of time, one picture in each idle moment, once the film has loaded. On the slowed-phone test, with the first film playing itself: 21 to 50 frames over 25 ms before (up to 13 of them over 50 ms), 0 or 1 after.
+- The first film now loads eight pictures at a time (was four). Going by the timings taken on the live site for the other films, it should be in after about 4 seconds on a first visit where it took about 10, so more first-time visitors get the film and not its live stand-in. Not timed on the live site yet.
+
+**Found by the new tests and fixed.** A tab clicked while the first film was playing itself was overridden: the page ended on "graphs", not on the chapter. The same slip was there for the later films, hidden because they finish in under 2 seconds. A click on a tab, a button or the map now stops a film for good.
+
+**Checked** (private headless Chrome on the real graphics chip at 1440 x 900 and 393 x 659, and Safari's engine through Playwright at Mac and iPhone size; all on the final version)
+- **The first film playing itself:** one scroll past the home screen, and the page goes from there to exactly where the giant words are pinned, never backwards, in 5.9 s (computer) and 5.2 s (phone); "graphs" is the word on screen; it rests there. One scroll back up returns to the home screen in 4.8 s and 4.2 s. A scroll the other way mid-film turns it round. While the home screen still has the screen, nothing moves.
+- **A later film:** with 60% of the screen nothing moves; past 70% it comes up, plays and lands exactly on its chapter in 2.5 s (computer) and 2.3 s (phone), and rests.
+- **Nothing is hijacked:** a tab clicked (or tapped) on the home screen goes to its chapter straight through the first film's stretch; a tab clicked while the first film is playing itself goes to its chapter; the space bar on the home screen sets the film playing. The older checks still pass in full: one push in lands on the chapter, a push back up carries back above the film, a key mid-glide, nothing moves without a recent scroll, a tab click from inside a film.
+- **How smooth, frame by frame, while a film plays itself** (60 frames a second is 16.7 ms a frame):
+
+| | First film | A later film |
+|---|---|---|
+| Chrome, computer | typical 16.7 ms, none of about 345 frames over 25 ms | none over 25 ms |
+| Chrome, phone size, processor slowed four times | typical 16.7 ms, 1 over 25 ms, none over 34 (before the fix: 21 to 50 over 25 ms, up to 13 over 50) | 7 of about 100 at 33 ms, none over 34 |
+| Safari's engine, Mac size | typical 17 ms, 2 over 25 ms, worst 35 to 45 | none over 25 ms |
+| Safari's engine, iPhone size | typical 17 ms, 1 over 25 ms, worst 30 | none over 25 ms |
+
+  The page's speed while it plays holds within about 5% of its pace. With the first film kept from loading, so that its live stand-in plays (a first visit by someone who scrolls at once): 0 or 1 frames over 25 ms at both sizes.
+- **Scroll speed over the whole page by hand** got better too, because the same measuring was costing frames there: computer, none of 1,929 frames over 25 ms (3 to 11 before); slowed phone, 29 of 3,113 over 25 ms and none over 33 (54 to 66 and 10 to 11 before).
+- A refused picture (four cases), the loading order, the films over simulated connections (0 to 3 pictures behind, ending on the last picture), chapter headings arriving once, rows inside chapters, reduced motion and JavaScript off: all pass as before. No page errors and no failed requests at either size or in either engine.
+- `node --check` on the page's three scripts passes.
+
+**Not checked**
+- A real iPhone and real Safari. This matters more than usual here: how a page that moves itself feels under a phone's own settling scroll can only be judged on the device.
+- The first film arriving faster on the live site (see above).
+
+**Seen and left alone:** on a phone the tab strip stays slid sideways after you come back to the top from a chapter, so "About" is half out of the strip until you slide it back. It is the same on the live site.
 
 ## No intro, quiet hand-overs, and films that keep up with your scroll (2026-11-22, later). Shipped as `7479fa5`
 

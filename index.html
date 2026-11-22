@@ -1133,15 +1133,21 @@ var pointer = { x: -1, y: -1, active: false };
   ['wheel', 'touchstart', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { run++; }, { passive: true }); });
 })();
 
-// A film finishes by itself. If the visitor stops scrolling part way through a section film, the page carries on the way they were going: down to where a tab click would land the chapter, or back up above the film.
-// It only ever acts while a film fills the screen (there are no words under a film, so nothing is skipped). It eases up from rest to about two thirds of a screen a second
-// (a little more on phones), and slows over the last tenth of a screen. Any wheel, touch, key or click stops it on that frame.
+// A film plays through by itself. Once a film has taken over most of the screen and the visitor's scrolling comes to rest, the page carries on the way they were going, at the film's own pace:
+// the first film (the fly-through after the home screen) down to the first giant word, or back up to the home screen; a section film down to where a tab click would land its chapter, or back up above the film.
+// It only ever starts where a film has the screen (its top edge less than three tenths of the way down), so the last lines above a film are not pulled away from a reader. It eases up from rest to about
+// two thirds of a screen a second (a little more on phones), and slows over the last tenth of a screen. Any wheel, touch, key or click stops it on that frame; after a scroll it goes on when the visitor stops again, and after a click on a tab, a button or the page it stays stopped.
 // It never starts while a finger is down or the page is still coasting, and never without a recent wheel, touch or key: dragging the scrollbar, a reload part way down or a tab click do not set it off.
+// Once it has landed it waits for the visitor's next move.
 (function () {
   if (REDUCE) return;
   var lastY = window.scrollY, dir = 1, movedAt = 0, inputAt = -1e9, touching = false, carry = 0; // inputAt starts long ago: a page opened or reloaded inside a film must not move by itself
   function input() { inputAt = performance.now(); carry = 0; }
-  ['wheel', 'keydown', 'touchmove', 'pointerdown'].forEach(function (ev) { window.addEventListener(ev, input, { passive: true }); });
+  function hold() { inputAt = -1e9; carry = 0; } // stops it, and leaves it stopped until the visitor scrolls again
+  ['wheel', 'touchmove'].forEach(function (ev) { window.addEventListener(ev, input, { passive: true }); });
+  window.addEventListener('keydown', function (e) { if (/^(Arrow(Up|Down)|Page(Up|Down)|Home|End| )$/.test(e.key)) input(); else hold(); }, { passive: true }); // keys that scroll count as scrolling; Tab and the rest stop it and must not set the page moving under someone using the keyboard
+  window.addEventListener('pointerdown', hold, { passive: true }); // a mouse click stops a film that is playing itself (a finger sets it going again when it lifts: its touch events come after this)
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('a, button')) hold(); }, true); // a tab, a button or the map: the page goes where that says, and a film must not carry it off on the way
   window.addEventListener('touchstart', function () { touching = true; input(); }, { passive: true });
   ['touchend', 'touchcancel'].forEach(function (ev) { window.addEventListener(ev, function () { touching = false; input(); }, { passive: true }); });
   function go(to) {
@@ -1149,7 +1155,7 @@ var pointer = { x: -1, y: -1, active: false };
     (function step(now) {
       if (carry !== id) return; // the visitor took over
       var dt = Math.min(50, now - last) / 1000, left = to - pos, d = Math.abs(left); last = now;
-      if (d < 0.75) { lastY = to; window.scrollTo(0, to); carry = 0; return; }
+      if (d < 0.75) { lastY = to; window.scrollTo(0, to); hold(); return; } // landed: nothing more moves until the visitor does
       var k = Math.min(1, (now - id) / 420); v += (Math.min(pace * k * k * (3 - 2 * k), Math.max(40, d * 4.5)) - v) * Math.min(1, dt * 10); // the page is at rest when this starts: it eases up to its pace over the first 0.4 s, holds it, and slows over the last tenth of a screen
       pos += (left < 0 ? -1 : 1) * Math.min(d, v * dt); lastY = Math.round(pos); window.scrollTo(0, pos);
       requestAnimationFrame(step);
@@ -1160,13 +1166,16 @@ var pointer = { x: -1, y: -1, active: false };
     var y = window.scrollY;
     if (y !== lastY) { if (!carry) dir = y > lastY ? 1 : -1; lastY = y; movedAt = now; }
     if (carry || touching || now - movedAt < 48 || now - inputAt < 48 || now - inputAt > 5000) return;
-    var reels = document.querySelectorAll('.reel.live'), H = window.innerHeight;
-    for (var k = 0; k < reels.length; k++) {
-      var r = reels[k].getBoundingClientRect(), sh = reels[k].firstElementChild.offsetHeight, nx = reels[k].nextElementSibling;
-      if (r.top < -2 && r.bottom > sh + 2) { // its stage is pinned: the visitor has stopped part way through the film
-        go(Math.round(dir > 0 ? (nx && nx.id && window.KP_AIM ? window.KP_AIM(nx) : y + r.bottom - sh + 8) : y + r.top - 0.62 * H)); break; // down: where a tab click lands the chapter. Up: far enough that the film is off the screen
-      }
+    var H = window.innerHeight, fly = document.querySelector('.fly.live'), thru = document.getElementById('thru'), reels = document.querySelectorAll('.reel.live'), to = null, r, k, tt, sh, nx;
+    if (fly && thru) { // the first film: from where the home screen has all but left, to where the giant words are pinned
+      r = fly.getBoundingClientRect(); tt = thru.getBoundingClientRect().top;
+      if (r.top < 0.3 * H && tt > 2) to = dir > 0 ? y + tt : (y + r.top - H < 0.2 * H ? 0 : y + r.top - H); // down: the first giant word. Up: the home screen (on a phone its lower half, where the board stands)
     }
+    for (k = 0; to === null && k < reels.length; k++) {
+      r = reels[k].getBoundingClientRect(); sh = reels[k].firstElementChild.offsetHeight; nx = reels[k].nextElementSibling;
+      if (r.top < 0.3 * H && r.bottom > sh + 2) to = dir > 0 ? (nx && nx.id && window.KP_AIM ? window.KP_AIM(nx) : y + r.bottom - sh + 8) : y + r.top - 0.62 * H; // the film has most of the screen, or is pinned. Down: where a tab click lands the chapter. Up: far enough that the film is off the screen
+    }
+    if (to !== null) go(Math.round(to));
   })(0);
 })();
 
@@ -3634,11 +3643,11 @@ import * as THREE from './vendor/three.module.min.js';
   var NET = navigator.connection || {}, CINE = !REDUCE && !NET.saveData && !/2g|3g/.test(NET.effectiveType || ''), FILM = { tf: '', tiny: null, n: PHONE ? 80 : 120, dir: PHONE ? './film/p/' : './film/d/', img: [], got: 0, loaded: false, ok: false, at: -1, a: -1, cv: document.getElementById('film'), ctx: null };
   if (FLY && FILM.cv && CINE) {
     flyEl.classList.add('filmed'); FILM.ctx = FILM.cv.getContext('2d'); if (PHONE) { FILM.cv.width = 720; FILM.cv.height = 1280; }
-    var filmNext = 0, filmGet = function (again) { // four at a time, in order; again: a picture the server refused, asked for a second time (the live site answers about one request in 800 with a 503)
+    var filmNext = 0, filmGet = function (again) { // eight at a time, in order (the live site answers a batch in about a third of a second whatever its size, so the film is in after about 4 s on a first visit, where four at a time took about 10); again: a picture the server refused, asked for a second time (the live site answers about one request in 800 with a 503)
       if (again === undefined && filmNext >= FILM.n) return; var i = again === undefined ? filmNext++ : again, im = new Image(); im.decoding = 'async';
-      im.onload = function () { FILM.img[i] = im; if (++FILM.got === FILM.n) FILM.loaded = true; filmGet(); }; im.onerror = function () { if (again === undefined) filmGet(i); else filmNext = FILM.n; }; // still missing after a second try: no film, the live fly-through stays
+      im.onload = function () { FILM.img[i] = im; if (++FILM.got === FILM.n) { FILM.loaded = true; filmWarm(0); } filmGet(); }; im.onerror = function () { if (again === undefined) filmGet(i); else filmNext = FILM.n; }; // still missing after a second try: no film, the live fly-through stays
       im.src = FILM.dir + ('000' + (i + 1)).slice(-4) + '.webp';
-    }, filmStart = function () { setTimeout(function () { for (var q = 0; q < 4; q++) filmGet(); }, 1200); };
+    }, filmStart = function () { setTimeout(function () { for (var q = 0; q < 8; q++) filmGet(); }, 1200); };
     if (document.readyState === 'complete') filmStart(); else window.addEventListener('load', filmStart);
   }
   function film(fl) { // every frame: fl is how far through the fly-through the page is. Answers how much of the screen the film has (0 to 1)
@@ -3658,6 +3667,10 @@ import * as THREE from './vendor/three.module.min.js';
     c.width = w; c.height = h; var g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0, w, h); var d = g.getImageData(0, 0, w, h).data;
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     return im.box = x1 < 0 ? null : { cx: (x0 + x1 + 1) / 2 / w, cy: (y0 + y1 + 1) / 2 / h, h: (y1 - y0 + 1) / h };
+  }
+  function filmWarm(i) { // once the film is in, the pictures its two cross-fades use have their board measured ahead of time, one in each idle moment. Measured on first use, each cost a long frame exactly where the film takes over from the live board and where it hands back
+    var k = Math.ceil(0.13 * FILM.n); if (i >= FILM.n) return; filmBox(i);
+    (window.requestIdleCallback || setTimeout)(function () { filmWarm(i === k - 1 ? FILM.n - k : i + 1); }, window.requestIdleCallback ? { timeout: 400 } : 60);
   }
   function filmFit(fl, lx, ly, S) { // through the two cross-fades the film's picture is moved and scaled so that its board lies exactly on the live one (lx, ly: the live model's place on screen; S: its pixels per unit), on any size of screen; then it eases to its own framing
     if (!FILM.ctx || !(FILM.a > 0)) return;
