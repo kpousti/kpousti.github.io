@@ -1,10 +1,58 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-22 (`1e45720`, the opening and the films' own ways in and out), on your "ship it"; the live page was checked byte for byte against the tested one, all five films answer, the three removed films are gone, and the opening was seen playing on the live site at computer and phone size. Only notes are newer than that.
-Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-22 (`1e45720`, the opening and the films' own ways in and out), on your "ship it"; the live page was checked byte for byte against the tested one, all five films answer, and the three removed films are gone. Also live: the Contact line "Email is the fastest way to reach me." is a mail link.
+**Not shipped yet:** the first section below (no intro, films that dissolve into their chapters and keep up over the internet, rows that rise with the scroll, the board matched to its film). It is committed on this branch and waits for your "ship it".
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
+## No intro, quiet hand-overs, and films that keep up with your scroll (2026-11-22, later). Not shipped yet
+
+After the opening shipped you looked at the site on your phone and your Mac and wrote: "i dont like the intro animation for when you just start the website and i dont feel like the website flows very well". Asked in multiple choice, you answered: the intro, "Don't like the idea", and what you want is "No intro"; it does not flow at "Films into chapters" and "Inside the chapters", and "It lags when I scroll"; on "Both phone and Mac". Before that you had said "Yes, match them" to the live board and the opening film.
+
+**What changed**
+- **No intro.** The home screen is there at once and the letters of your name fly in as they did before. The first script, the hero's arrival and the name are back to exactly what shipped in `7c7c6a8`. The sheet, the drawn board, the falling letters and their safety nets are gone, and the address ending `?intro` does nothing now. The dark first paint stays.
+- **Films into chapters: dissolves, no pieces.** The blades, blocks, flick, hoops and slats are out. A film comes up with the page, fading in and settling to its size; it plays over the first 70% of its travel; the chapter's name comes up over its last picture; then, over the last quarter and still pinned, the picture dissolves into the chapter that has come up behind it, and the chapter comes through with its heading already there. Each film still drifts a little its own way as it goes (turbine: on into the blades; route: up and away; phone: set back down; armillary: still turning; lamp: toward the light). All of it is the opacity and position of the film's canvas, which the browser changes without drawing anything again, and all of it follows the scrollbar in both directions. Found on the last look at the stills and fixed: a chapter's heading was being hidden a second time behind its film, so in every hand-over it showed faintly, vanished and rose again. It now arrives once and stays.
+- **The lag: films now keep up over the internet.** This was a real cause, and my speed tests could not see it, because on this Mac a film's pictures arrive instantly. Measured on the live site, over this Mac's own connection, as a first-time visitor scrolling two screens a second: every film ran up to about 50 pictures behind the scrollbar and was cut off at about picture 65 of 120. Why: a film's pictures were fetched in order, four at a time, starting two screens ahead. The live site answers a batch of pictures in about a third of a second when the network has not served them recently (the usual case for a personal site), however many are in the batch, so a 120-picture film took up to 9.5 seconds to arrive; and the page showed the last picture it had. Now a film fetches its first and last picture, then every eighth, every fourth, every second, then the rest, eight at a time. A film is in step with the scrollbar on a few of its pictures within about half a second, always ends on its last picture, and gains the rest as they arrive. The figures are under "Checked".
+- **Films answer the scrollbar at once.** They used to trail it slightly, the way the 3D model does on purpose.
+- **Inside the chapters: rows and cards rise with the scroll.** Where the browser can tie an animation to the scrollbar (Chrome, and recent Safari), each row comes up as you scroll it into view, a little after its neighbour along a row, and goes back down if you scroll back. Before, each waited for a timer after it came on screen, so on a quick scroll they arrived late. Browsers that cannot do it keep the timer.
+- **The page finishing a film by itself** is brisker: 0.65 of a screen a second on computers and 0.8 on phones (was 0.45 and 0.6).
+- **The live board matches its film.** Black back and gold brass, as in the film's first picture, so the hand-over at the top of the page no longer changes colour. The pale blue look came from the glass pane's haze, which is now nearly clear (7% to 1.8%); the enamel and the brass were adjusted to match.
+
+**Checked** (private headless Chrome on the real graphics chip at 1440 x 900 and 393 x 659, and Safari's engine through Playwright at Mac and iPhone size; all on the final version, except Safari's engine's scroll speed and the old-against-new comparison, which were taken one small change earlier, before the heading fix)
+- **The films over the internet**, as a first visit with nothing cached. "Behind" is how many pictures the film on screen ran behind the one the scrollbar asked for, across the five films; "ended on" is the picture showing when its play should be over.
+
+| Connection, and how fast the visitor scrolls | Before | Now |
+|---|---|---|
+| The live site itself, from this Mac, 2 screens a second | 47 to 53 behind; ended on picture 63 to 74 of 120 | can only be measured once shipped |
+| A line made to behave like it (fast, but each batch of pictures waits a tenth of a second), 2 screens a second | 63 to 84 behind; ended on 32 to 52 | 1 to 3 behind; ended on 120 |
+| The same, 3 screens a second | 78 to 92 behind; ended on 21 to 36 | 3 to 7 behind; ended on 120 |
+| Home line, 30 Mbit/s, 2 screens a second | up to 86 behind; ended on 31 to 116 | 0 to 3 behind; ended on 120 |
+| Slow line, 10 Mbit/s, 1 screen a second | 13 to 97 behind; ended on 24 to 105 | 1 to 7 behind; ended on 120 |
+| Slow line, 10 Mbit/s, 2 screens a second | 82 to 111 behind; ended on 8 to 37 | 7 behind, the route film 65 for part of its play; ended on 120 |
+| Phone on mobile data, 10 Mbit/s, 1 screen a second | up to 12 behind; ended on 67 to 80 of 80 | 0 behind; ended on 80 |
+| Phone on mobile data, 10 Mbit/s, 2 screens a second | 14 to 57 behind; ended on 20 to 65 of 80 | 0 to 3 behind; ended on 80 |
+
+  On a fast line every picture is there before its film comes into view, before and now. Timed on the live site: a film's first seventeen pictures (the first, the last and every eighth) took about 2.0 s four at a time and about 0.5 s eight at a time when the network had not served them recently; a whole film about 9.5 s against 3.9 s. One limit is left, and is written in the code: on a slow line at a brisk scroll a film the visitor has already passed is still downloading and shares the line with the one ahead, so the heaviest film (route) can still run behind for part of its play. It ends on its last picture all the same.
+- The new loading order names every picture exactly once for any length of film (tested for 2 to 400 pictures), and all 120 (80 on phones) arrive.
+- No page errors and no failed requests at either size or in either engine, through the hero's arrival and every film's way in, name card and dissolve.
+- Chapter headings: scrolled through the last half of every film at the page's own gliding pace, at a slow scroll and at 2 screens a second, both sizes: each heading arrives once and never goes back. (Before the fix this check failed on all five films.)
+- Rows inside chapters, in both engines at both sizes, walking the whole page in quarter-screen steps: every row is fully there by the time it is well up the screen, none is still faint where the page ends, none is left hidden. 41 of the page's 49 rising blocks follow the scrollbar; the others are the chapter headings and what is on screen at the start.
+- The page finishing a film (both sizes, every line of the test now passes): one push in lands exactly where a tab click lands the chapter; a push back up carries back above the film; a push the other way mid-glide turns it round; nothing moves without a recent wheel, touch or key; a tab click from inside a film lands on its section.
+- Reduced motion and JavaScript off: no film takes room, the hero's links can be clicked, every heading is there.
+- Scroll speed over the whole page (frames drawn, with the pictures already on this Mac): computer, typical frame 16.7 ms, worst 33, none over 50. Phone at 3x with the processor slowed four times: typical 16.7 ms, worst 67, 1 of 1,164 over 50. Against the page before this round, measured twice each: the same or better (computer: 3 to 11 frames over 25 ms now, 17 to 18 before; slowed phone: 54 to 66 now, 65 to 70 before). Safari's engine: typical 16 ms, none over 50 at either size.
+- The live board beside the opening film's first picture, by stills: black back and gold brass on both, no change of colour through the hand-over.
+- The page is no longer than before: 33.1 screens on a computer, 53.3 on a phone.
+- `node --check` on the page's three scripts, `node blender/check_fold.mjs` and `node blender/dump_city.mjs` pass.
+
+**Not checked**
+- A real iPhone and real Safari. Safari's engine on this Mac is not the device.
+- The new loading on the live site itself. It can only be measured there once this is shipped; the "before" figures are from the live site, the "after" figures from the same page on simulated connections.
+- Whether this was all of the lag you felt. If it still lags after this ships, open `kiapousti.com/?fps` on that device, scroll to where it lags, and tell me the lowest number and where.
+
+**Not done** (your call): the board in the phone's first screen; the readout as a fixed title block; one left edge for bar, hero and chapters; the scout's amber bead on the progress line.
+
 ## An opening, and films that each arrive and let go their own way (2026-11-22). Shipped as `1e45720`
+
+**Taken out again the same day** (section above): the opening, and the films' piece effects (the table of ways in and out below). Everything else in this section stands.
 
 After the route film shipped you asked for the page to be "much smoother… so smooth and buttery", for the transitions between the films to be unique, for an intro animation ("honestly the most insane part"), and for four agents: one to go through the site on all levels, one to bring ideas from the most successful websites, one to test only the intro, one to judge the animations. You also said yes to removing the three films the page no longer plays.
 
