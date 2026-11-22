@@ -7,6 +7,7 @@
 <title>Kia Pousti Portfolio</title>
 <meta name="description" content="Kia Pousti: software engineer working in C++, Python and applied AI. Live A*, Dijkstra and Tarjan demos.">
 <meta name="theme-color" content="#0a1220">
+<meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://kiapousti.com/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kiapousti.com/">
@@ -153,7 +154,8 @@ h1 {
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn.primary:hover { background: var(--bright); border-color: var(--bright); color: var(--on-accent); }
 .links { display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; margin-top: 32px; }
-.links a { color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.links a { position: relative; color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.links a::after { content: ""; position: absolute; inset: -12px -8px; } /* a larger place to tap, with nothing moved */
 .links a:hover { color: var(--accent); border-color: var(--accent); }
 /* The readout under the Galton board: script places it, and it is hidden from assistive tech (the numbers change many times a second). */
 .hud { position: fixed; left: 0; top: 0; z-index: 1; margin: 0; padding: 9px 14px; border-radius: 12px; background: rgba(var(--ink-rgb), 0.62); display: grid; gap: 2px; justify-items: center; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; letter-spacing: 0.01em; color: var(--text-dim); white-space: nowrap; pointer-events: none; opacity: 0; will-change: transform, opacity; }
@@ -270,7 +272,8 @@ body.nav #map { z-index: 31; }
 .ios-ico { flex: none; width: 26px; height: 26px; border-radius: 7px; display: block; }
 h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6px; vertical-align: -5px; margin-right: 9px; }
 .ios-views { flex: 1; min-height: 0; position: relative; }
-.ios-view { position: absolute; inset: 0; overflow-y: auto; padding: 0 11px 10px; scrollbar-width: none; }
+.ios-view { position: absolute; inset: 0; overflow-y: hidden; padding: 0 11px 10px; scrollbar-width: none; } /* a swipe or a wheel that starts on a phone scrolls the page... */
+.ios.live .ios-view { overflow-y: auto; overscroll-behavior: contain; } /* ...until the visitor taps inside that phone: then its own screen scrolls, and gives the page back when it leaves the screen */
 .ios-view::-webkit-scrollbar { display: none; }
 .ios-view.off { visibility: hidden; pointer-events: none; }
 #builds .build .screen.ios canvas { height: 150px !important; border-radius: 12px; }
@@ -383,50 +386,53 @@ h3 .ios-ico { display: inline-block; width: 22px; height: 22px; border-radius: 6
 .contact-cards strong { font-weight: 500; color: var(--bright); overflow-wrap: anywhere; }
 footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 auto; font-size: 13px; color: var(--text-dim); position: relative; z-index: 1; }
 
-/* ---------- Scroll-in: one short fade and rise. JS adds .pre only to blocks below the fold, then .in when they arrive. ---------- */
+/* ---------- Scroll-in: one short fade and rise, and a headline's words one after another. JS adds .pre only to blocks below the fold, then .in when they arrive. ---------- */
 .pre { opacity: 0; transform: translateY(10px); }
 .pre.in { opacity: 1; transform: none; transition: opacity var(--t-med) var(--ease-out), transform var(--t-med) var(--ease-out); }
 .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0.1em 0 0.16em; margin: -0.1em 0 -0.16em; }
 .w > span { display: inline-block; }
+.head.pre h2 .w > span { transform: translateY(108%); }
+.head.pre.in h2 .w > span { transform: none; transition: transform var(--t-slow) var(--ease-out); transition-delay: calc(var(--i) * 45ms); } /* each word of a headline rises out from behind its own line, one after another */
 /* The fly-through: the page holds still while the camera goes in close on the turbine and tracks along its blades. Script turns this on; without it the section takes no room. */
+.fly:not(.live) .fly-stage { display: none; }
 .fly.live { height: 190vh; }
 .fly.live.filmed { height: 330vh; } /* with the opening film: more scroll for it to play over */
 .film { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; } /* the film's frames, drawn by scroll; it fills the screen, cropped to fit like a photo */
 .fly.live .fly-stage, .reel.live .fly-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; pointer-events: none; }
 /* Section films: before a chapter, a film made in advance plays by scroll, the way the opening one does. Script turns each one on once it knows the film's pictures are there; without script, with reduced motion, or with no footage, the section takes no room at all.
    A film ends as its chapter's title card. Its section overlaps the chapter after it by 88vh, so the chapter comes up behind the film unseen; the chapter's name comes up over the film's last picture (.reel-card),
-   and at the moment the stage lets go, the chapter's own card (.curtain.cine, moved up 12vh so that it fills the screen right then) shows the identical picture and name, split into its strips, which slide away.
-   Everything here is in vh, never svh: on a phone the film, the card and the overlap must all use the same unit to meet exactly. */
+   then, still pinned, that picture comes apart in a way that belongs to its film (script, "How each film arrives and how it lets go"): the turbine's blades are drawn into the hub, the route's is searched away
+   block by block, the phone's is swiped off like an app, the armillary's thins into hoops, the lamp's opens like its shutter. The chapter is uncovered in place, with its heading on screen, before the stage lets go.
+   A chapter that a film leads into has no title card of its own (.curtain.cine). Everything here is in vh, never svh: on a phone the film and the overlap must use the same unit to meet exactly. */
 .reel .fly-stage { display: none; }
 .reel.live { height: 200vh; margin-bottom: -88vh; position: relative; z-index: 4; pointer-events: none; }
 .reel.live .fly-stage { display: block; height: 100vh; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 76px); mask-image: linear-gradient(to bottom, transparent 0, #000 76px); } /* a soft top edge while the film rises with the page; once pinned, that band is behind the tab bar */
-.reel-card { position: absolute; inset: 0; opacity: 0; background: rgba(var(--ink-rgb), 0.55); }
+.reel-card { position: absolute; inset: 0; opacity: 0; background: linear-gradient(to bottom, rgba(var(--ink-rgb), 0.86) 0, rgba(var(--ink-rgb), 0.78) 34%, rgba(var(--ink-rgb), 0) 62%); } /* a veil behind the name only: the lower part of the picture stays as it was filmed */
+.reel[data-film="phone"].live .fly-stage { -webkit-mask-image: none; mask-image: none; } /* this film comes up like a sheet on a phone, with round corners and a grabber, so it keeps a hard top edge */
 .reel-card p { left: 0; width: 100%; }
 /* The ending: open space after the last rows, where the parts come back together as the turbine the page opened on. Script gives it its height; without it there is no gap. */
 .finale.live { height: 78vh; }
 /* The pinned story runs on the 3D city when it can: the frame goes clear so the model shows through, and the flat drawing only writes the readout and labels. */
 .pin.pin3d .pin-screen { background: none; }
-/* Pinned scene after the hero: the page holds still while one giant word fills the screen and the city model crosses in front of it. */
-.thru { position: relative; height: 170vh; }
-.thru-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
-.thru-line { position: absolute; inset: 0; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vh; text-align: center; padding: 0 24px 28vh; opacity: 0; transform: translateY(18px); transition: opacity var(--t-med) var(--ease-out), transform var(--t-med) var(--ease-out); }
-.thru-line.on { opacity: 1; transform: none; } /* the giant word hands over with a short rise, not a blink */
+/* Pinned scene after the hero: the page holds still while one giant word fills the screen and the city model crosses in front of it. Script turns that on (.live); without it, or with reduced motion,
+   the two lines are ordinary text, one under the other, and both can be read. */
+.thru { position: relative; }
+.thru-line { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vh; text-align: center; padding: 12vh 24px; }
+.thru.live { height: 170vh; }
+.thru.live .thru-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.thru.live .thru-line { position: absolute; inset: 0; padding: 0 24px 28vh; opacity: 0; transform: translateY(18px); transition: opacity 140ms linear, transform 0s linear 140ms; } /* the word that leaves goes quickly and without moving... */
+.thru.live .thru-line.on { opacity: 1; transform: none; transition: opacity var(--t-med) var(--ease-out) 90ms, transform var(--t-med) var(--ease-out) 90ms; } /* ...and the word that arrives rises a moment later, so the two are never on screen together */
 .thru-line small { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--accent); }
 .thru-line b { font-family: var(--font-display); font-weight: 600; font-stretch: 86%; font-size: clamp(5rem, 27vw, 27rem); line-height: 0.86; letter-spacing: -0.04em; color: var(--bright); white-space: nowrap; }
 .thru-line span { max-width: 44ch; color: var(--text-dim); font-size: 1.08rem; }
-@media (prefers-reduced-motion: reduce) { .thru { height: auto; } .thru-stage { position: static; } }
 /* Chapter curtains: a title card over the top of each chapter, cut into strips that slide off at different speeds as you scroll. JS moves them; without JS or with reduced motion they are never added. */
 .chapter { position: relative; overflow-x: clip; }
 .curtain { position: absolute; left: 0; right: 0; top: 0; height: 100vh; z-index: 3; overflow: hidden; pointer-events: none; display: flex; }
 .curtain > div { position: relative; flex: 1; overflow: hidden; background: var(--ink); border-right: 1px solid var(--line); will-change: transform; }
 .curtain > div::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--accent); opacity: 0.7; }
 .curtain > div:last-child { border-right: 0; }
-.curtain.cine { top: -12vh; }
-.curtain.cine > div { border-right: 0; transition: transform 0.8s cubic-bezier(0.7, 0, 0.2, 1); } /* after a film the strips are either all in place or all gone, and this plays the move */
-.curtain.cine > div + div { margin-left: -1px; } /* the strips overlap by a pixel: a screen width that does not divide evenly would otherwise show a hairline of the page between two strips of the picture */
-.curtain.cine > div > i { position: absolute; top: 0; height: 100vh; background-size: cover; background-position: center; } /* each strip's slice of the film's last picture */
-.curtain.cine > div > i::after { content: ""; position: absolute; inset: 0; background: rgba(var(--ink-rgb), 0.55); }
-.curtain p, .reel-card p { position: absolute; top: 0; height: 100vh; margin: 0; padding-top: 7vh; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 18px; } /* the title sits high on the card, so it is in view as the card rises */
+.curtain.cine { display: none; } /* a chapter that a film leads into: the film is its title card */
+.curtain p, .reel-card p { position: absolute; top: 0; height: 100vh; margin: 0; padding-top: max(7vh, 72px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 18px; } /* the title sits high on the card, so it is in view as the card rises */
 .curtain small, .reel-card small { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--accent); }
 .curtain b, .reel-card b { font-family: var(--font-display); font-weight: 600; font-stretch: 86%; font-size: clamp(3.2rem, 11vw, 9rem); line-height: 1; letter-spacing: -0.03em; color: var(--bright); white-space: nowrap; }
 .top-link { display: block; width: max-content; margin: 0 0 8px -12px; padding: 8px 12px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.02em; color: var(--accent); }
@@ -473,8 +479,33 @@ footer { padding: 0 24px 96px; text-align: left; max-width: 1128px; margin: 0 au
 @media (max-width: 420px) {
   .wins { grid-template-columns: minmax(0, 1fr); }
 }
-/* While the opening plays, the words under the name wait for it. */
-html.intro .hero > :not(h1) { animation-delay: 1.1s; }
+/* The opening (script, "The opening"). A dark drawing sheet lies over the sky and the model, under the page's words. It is two halves that meet along the horizon and along a bell curve, plus a clear layer for the balls;
+   when the name has landed the halves slide apart, up and down, and the page is under them. The first script puts html.intro on before anything is painted; without script, with reduced motion,
+   or on a second visit the same day, none of this exists. Only transform and opacity move: each half's outline is fixed. */
+.sheet { display: none; }
+html.intro .sheet { display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.sheet > div { position: absolute; inset: 0; will-change: transform; transition: transform 0.9s cubic-bezier(0.7, 0, 0.2, 1); }
+.sheet > div:nth-child(-n+2) { background: var(--ink); }
+.sheet > div:nth-child(2) { clip-path: inset(66vh 0 0 0); } /* until script gives both halves their true outline, the lower one is everything under the horizon */
+@media (max-width: 999px) { .sheet > div:nth-child(2) { clip-path: inset(76vh 0 0 0); } }
+.sheet > div:nth-child(-n+2)::after { content: ""; position: absolute; inset: 14px; border: 1px solid var(--line); } /* the sheet's border */
+.sheet canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sheet i { position: absolute; left: 0; top: 0; border-radius: 50%; opacity: 0; } /* a ball, or the light on a peg: placed and moved by transform */
+.sheet.part > div { transform: translate3d(0, 101%, 0); }
+.sheet.part > div:first-child { transform: translate3d(0, -101%, 0); }
+.sheet.quick > div { transition-duration: 0.3s; }
+/* While the sheet is down the bar and the opening's words wait; the name's letters are the only part of the page on it. As it parts the bar comes back and the words arrive one after another. */
+.bar, .progress { transition: opacity 0.5s linear; }
+html.intro-wait .bar, html.intro-wait .progress, html.intro-wait .themes { opacity: 0; }
+html.intro-wait .hero > :not(h1) { animation: none; opacity: 0; }
+html.intro-wait .hero > h1, html.opened .hero > h1 { animation: none; }
+html.opened .hero > :nth-child(1) { animation-delay: 0.44s; }
+html.opened .hero > :nth-child(n+3) { animation-delay: 0.56s; }
+html.opened .hero > :nth-child(n+4) { animation-delay: 0.63s; }
+html.opened .hero > :nth-child(n+5) { animation-delay: 0.7s; }
+html.opened .hero > :nth-child(n+6) { animation-delay: 0.77s; }
+html.opened .hero > :nth-child(n+7) { animation-delay: 0.84s; }
+html.opened .hero > :nth-child(n+8) { animation-delay: 0.94s; }
 /* The hero model: a small city tile, built in canvas, with A* planning a route across it. */
 #map { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 /* The name, split into letters by script: they fly in from depth, then lean together with the pointer. Without script or with reduced motion it is plain text. */
@@ -483,6 +514,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
 .nl { display: inline-block; opacity: 0; transform: translate3d(0, 0.4em, -500px) rotateX(-75deg); transform-origin: 50% 85%; transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s linear;
   background: linear-gradient(180deg, var(--bright) 52%, var(--accent) 118%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .split.in .nl { opacity: 1; transform: translate3d(0, 0, calc(var(--d, 0) * 1px)); }
+.split.flat .nl { transform: none; } /* for a moment, while the opening measures where each letter rests */
 .split.set .nl { transition-delay: 0s !important; transition-duration: 0.35s; }
 .split.set .nl:hover { transform: translate3d(0, -0.05em, 90px); }
 /* Narrow screens: the model gets its own space under the words. */
@@ -552,7 +584,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
   border: 1px solid rgba(var(--edge), 0.14); box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.6);
 }
 .themes[hidden] { display: none; }
-@media (max-width: 900px) { .themes { transition: transform 0.3s, opacity 0.3s; } .themes.away { transform: translateY(80px); opacity: 0; pointer-events: none; } } /* phones: the picker is offered at the top of the page and gets out of the way once you scroll, so it never covers content */
+.themes { transition: transform 0.3s, opacity 0.3s; } .themes.away { transform: translateY(80px); opacity: 0; pointer-events: none; } /* the picker is offered at the top of the page and gets out of the way once you scroll, so it never covers content or a film */
 .themes button {
   display: flex; align-items: center; gap: 7px; padding: 7px 12px 7px 8px; border: 0; border-radius: 999px; background: none; cursor: pointer;
   font: 500 12.5px var(--font-body); color: var(--text-dim); white-space: nowrap;
@@ -566,23 +598,24 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
 }
 </style>
 <script>
-// Play the opening once a day on the live site (every load in previews), and never for visitors who ask for reduced motion.
+// The opening plays once a day on the live site (every load in previews, and any time the address ends in ?intro). Never for visitors who ask for reduced motion, and never on a link to a place further down the page.
 (function () {
-  var play = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var play = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) && !location.hash, c = document.documentElement.classList;
   try {
-    if (play && /(^|\.)kiapousti\.com$|github\.io$/.test(location.hostname)) {
+    if (play && !/[?&]intro\b/.test(location.search) && /(^|\.)kiapousti\.com$|github\.io$/.test(location.hostname)) {
       var day = new Date().toDateString();
       if (localStorage.getItem('kp-intro') === day) play = false; else localStorage.setItem('kp-intro', day);
     }
   } catch (e) {}
   window.KP_INTRO = play;
-  if (play) document.documentElement.className += ' intro';
+  if (play) { c.add('intro', 'intro-wait'); setTimeout(function () { c.remove('intro', 'intro-wait'); }, 6500); } // intro: the sheet is over the page; intro-wait: the opening's words wait under it. The timer is a safety net: whatever happens to the scripts below, the sheet comes off
 })();
 </script>
 </head>
 <body>
 <div class="sky" aria-hidden="true"><i></i><canvas></canvas><u></u><b></b></div>
 <canvas id="map" aria-hidden="true"></canvas>
+<div class="sheet" id="intro" aria-hidden="true"><div><canvas></canvas></div><div></div><div></div></div>
 <div class="themes" id="themes" role="group" aria-label="Color theme" hidden></div>
 
 <a class="skip" href="#about">Skip to content</a>
@@ -597,6 +630,7 @@ html.intro .hero > :not(h1) { animation-delay: 1.1s; }
     <a href="#skills">Skills</a>
     <a href="#contact">Contact</a>
   </nav>
+  <button type="button" class="bar-map" aria-label="Route map" style="visibility:hidden"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 15s5-4.6 5-8.6A5 5 0 0 0 3 6.400c0 4 5 8.600 5 8.600z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6.400" r="1.700" fill="currentColor"/></svg><span>Map</span></button>
   <a class="bar-cta" href="#contact">Get in touch</a>
 </header>
 <div class="progress" aria-hidden="true"></div>
@@ -1016,6 +1050,7 @@ function applyTheme(key) {
 }
 applyTheme('night');
 var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var SLOW = +((/[?&]slow=(\d+)/.exec(location.search) || [])[1] || 1); // add ?slow=5 to the address to play every timed move five times slower, for a close look
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function rgba(c, a) { return 'rgba(' + c + ',' + a + ')'; }
 // Seeded random generator, so every visit draws the same graphs.
@@ -1123,34 +1158,38 @@ var pointer = { x: -1, y: -1, active: false };
 })();
 
 // A film finishes by itself. If the visitor stops scrolling part way through a section film, the page carries on the way they were going: down to where a tab click would land the chapter, or back up above the film.
-// It only ever acts while a film fills the screen (there are no words under a film, so nothing is skipped), at about 1.2 seconds a screen. Any wheel, touch, key or click stops it on that frame.
+// It only ever acts while a film fills the screen (there are no words under a film, so nothing is skipped). It sets off at the visitor's own last speed, holds a pace the film's pictures can keep up with
+// (under half a screen a second, a little more on phones), and slows over the last tenth of a screen. Any wheel, touch, key or click stops it on that frame.
 // It never starts while a finger is down or the page is still coasting, and never without a recent wheel, touch or key: dragging the scrollbar, a reload part way down or a tab click do not set it off.
 (function () {
   if (REDUCE) return;
-  var lastY = window.scrollY, dir = 1, movedAt = 0, inputAt = 0, touching = false, carry = 0;
+  var lastY = window.scrollY, lastT = 0, dir = 1, speed = 0, movedAt = 0, inputAt = -1e9, touching = false, carry = 0; // inputAt starts long ago: a page opened or reloaded inside a film must not move by itself
   function input() { inputAt = performance.now(); carry = 0; }
   ['wheel', 'keydown', 'touchmove', 'pointerdown'].forEach(function (ev) { window.addEventListener(ev, input, { passive: true }); });
   window.addEventListener('touchstart', function () { touching = true; input(); }, { passive: true });
   ['touchend', 'touchcancel'].forEach(function (ev) { window.addEventListener(ev, function () { touching = false; input(); }, { passive: true }); });
-  function go(to, ms) {
-    var id = carry = performance.now(), from = window.scrollY;
+  function go(to) {
+    var H = window.innerHeight, pace = (window.innerWidth < 700 ? 0.6 : 0.45) * H, id = carry = performance.now(), last = id, pos = window.scrollY, v = clamp(speed, 0.2 * H, pace); // px a second
     (function step(now) {
       if (carry !== id) return; // the visitor took over
-      var u = clamp((now - id) / ms, 0, 1), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
-      lastY = Math.round(from + (to - from) * e); window.scrollTo(0, lastY);
-      if (u < 1) requestAnimationFrame(step); else carry = 0;
+      var dt = Math.min(50, now - last) / 1000, left = to - pos, d = Math.abs(left); last = now;
+      if (d < 0.75) { lastY = to; window.scrollTo(0, to); carry = 0; return; }
+      v += (Math.min(pace, Math.max(40, d * 4.5)) - v) * Math.min(1, dt * 6); // toward the cruising pace, then slower over the last tenth of a screen
+      pos += (left < 0 ? -1 : 1) * Math.min(d, v * dt); lastY = Math.round(pos); window.scrollTo(0, pos);
+      requestAnimationFrame(step);
     })(id);
   }
   (function tick(now) {
     requestAnimationFrame(tick);
-    var y = window.scrollY; if (y !== lastY) { if (!carry) dir = y > lastY ? 1 : -1; lastY = y; movedAt = now; }
-    if (carry || touching || now - movedAt < 140 || now - inputAt < 140 || now - inputAt > 5000) return;
+    var y = window.scrollY;
+    if (y !== lastY) { if (!carry) { dir = y > lastY ? 1 : -1; speed = Math.abs(y - lastY) / Math.max(4, now - lastT) * 1000; } lastY = y; movedAt = now; }
+    lastT = now;
+    if (carry || touching || now - movedAt < 80 || now - inputAt < 80 || now - inputAt > 5000) return;
     var reels = document.querySelectorAll('.reel.live'), H = window.innerHeight;
     for (var k = 0; k < reels.length; k++) {
       var r = reels[k].getBoundingClientRect(), sh = reels[k].firstElementChild.offsetHeight, nx = reels[k].nextElementSibling;
       if (r.top < -2 && r.bottom > sh + 2) { // its stage is pinned: the visitor has stopped part way through the film
-        var to = dir > 0 ? (nx && nx.id && window.KP_AIM ? window.KP_AIM(nx) : y + r.bottom - sh + 8) : y + r.top - 0.45 * H;
-        go(Math.round(to), Math.max(650, Math.min(1600, 1200 * Math.abs(to - y) / H))); break;
+        go(Math.round(dir > 0 ? (nx && nx.id && window.KP_AIM ? window.KP_AIM(nx) : y + r.bottom - sh + 8) : y + r.top - 0.62 * H)); break; // down: where a tab click lands the chapter. Up: far enough that the film is off the screen
       }
     }
   })(0);
@@ -2247,7 +2286,7 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
       setTimeout(function () { el.classList.remove('pre', 'in'); el.style.transitionDelay = ''; }, 2200);
     });
   }, { rootMargin: '0px 0px -8% 0px' });
-  // Headlines wait until the curtain over their chapter has lifted, then glitch as their words land.
+  // Headlines wait until the curtain over their chapter has lifted, then their words rise into place.
   var headIo = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
@@ -2304,10 +2343,11 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   update();
 })();
 
-// ---------- Pinned scene: the giant word swaps halfway through, with the glitch ----------
+// ---------- Pinned scene: the giant word swaps halfway through ----------
 (function () {
   var thru = document.getElementById('thru'), lines = thru && thru.querySelectorAll('.thru-line'), cur = 0;
   if (!thru || REDUCE) return;
+  thru.classList.add('live');
   window.addEventListener('scroll', function () {
     var r = thru.getBoundingClientRect(), H = window.innerHeight;
     if (r.bottom < 0 || r.top > H) return;
@@ -2337,11 +2377,10 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
     var H = window.innerHeight;
     curtains.forEach(function (c) {
       var top = c.ch.getBoundingClientRect().top;
-      if (top > H + 50 || top < -H) return; // only chapters near the screen
+      if (c.ch.cine || top > H + 50 || top < -H) return; // only chapters near the screen; and a chapter that a film leads into has its card opened by the film (see "How each film lets go")
       var u = clamp((H * 0.5 - top) / (H * 0.5 - 110), 0, 1); // the card rises whole until the chapter is halfway up the screen, then its strips slide off; all gone by the time the chapter sits under the tab bar, where a tab click lands
       for (var i = 0; i < c.strips.length; i++) {
         var odd = i % 2 ? 0.12 : 0, v = clamp((u - 0.18 - odd - i * 0.03) / 0.5, 0, 1); // strips leave in a staggered, uneven order
-        if (c.ch.cine) v = c.ch.cine.getBoundingClientRect().bottom <= c.ch.cine.firstElementChild.offsetHeight + 1 ? 1 : 0; // a chapter that a film leads into: its card stays whole under the film, and opens (by the CSS transition) the moment the film's stage lets go
         var way = c.k % 3; // up, down, then alternating: no two chapters open the same way
         c.strips[i].style.transform = 'translate3d(0,' + ((way === 0 || (way === 2 && i % 2) ? -1 : 1) * v * v * 100) + '%,0)';
       }
@@ -2395,6 +2434,8 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   });
 })();
 
+var IOS_LIVE = null; // the one phone demo whose own screen scrolls, if any (see its styles)
+window.addEventListener('scroll', function () { if (!IOS_LIVE) return; var r = IOS_LIVE.getBoundingClientRect(); if (r.bottom < 0 || r.top > window.innerHeight) { IOS_LIVE.classList.remove('live'); IOS_LIVE = null; } }, { passive: true });
 // ---------- Side builds as small working iPhone apps: a status bar, the app's name and logo, three tabs and real controls, built round each build's live canvas. Everything shown is sample data. ----------
 (function () {
   function sw(on, locked) { return '<button class="ios-sw" role="switch" aria-checked="' + (on ? 'true' : 'false') + '"' + (locked ? ' disabled' : '') + '></button>'; }
@@ -2469,6 +2510,7 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
       var bp = wrap.querySelectorAll('input[data-unit="bps"]'); if (bp.length) BT.cost = Array.prototype.reduce.call(bp, function (sum, el) { return sum + +el.value; }, 0) / 10000; // fee plus slippage: the backtest on the Chart screen is run again with it
     });
     screen.addEventListener('click', function (e) {
+      if (IOS_LIVE !== screen) { if (IOS_LIVE) IOS_LIVE.classList.remove('live'); IOS_LIVE = screen; screen.classList.add('live'); } // a tap inside this phone: from now on its own screen scrolls
       var b = e.target.closest('button'); if (!b) return;
       var k = Array.prototype.indexOf.call(tb, b);
       if (k >= 0) { show(k); return; }
@@ -2486,10 +2528,123 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   });
 })();
 
-// ---------- The name: every letter is a part. They arrive from depth one after another, then the whole name leans with the pointer like one solid object, each letter at its own depth. ----------
+// ---------- The opening. On the first visit of the day the page opens as a dark drawing sheet with a Galton board drawn on it: ten bins, because the name has ten characters, and so nine rows of pegs.
+// Steel balls pour through it, each going left or right at every peg on a real coin flip, and pile up toward the bell curve. Then the name falls through the same pegs: each letter is the ball for its own bin,
+// so the letter for bin k goes right exactly k times out of nine, in an order drawn afresh on every load, and one amber ball takes the space between the two words. The name lands on the pile. Then the sheet parts
+// along the curve the pile was heading for: the lower half slides down with the balls, the upper half goes up with the pegs, and the letters travel to the heading while the page arrives underneath.
+// Everything is worked out before it starts and handed to the browser as animations of transform and opacity (the Web Animations API), with no frame loop, so it stays smooth while the 3D scene is starting up.
+// Any scroll, tap or key finishes it at once. Whether it plays at all is decided in the first script. ----------
+function introOff() { // the page under the sheet starts to arrive
+  if (!window.KP_INTRO) return;
+  var c = document.documentElement.classList; window.KP_INTRO = false; c.remove('intro-wait'); c.add('opened');
+  try { window.dispatchEvent(new Event('kp-open')); } catch (e) {}
+}
+function opening(h1, plain) { // plain: the letters' ordinary arrival, for when the opening cannot play
+  var root = document.documentElement, box = document.getElementById('intro'), nl = h1.querySelectorAll('.nl'), n = nl.length, rows = n - 1, anims = [], fly = [], letters = [], parted = false, timer = 0, i, k, r;
+  function drop() { introOff(); root.classList.remove('intro'); if (box && box.parentNode) box.parentNode.removeChild(box); }
+  var W = window.innerWidth, H = window.innerHeight, wide = W >= 1000, bar = document.querySelector('.bar').getBoundingClientRect().height;
+  // The board stands on the backdrop's horizon. b is one bin's width; everything else follows from it.
+  var hy = Math.round(H * (wide ? 0.66 : 0.76)), b = Math.min(64, (W - 40) / n, (hy - bar - 22) / 9.7), first = b >= 44 ? 4 : 3, per = 2 * first - 1, rb = b / (first * 2.06 + 1), rp = 0.866 * b;
+  if (!box || !h1.animate || document.hidden || window.scrollY > 2 || n < 4 || b < 24) { drop(); plain(); return; }
+  try {
+    var N = wide ? 96 : 48, ax = Math.round(W / 2), share = [], most = 0, c = 1;
+    for (k = 0; k < n; k++) { share.push(N * c / Math.pow(2, rows)); most = Math.max(most, share[k]); c = c * (rows - k) / (k + 1); } // the share of the balls each bin is heading for
+    function pile(m) { return Math.min(1, m) * 2 * rb + m / (per / 2) * 1.74 * rb; } // how high m balls stack in a bin: rows of four and three by turns (three and two when the bins are narrow)
+    var ay = hy - pile(most) - 0.95 * b - 0.35 * b - (rows - 1) * rp; // the top peg: under it the rows of pegs, room for a letter, and the tallest pile
+    function binX(q) { return ax + (q - rows / 2) * b; }
+    var A = box.children[0], B = box.children[1], C = box.children[2], cv = A.firstElementChild, g = cv.getContext('2d'), dpr = Math.min(window.devicePixelRatio || 1, 2), TH = THEMES[THEME_KEY], INK = TH.scheme === 'light' ? '15,26,46' : '238,243,250';
+    // the board, drawn once: the ways between the pegs, the pegs, the walls of the bins
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); g.scale(dpr, dpr); g.lineWidth = 1; g.strokeStyle = 'rgba(' + INK + ',0.09)'; g.beginPath();
+    for (r = 0; r < rows; r++) for (k = 0; k <= r; k++) { var px = ax + (k - r / 2) * b, py = ay + r * rp; g.moveTo(px - b / 2, py + rp); g.lineTo(px, py); g.lineTo(px + b / 2, py + rp); }
+    for (k = 0; k <= n; k++) { g.moveTo(Math.round(binX(k) - b / 2) + 0.5, ay + rows * rp + 0.2 * b); g.lineTo(Math.round(binX(k) - b / 2) + 0.5, hy); }
+    g.stroke(); g.fillStyle = 'rgba(' + INK + ',0.34)';
+    for (r = 0; r < rows; r++) for (k = 0; k <= r; k++) { g.beginPath(); g.arc(ax + (k - r / 2) * b, ay + r * rp, wide ? 2.2 : 1.8, 0, 6.2832); g.fill(); }
+    // The curve the pile is heading for, through the top of each bin's share. The sheet's two halves meet along it and along the horizon.
+    var pts = [[binX(-1.7), hy], [binX(-0.95), hy]], curve = [], q, f;
+    for (k = 0; k < n; k++) pts.push([binX(k), hy - pile(share[k])]);
+    pts.push([binX(n - 0.05), hy], [binX(n + 0.7), hy]);
+    for (q = 1; q < pts.length - 2; q++) for (f = 0; f < 6; f++) { // a smooth line through the points (Catmull-Rom), six steps to a span
+      var t = f / 6, p0 = pts[q - 1], p1 = pts[q], p2 = pts[q + 1], p3 = pts[q + 2];
+      curve.push([p1[0] + (p2[0] - p1[0]) * t, Math.min(hy, 0.5 * (2 * p1[1] + (p2[1] - p0[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t * t + (3 * p1[1] - p0[1] - 3 * p2[1] + p3[1]) * t * t * t))]);
+    }
+    curve.push(pts[pts.length - 2]);
+    A.style.clipPath = 'polygon(0px 0px,' + W + 'px 0px,' + W + 'px ' + (hy + 1) + 'px,' + curve.map(function (p) { return p[0].toFixed(1) + 'px ' + (p[1] + 1).toFixed(1) + 'px'; }).reverse().join(',') + ',0px ' + (hy + 1) + 'px)'; // the upper half reaches one pixel under the line, so nothing of the page shows between the two
+    B.style.clipPath = 'polygon(0px ' + hy + 'px,' + curve.map(function (p) { return p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px'; }).join(',') + ',' + W + 'px ' + hy + 'px,' + W + 'px ' + H + 'px,0px ' + H + 'px)';
+    function dot(to, size, bg) { var d = document.createElement('i'); d.style.cssText = 'width:' + size + 'px;height:' + size + 'px;margin:' + -size / 2 + 'px;background:' + bg; to.appendChild(d); return d; }
+    function fall(tf, bits, lift, h, land, R) { // the keyframes of one thing going down the pegs: it drops onto the top peg, at every row hops left or right in a small arc, leaning into it, and at last drops onto its pile. h: ms a row; land: ms for the last drop
+      var D = 9.7 * h + land, sx = ax, sy = ay - 0.9 * rp - lift, kf = [{ transform: tf(sx, sy, 0), opacity: 0, offset: 0 }, { transform: tf(sx, sy, 0), opacity: 1, offset: 0.014, easing: 'cubic-bezier(0.5,0,0.9,0.5)' }], j = 0, x, y, d;
+      for (r = 0; r < rows; r++) {
+        x = ax + (j - r / 2) * b; y = ay + r * rp - lift; d = bits[r] ? 1 : -1;
+        kf.push({ transform: tf(x, y, 0), opacity: 1, offset: (0.7 + r) * h / D, easing: 'cubic-bezier(0.2,0.7,0.4,1)' }, { transform: tf(x + 0.15 * d * b, y - 0.16 * rp, d * 12), opacity: 1, offset: (1.06 + r) * h / D, easing: 'cubic-bezier(0.5,0,0.9,0.5)' });
+        if (bits[r]) j++;
+      }
+      kf.push({ transform: tf(R[0], R[1], 0), opacity: 1, offset: 1 });
+      return { kf: kf, D: D };
+    }
+    function play(el, F, delay) { var a = el.animate(F.kf, { duration: F.D, delay: Math.max(0, delay), fill: 'both' }); a.playbackRate = 1 / SLOW; anims.push(a); return a; }
+    function at(x, y) { return 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)'; }
+    function rest(q, s) { var pr = s % per, L = 2 * Math.floor(s / per) + (pr >= first ? 1 : 0); return [binX(q) + (pr >= first ? pr - first - (first - 2) / 2 : pr - (first - 1) / 2) * rb * 2.06, hy - rb - L * rb * 1.74, L]; }
+    // the steel balls: every bounce a coin flip. They leave closer and closer together, and all are down before the first letter lands
+    var cnt = [], topOf = [], t0 = performance.now(), HB = 46, STEEL = 'radial-gradient(circle at 34% 30%,#fff,#c3ccd9 46%,#727c8d)';
+    for (k = 0; k < n; k++) { cnt.push(0); topOf.push(0); }
+    for (i = 0; i < N; i++) {
+      var bits = [], bin = 0; for (r = 0; r < rows; r++) { bits.push(Math.random() < 0.5); if (bits[r]) bin++; }
+      var R = rest(bin, cnt[bin]++); topOf[bin] = Math.max(topOf[bin], (2 + R[2] * 1.74) * rb);
+      play(dot(C, 2 * rb, STEEL), fall(at, bits, rb + 2, HB, 70, R), 80 + 620 * Math.pow(i / (N - 1), 0.7));
+    }
+    // the name: when its font is there (half a second at most), each letter takes its own way down to its own bin
+    var went = false;
+    function name() {
+      if (went || parted) return; went = true;
+      var fs = parseFloat(getComputedStyle(h1).fontSize), s0 = 1.35 * b / fs, HL = 62, base = Math.max(560, performance.now() - t0 + 60), last = 0;
+      h1.classList.add('flat');
+      for (k = 0; k < n; k++) nl[k].style.transition = 'none';
+      for (k = 0; k < n; k++) (function (el, k) {
+        var steps = [], j, tmp, rel = base + 52 * k, space = !el.textContent.trim(), Q = [binX(k), hy - topOf[k] - (space ? 5 : 1)], F, tf, hit;
+        for (j = 0; j < rows; j++) steps.push(j < k); // exactly k of the nine go right...
+        for (j = rows - 1; j > 0; j--) { r = Math.floor(Math.random() * (j + 1)); tmp = steps[j]; steps[j] = steps[r]; steps[r] = tmp; } // ...in a shuffled order
+        if (space) { F = fall(at, steps, 7, HL, 60, Q); play(dot(C, 10, 'radial-gradient(circle at 34% 30%,#ffe9c4,' + TH.accent + ' 55%,#b0752c)'), F, rel); } // the amber ball stands for the space
+        else {
+          var bx = el.getBoundingClientRect(), O = [bx.left + bx.width / 2, bx.top + bx.height * 0.85], d = parseFloat(getComputedStyle(el).getPropertyValue('--d')) || 0;
+          tf = function (x, y, rot) { return 'translate3d(' + (x - O[0]).toFixed(1) + 'px,' + (y - O[1]).toFixed(1) + 'px,0) scale(' + s0.toFixed(4) + ') rotate(' + rot + 'deg)'; };
+          F = fall(tf, steps, 3, HL, 60, Q); play(el, F, rel); letters.push({ el: el, landed: tf(Q[0], Q[1], 0), home: 'translate3d(0px,0px,' + d + 'px) scale(1) rotate(0deg)' });
+        }
+        for (r = 0, j = 0; r < rows; r++) { // each peg it touches lights for a third of a second
+          hit = dot(A, wide ? 7 : 6, TH.accent); hit.style.transform = at(ax + (j - r / 2) * b, ay + r * rp);
+          var fa = hit.animate([{ opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 0 }], { duration: 320, delay: rel + (0.7 + r) * HL - (performance.now() - t0), fill: 'both' }); fa.playbackRate = 1 / SLOW; anims.push(fa);
+          if (steps[r]) j++;
+        }
+        last = Math.max(last, rel + F.D);
+      })(nl[k], k);
+      h1.classList.remove('flat');
+      timer = setTimeout(function () { part(false); }, (last + 150 - (performance.now() - t0)) * SLOW);
+    }
+    function part(quick) { // the sheet parts and the letters go home
+      if (parted) return; parted = true; clearTimeout(timer); clearTimeout(wait);
+      EV.forEach(function (ev) { window.removeEventListener(ev, skip); }); window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onSize);
+      if (!went) { for (k = 0; k < n; k++) nl[k].style.transition = 'none'; }
+      anims.forEach(function (a) { try { a.finish(); } catch (e) {} }); // everything is down
+      var ms = quick ? 300 : 800;
+      if (quick) box.classList.add('quick'); else if (SLOW > 1) for (k = 0; k < 3; k++) box.children[k].style.transitionDuration = 0.9 * SLOW + 's';
+      box.classList.add('part'); introOff();
+      letters.forEach(function (L, j) { var a = L.el.animate([{ transform: L.landed, opacity: 1 }, { transform: L.home, opacity: 1 }], { duration: ms, delay: quick ? 0 : 16 * j, easing: 'cubic-bezier(0.65,0,0.35,1)', fill: 'both' }); a.playbackRate = 1 / SLOW; fly.push(a); });
+      setTimeout(function () { // the letters are home: they go back to their ordinary styles with no visible step
+        h1.classList.add('in'); void h1.offsetWidth; fly.concat(anims).forEach(function (a) { try { a.cancel(); } catch (e) {} });
+        requestAnimationFrame(function () { for (k = 0; k < n; k++) nl[k].style.transition = ''; h1.classList.add('set'); });
+      }, (ms + 16 * n + 40) * SLOW);
+      setTimeout(drop, (quick ? 340 : 960) * SLOW);
+    }
+    var EV = ['wheel', 'touchstart', 'keydown', 'pointerdown'], skip = function () { part(true); }, onScroll = function () { if (window.scrollY > 2) part(true); }, onSize = function () { if (window.innerWidth !== W) part(true); }; // a phone's address bar coming and going changes only the height, and is no reason to stop
+    EV.forEach(function (ev) { window.addEventListener(ev, skip, { passive: true }); }); window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', onSize);
+    var wait = setTimeout(name, 500);
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(name);
+  } catch (e) { parted = true; anims.concat(fly).forEach(function (a) { try { a.cancel(); } catch (e2) {} }); for (k = 0; k < n; k++) nl[k].style.transition = ''; h1.classList.remove('flat'); drop(); plain(); }
+}
+
+// ---------- The name: every letter is a part. They arrive from depth one after another (or, on the day's first visit, through the opening's board), then the whole name leans with the pointer like one solid object, each letter at its own depth. ----------
 (function () {
   var h1 = document.querySelector('.hero h1');
-  if (!h1 || REDUCE || !h1.firstChild) return;
+  if (!h1 || REDUCE || !h1.firstChild) { introOff(); document.documentElement.classList.remove('intro'); return; }
   var text = h1.textContent, hero = document.querySelector('.hero');
   h1.setAttribute('aria-label', text); h1.textContent = '';
   var row = document.createElement('span'); row.className = 'nw'; row.setAttribute('aria-hidden', 'true'); h1.appendChild(row); // one row: the heading itself is a grid, so the letters need their own line box
@@ -2499,9 +2654,10 @@ var gold = (function () { var d = new Date(), off = ((d.getUTCHours() * 60 + d.g
   });
   h1.classList.add('split');
   var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  ready.then(function () { requestAnimationFrame(function () { requestAnimationFrame(function () { h1.classList.add('in'); setTimeout(function () { h1.classList.add('set'); }, 1900); }); }); });
+  function plain() { ready.then(function () { requestAnimationFrame(function () { requestAnimationFrame(function () { h1.classList.add('in'); setTimeout(function () { h1.classList.add('set'); }, 1900); }); }); }); }
+  if (window.KP_INTRO) opening(h1, plain); else plain();
   hero.addEventListener('pointermove', function (e) {
-    if (e.pointerType === 'touch') return;
+    if (e.pointerType === 'touch' || window.KP_INTRO) return; // the name holds still while the opening is using its letters
     var r = h1.getBoundingClientRect(), dx = clamp((e.clientX - r.left - r.width / 2) / r.width, -1, 1), dy = clamp((e.clientY - r.top - r.height / 2) / r.height, -1.5, 1.5);
     h1.style.setProperty('--ry', (dx * 14).toFixed(2) + 'deg'); h1.style.setProperty('--rx', (-dy * 7).toFixed(2) + 'deg');
   });
@@ -2712,7 +2868,8 @@ import * as THREE from './vendor/three.module.min.js';
       var w = parts.filter(function (P) { return P.rotor && P.p.x * sg > 0; }), mx = 0, my = 0;
       w.forEach(function (P) { mx += P.p.x / w.length; my += P.p.y / w.length; }); w.forEach(function (P) { P.ax = mx; P.ay = my; });
     });
-    partsAt = performance.now() - t0; lastKey = ''; if (REDUCE) frame(0);
+    partsAt = window.KP_INTRO ? 1e12 : performance.now() - t0; lastKey = ''; if (REDUCE) frame(0); // while the opening's sheet is still over the page the board waits, and grows in as the sheet parts
+    window.addEventListener('kp-open', function () { partsAt = performance.now() - t0; lastKey = ''; });
   }).catch(function () {}); // no model: the page reads fine without it
   var nA = new THREE.Vector3(), nB = new THREE.Vector3(), cT = new THREE.Color(), ROD = new THREE.Color(0x7f8fb0), BALL = new THREE.Color(0xdfe6f2), BLUE = new THREE.Color(0x3f86ff).multiplyScalar(1.7);
   var QUIET = new THREE.Color(0x2b3346), DIM = new THREE.Color(0.22, 0.24, 0.3); // streets and rivets in the city: there, but not competing with the route
@@ -3651,23 +3808,101 @@ import * as THREE from './vendor/three.module.min.js';
   }
   // ----- Section films ("reels"). Before a chapter, a film made in advance plays by scroll: <section class="reel" data-film="name"> draws film/<name>/d/0001.webp ... on computers and film/<name>/p/ on phones.
   // A reel takes room only once the page knows its first picture is there (asked once, at load, headers only) and only while it is still below the screen, so nothing on screen ever jumps.
-  // Its pictures load when the visitor comes within two screens of it, four at a time, and are let go again four screens away. The film comes up with the page, fading in over the last 0.6 of a screen of its rise
-  // and crossing with the live model as the opening film does. It plays over the first 78% of its travel; then the chapter's name comes up on its last picture, and when its stage lets go the chapter's title card
-  // takes over with the same picture and name (see the styles) and opens onto the chapter. Nothing fades to empty. No reels with reduced motion, data saving or a slow connection. -----
+  // Its pictures load when the visitor comes within two screens of it, four at a time, and are let go again four screens away. The film comes up with the page and is put together as it comes;
+  // it plays over the first 66% of its travel; the chapter's name comes up over its last picture and goes again; and over the last quarter that picture comes apart, uncovering the chapter behind it
+  // while the stage is still pinned (see "How each film arrives and how it lets go"). Nothing fades to empty. No reels with reduced motion, data saving or a slow connection. -----
   var REELS = [];
+  // ----- How each film arrives and how it lets go. Both are drawn on the film's own canvas and both follow the scrollbar, so they play at the visitor's pace and run backwards when the page is scrolled back.
+  // The way out: over the last quarter of a film's travel, while its stage is still pinned, its last picture comes apart, each film in a way taken from what it shows, and the chapter behind it is uncovered in place
+  // with its heading on screen. The way in: while the stage is still coming up the screen, the first picture is put together in the same manner.
+  // g: the film's canvas; P: the picture; u: 0 (whole) to 1 (gone) on the way out; v: 0 (nothing) to 1 (whole) on the way in, how much of the stage is on screen; V: the part of the canvas that is on screen (the rest
+  // is cropped away, as on a photo that fills its frame). Pieces that are not moving are copied whole or drawn as one, so no seam shows between them. head: how far out the chapter's heading is uncovered. -----
+  function ein(x) { return x * x; } function eout(x) { return 1 - Math.pow(1 - x, 3); } function eio(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function fxBlade(g, P, V, k, n, e) { // one blade of the turbine's fan: a slice of the picture round the corner the rotor sits in, turned and shrunk into that corner by e
+    var px = V.x - 0.06 * V.w, py = V.y + 1.1 * V.h, rad = Math.hypot(V.x + V.w - px, V.y - py) * 1.02, da = Math.PI / 2 / n, a0 = -Math.PI / 2 + k * da;
+    g.save(); g.translate(px, py); g.rotate(-0.6 * e); g.scale(1 - e, 1 - e); g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, rad, a0 - (k ? 0 : 0.1), a0 + da + (k === n - 1 ? 0.1 : 0)); g.closePath(); g.clip(); g.translate(-px, -py); g.drawImage(P, 0, 0); g.restore();
+  }
+  function fxFan(g, P, V, n, from, to) { if (to > from) { var px = V.x - 0.06 * V.w, py = V.y + 1.1 * V.h, da = Math.PI / 2 / n; g.save(); g.beginPath(); g.moveTo(px, py); g.arc(px, py, Math.hypot(V.x + V.w - px, V.y - py) * 1.02, -Math.PI / 2 + from * da - (from ? 0 : 0.1), -Math.PI / 2 + to * da + (to === n ? 0.1 : 0)); g.closePath(); g.clip(); g.drawImage(P, 0, 0); g.restore(); } } // blades that are whole, drawn as one piece
+  function fxBlock(g, P, V, c, r, cols, rows, e, blue) { // one block of the route film's picture, shrunk about its own middle by e, with the search's blue round it while it changes
+    var x0 = Math.round(V.x + c * V.w / cols), x1 = Math.round(V.x + (c + 1) * V.w / cols), y0 = Math.round(V.y + r * V.h / rows), y1 = Math.round(V.y + (r + 1) * V.h / rows);
+    if (e <= 0) { g.drawImage(P, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0); return; }
+    var w = (x1 - x0) * (1 - e), h = (y1 - y0) * (1 - e), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    g.drawImage(P, x0, y0, x1 - x0, y1 - y0, mx - w / 2, my - h / 2, w, h);
+    g.strokeStyle = 'rgba(96,156,255,' + (0.95 * blue).toFixed(3) + ')'; g.lineWidth = 2; g.strokeRect(mx - w / 2, my - h / 2, w, h);
+  }
+  function fxHoop(g, P, cx, cy, r0, r1, e, turn) { // one hoop of the armillary's picture: the ring between two radii, thinned toward its middle line by e and turned, with a line of brass where it thins
+    var mid = (r0 + r1) / 2, half = (r1 - r0) / 2 * (1 - e);
+    g.save(); g.beginPath(); g.arc(cx, cy, mid + half, 0, 6.2832); g.arc(cx, cy, Math.max(0, mid - half), 0, 6.2832, true); g.clip('evenodd'); g.translate(cx, cy); g.rotate(turn * e); g.translate(-cx, -cy); g.drawImage(P, 0, 0); g.restore();
+    g.strokeStyle = 'rgba(242,181,107,' + (0.9 * e * (1 - seg(e, 0.8, 1))).toFixed(3) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, mid, 0, 6.2832); g.stroke();
+  }
+  function fxSlat(g, P, y0, y1, e) { // one slat of the lamp's shutter: a band of the picture turned about its own middle line by e (0 face on, 1 edge on), darker as it turns from the light
+    if (e <= 0) { g.drawImage(P, 0, y0, P.width, y1 - y0, 0, y0, P.width, y1 - y0); return; }
+    var c = Math.cos(e * Math.PI / 2), mid = (y0 + y1) / 2, h = (y1 - y0) * c;
+    g.drawImage(P, 0, y0, P.width, y1 - y0, 0, mid - h / 2, P.width, h); g.fillStyle = 'rgba(0,0,0,' + (0.6 * (1 - c)).toFixed(3) + ')'; g.fillRect(0, mid - h / 2, P.width, h);
+  }
+  var FX = {
+    turbine: { head: 0.3, // the blades are drawn into the hub one after another, from the top
+      out: function (g, P, u, V) { for (var n = 9, k = 0, still = n; k < n; k++) { var t = seg(u, k * 0.062, k * 0.062 + 0.5); if (t <= 0) { still = Math.min(still, k); continue; } if (t < 1) fxBlade(g, P, V, k, n, ein(t)); } fxFan(g, P, V, n, still, n); },
+      in: function (g, P, v, V) { // and the film arrives as a rotor: twelve blades about the engine's shaft, widening as they turn until they close up into the picture
+        var n = 12, cx = V.x + 0.48 * V.w, cy = V.y + 0.5 * V.h, f = eio(seg(v, 0.06, 0.96)), k;
+        if (f >= 1) { g.drawImage(P, 0, 0); return; }
+        g.save(); g.beginPath(); for (k = 0; k < n; k++) { var a0 = (1 - f) * 0.9 + k * 6.2832 / n; g.moveTo(cx, cy); g.arc(cx, cy, Math.hypot(V.w, V.h), a0, a0 + f * 6.2832 / n); g.closePath(); } g.clip(); g.drawImage(P, 0, 0); g.restore();
+      } },
+    route: { head: 0.42, // the picture is searched away from the pin at the goal, block by block, the way A* spread across the streets
+      out: function (g, P, u, V) {
+        var cols = PHONE ? 5 : 10, rows = PHONE ? 9 : 6, c0 = Math.floor((PHONE ? 0.5 : 0.7) * cols), r0 = Math.floor((PHONE ? 0.42 : 0.52) * rows), far = Math.max(c0, cols - 1 - c0) + Math.max(r0, rows - 1 - r0) + 0.9, c, r;
+        for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) { var d = (Math.abs(c - c0) + Math.abs(r - r0) + (hashNoise(c * 7.3 + r * 3.1) + 0.5) * 0.9) / far * 0.56, t = seg(u, d, d + 0.4); if (t < 1) fxBlock(g, P, V, c, r, cols, rows, eio(t), Math.sin(Math.PI * t)); }
+      },
+      in: function (g, P, v, V) { // and is found block by block, row after row, as each row comes on screen
+        var cols = PHONE ? 5 : 10, rows = PHONE ? 9 : 6, c, r;
+        for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) { var d = r / rows * 0.8 + (hashNoise(c * 5.1 + r * 2.7) + 0.5) * 0.1, t = seg(v, d, d + 0.24); if (t > 0) fxBlock(g, P, V, c, r, cols, rows, 1 - eout(t), Math.sin(Math.PI * t)); }
+      } },
+    phone: { head: 0.34, // the picture pulls back into a card with round corners and is flicked up off the screen, the way an app is closed
+      out: function (g, P, u, V) {
+        var a = eout(seg(u, 0, 0.45)), b = ein(seg(u, 0.24, 1)), sc = 1 - 0.2 * a - 0.05 * b, cx = V.x + V.w / 2, cy = V.y + V.h / 2, rr = 0.06 * Math.min(V.w, V.h) * a, hw = V.w / 2, hh = V.h / 2;
+        g.save(); g.translate(cx, cy - b * V.h * 1.12); g.scale(sc, sc); g.beginPath(); g.moveTo(-hw + rr, -hh); g.arcTo(hw, -hh, hw, hh, rr); g.arcTo(hw, hh, -hw, hh, rr); g.arcTo(-hw, hh, -hw, -hh, rr); g.arcTo(-hw, -hh, hw, -hh, rr); g.closePath();
+        g.save(); g.clip(); g.drawImage(P, -cx, -cy); g.restore(); g.strokeStyle = 'rgba(255,255,255,' + (0.18 * a).toFixed(3) + ')'; g.lineWidth = 2 / sc; g.stroke(); g.restore();
+      },
+      in: function (g, P, v, V) { // and comes up like a sheet on a phone: round top corners and a grabber, squared off as it reaches the top
+        var rr = 0.045 * Math.min(V.w, V.h) * (1 - smooth((v - 0.82) / 0.18)), w = 0.05 * Math.min(V.w, V.h);
+        g.save(); g.beginPath(); g.moveTo(V.x, V.y + V.h); g.lineTo(V.x, V.y + rr); g.arcTo(V.x, V.y, V.x + rr, V.y, rr); g.arcTo(V.x + V.w, V.y, V.x + V.w, V.y + rr, rr); g.lineTo(V.x + V.w, V.y + V.h); g.closePath(); g.clip(); g.drawImage(P, 0, 0); g.restore();
+        if (rr > 1) { g.fillStyle = 'rgba(255,255,255,' + (0.4 * rr / (0.045 * Math.min(V.w, V.h))).toFixed(3) + ')'; g.beginPath(); g.arc(V.x + V.w / 2 - w, V.y + rr * 0.45, w * 0.09, 0.5 * Math.PI, 1.5 * Math.PI); g.arc(V.x + V.w / 2 + w, V.y + rr * 0.45, w * 0.09, 1.5 * Math.PI, 0.5 * Math.PI); g.fill(); }
+      } },
+    armillary: { head: 0.58, // the picture comes apart into hoops round the glass sphere, from the middle outward: each turns its own way and thins to a line of brass
+      out: function (g, P, u, V) {
+        var cx = V.x + V.w * (PHONE ? 0.56 : 0.5), cy = V.y + V.h * 0.5, n = PHONE ? 5 : 6, RM = Math.hypot(Math.max(cx - V.x, V.x + V.w - cx), Math.max(cy - V.y, V.y + V.h - cy)), i, first = n;
+        for (i = 0; i < n; i++) { var t = seg(u, i * 0.085, i * 0.085 + 0.55); if (t <= 0) { first = Math.min(first, i); continue; } if (t < 1) fxHoop(g, P, cx, cy, RM * i / n, RM * (i + 1) / n, eio(t), i % 2 ? -0.7 : 0.7); }
+        if (first < n) { g.save(); g.beginPath(); g.rect(0, 0, P.width, P.height); g.arc(cx, cy, RM * first / n, 0, 6.2832, true); g.clip('evenodd'); g.drawImage(P, 0, 0); g.restore(); }
+      },
+      in: function (g, P, v, V) { // and is drawn as hoops that fill out, from the outside in
+        var cx = V.x + V.w * 0.5, cy = V.y + V.h * 0.47, n = PHONE ? 5 : 6, RM = Math.hypot(Math.max(cx - V.x, V.x + V.w - cx), Math.max(cy - V.y, V.y + V.h - cy)), i, whole = n;
+        for (i = n - 1; i >= 0; i--) { var t = seg(v, (n - 1 - i) * 0.09, (n - 1 - i) * 0.09 + 0.5); if (t >= 1) { whole = i; continue; } if (t > 0) fxHoop(g, P, cx, cy, RM * i / n, RM * (i + 1) / n, 1 - eio(t), i % 2 ? -0.5 : 0.5); }
+        if (whole < n) { g.save(); g.beginPath(); g.rect(0, 0, P.width, P.height); g.arc(cx, cy, RM * whole / n, 0, 6.2832, true); g.clip('evenodd'); g.drawImage(P, 0, 0); g.restore(); }
+      } },
+    lamp: { head: 0.4, dim: true, // the picture is the lamp's shutter: one bloom of its light, then the slats turn edge-on and the signal is through
+      out: function (g, P, u, V) {
+        var n = PHONE ? 11 : 9, k, fl = Math.sin(Math.PI * seg(u, 0, 0.34));
+        for (k = 0; k < n; k++) { var t = seg(u, 0.1 + 0.02 * k, 0.74 + 0.02 * k); if (t < 1) fxSlat(g, P, Math.round(V.y + k * V.h / n), Math.round(V.y + (k + 1) * V.h / n), eio(t)); }
+        if (fl > 0) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(255,238,205,' + (0.42 * fl).toFixed(3) + ')'; g.fillRect(0, 0, P.width, P.height); g.globalCompositeOperation = 'source-over'; }
+      },
+      in: function (g, P, v, V) { for (var n = PHONE ? 11 : 9, k = 0; k < n; k++) { var t = seg(v, k / n * 0.72, k / n * 0.72 + 0.26); if (t > 0) fxSlat(g, P, Math.round(V.y + k * V.h / n), Math.round(V.y + (k + 1) * V.h / n), 1 - eout(t)); } } }, // and its slats turn face on, one after another from the top, as the film comes up
+    strips: { head: 0.3, // any other film: upright strips, sliding off up and down in turn
+      out: function (g, P, u, V) { for (var n = PHONE ? 4 : 6, k = 0; k < n; k++) { var x0 = Math.round(V.x + k * V.w / n), x1 = Math.round(V.x + (k + 1) * V.w / n), d = (k % 2 ? 0.14 : 0) + k * 0.04; g.drawImage(P, x0, 0, x1 - x0, P.height, x0, (k % 2 ? 1 : -1) * eio(seg(u, d, d + 0.6)) * P.height, x1 - x0, P.height); } },
+      in: null }
+  };
+  function headShow(hd, on) { // a chapter's heading waits unseen behind its film, and arrives as the film's last picture clears it
+    if (on === !!hd.kpOn && (on || hd.classList.contains('pre'))) return;
+    hd.kpOn = on; clearTimeout(hd.kpT); hd.classList.remove('in'); hd.classList.add('pre');
+    if (on) { void hd.offsetWidth; hd.classList.add('in'); hd.kpT = setTimeout(function () { hd.classList.remove('pre', 'in'); }, 1600); }
+  }
   if (CINE) Array.prototype.forEach.call(document.querySelectorAll('.reel'), function (el) {
-    var c = el.querySelector('canvas'), R = { el: el, cv: c, ctx: c.getContext('2d'), n: +el.getAttribute(PHONE ? 'data-frames-p' : 'data-frames') || (PHONE ? 80 : 120), dir: './film/' + el.getAttribute('data-film') + (PHONE ? '/p/' : '/d/'), img: [], next: 0, on: false, at: -1, a: 0, ca: 0 };
-    var ch = el.nextElementSibling, cur = ch && ch.querySelector('.curtain'); if (!cur) return; // a film ends as the title card of the chapter after it: no card, no film
+    var c = el.querySelector('canvas'), R = { el: el, cv: c, ctx: c.getContext('2d'), n: +el.getAttribute(PHONE ? 'data-frames-p' : 'data-frames') || (PHONE ? 80 : 120), dir: './film/' + el.getAttribute('data-film') + (PHONE ? '/p/' : '/d/'), img: [], next: 0, on: false, at: -1, key: '', a: 0, ca: 0, fx: FX[el.getAttribute('data-film')] || FX.strips };
+    var ch = el.nextElementSibling, cur = ch && ch.querySelector('.curtain'); if (!cur) return; // a film hands over to the chapter after it: no chapter, no film
     if (PHONE) { c.width = 720; c.height = 1280; }
     fetch(R.dir + '0001.webp', { method: 'HEAD' }).then(function (r) {
       if (!r.ok || el.getBoundingClientRect().top <= window.innerHeight) return;
-      var strips = cur.children, n = strips.length, k, sl, fit; R.sl = [];
-      R.card = document.createElement('div'); R.card.className = 'reel-card'; R.card.innerHTML = '<p>' + strips[0].querySelector('p').innerHTML + '</p>'; c.parentNode.appendChild(R.card); // the chapter's name, over the film's last picture
-      for (k = 0; k < n; k++) { // each strip of the card gets its slice of that picture (the picture itself is fetched with the film). Slice and name are as wide as the whole card and start at its left edge, allowing for the strips' one-pixel overlap
-        fit = 'width:calc(' + n * 100 + '% - ' + (n - 1) + 'px);left:calc(' + k + 'px - ' + k * 100 + '%)';
-        sl = document.createElement('i'); sl.style.cssText = fit; strips[k].querySelector('p').style.cssText = fit; strips[k].insertBefore(sl, strips[k].firstChild); strips[k].style.transitionDelay = ((k % 2 ? 110 : 0) + k * 35) + 'ms'; R.sl.push(sl);
-      }
-      cur.classList.add('cine'); ch.cine = el; el.classList.add('live'); REELS.push(R);
+      R.card = document.createElement('div'); R.card.className = 'reel-card'; R.card.innerHTML = '<p>' + cur.querySelector('p').innerHTML + '</p>'; c.parentNode.appendChild(R.card); // the chapter's name, over the film's last picture
+      R.head = ch.querySelector('.head'); cur.classList.add('cine'); ch.cine = el; el.classList.add('live'); REELS.push(R);
     }).catch(function () {});
   });
   function reelGet(R) { // four at a time, in order
@@ -3678,20 +3913,26 @@ import * as THREE from './vendor/three.module.min.js';
   function reels(lag) { // every frame: plays whichever section film is on screen. Answers how much of the screen a film has (0 to 1)
     for (var k = 0, most = 0; k < REELS.length; k++) {
       var R = REELS[k], r = R.el.getBoundingClientRect(), a = 0, q;
-      if (!R.on && r.bottom > -2 * H && r.top < 3 * H) { R.on = true; for (q = 0; q < 4; q++) reelGet(R); for (q = 0; q < R.sl.length; q++) R.sl[q].style.backgroundImage = 'url(' + R.dir + ('000' + R.n).slice(-4) + '.webp)'; }
-      else if (R.on && (r.bottom < -4 * H || r.top > 5 * H)) { R.on = false; R.img = []; R.next = 0; R.at = -1; }
+      if (!R.on && r.bottom > -2 * H && r.top < 3 * H) { R.on = true; for (q = 0; q < 4; q++) reelGet(R); }
+      else if (R.on && (r.bottom < -4 * H || r.top > 5 * H)) { R.on = false; R.img = []; R.next = 0; R.at = -1; R.key = ''; }
       if (R.img[0] && r.top < H && r.bottom > 0) {
-        var p = clamp(-(r.top + lag) / Math.max(1, r.height - H), 0, 1), i = Math.round(clamp(p / 0.78, 0, 1) * (R.n - 1)), held = r.bottom > R.cv.parentNode.offsetHeight + 1, ca = held ? smooth((p - 0.68) / 0.24) : 0; // held: its stage has not let go yet
-        a = held ? smooth(clamp(1 - r.top / (0.6 * H), 0, 1)) : 0; // up with the page, under the last rows of the section before; off the instant the stage lets go, where the chapter's card under it shows the same picture
+        var run = Math.max(1, r.height - H), p = clamp(-(r.top + lag) / run, 0, 1), pr = clamp(-r.top / run, 0, 1), i = Math.round(clamp(p / 0.66, 0, 1) * (R.n - 1)); // p follows the scroll with the model's weight; pr is the scrollbar itself
+        var v = clamp(1 - r.top / H, 0, 1), u = seg(pr, 0.76, 0.99), ca = smooth((pr - 0.6) / 0.12) * (1 - smooth((pr - 0.76) / 0.1)); // v: how much of the stage is on screen; u: how far its last picture has come apart; ca: the chapter's name over that picture
+        a = u < 1 ? Math.min(1, 3 * v) : 0; // up with the page, under the last rows of the section before
         if (ca !== R.ca) { R.ca = ca; R.card.style.opacity = ca; }
         while (i > 0 && !R.img[i]) i--; // a picture that has not arrived yet: the nearest earlier one stands in
-        if (a > 0 && i !== R.at) {
-          var dir = i >= R.at ? 1 : -1, im; R.at = i; R.ctx.clearRect(0, 0, R.cv.width, R.cv.height); R.ctx.drawImage(R.img[i], 0, 0, R.cv.width, R.cv.height);
-          for (q = 1; q <= 5; q++) { im = R.img[i + q * dir]; if (im && im.decode) im.decode().catch(function () {}); } // unpacked ahead of the scroll, as in the opening film
+        var key = i + (u > 0 ? 'o' + u.toFixed(4) : v < 1 && R.fx.in ? 'i' + v.toFixed(4) : '');
+        if (a > 0 && key !== R.key) {
+          var was = R.at, im = R.img[i], cw = R.cv.width, chh = R.cv.height, bw = R.cv.clientWidth || cw, bh = R.cv.clientHeight || chh, sc = Math.max(bw / cw, bh / chh), V = { w: bw / sc, h: bh / sc };
+          V.x = (cw - V.w) / 2; V.y = (chh - V.h) / 2; R.key = key; R.at = i; R.ctx.clearRect(0, 0, cw, chh);
+          if (u > 0) R.fx.out(R.ctx, im, u, V); else if (v < 1 && R.fx.in) R.fx.in(R.ctx, im, v, V); else R.ctx.drawImage(im, 0, 0, cw, chh);
+          if (R.fx.dim && p < 0.15) { R.ctx.globalCompositeOperation = 'source-atop'; R.ctx.fillStyle = 'rgba(' + THEMES[THEME_KEY].inkRgb + ',' + (0.5 * (1 - p / 0.15)).toFixed(3) + ')'; R.ctx.fillRect(0, 0, cw, chh); R.ctx.globalCompositeOperation = 'source-over'; } // a film brighter than the page starts dimmed toward it
+          if (i !== was) for (q = 1, bw = Math.min(14, Math.max(5, 3 * Math.abs(i - was))); q <= bw; q++) { im = R.img[i + q * (i >= was ? 1 : -1)]; if (im && im.decode) im.decode().catch(function () {}); } // unpacked ahead of the scroll, further ahead the faster it goes
         }
+        if (R.head) headShow(R.head, u >= R.fx.head);
+        q = Math.min(a, smooth(v * 1.6)) * (1 - u); if (q > most) most = q; // the live model gives way as the film comes up, and comes back through the picture as it parts
       }
       if (a !== R.a) { R.a = a; R.cv.style.opacity = a; }
-      if (a > most) most = a;
     }
     return most;
   }
@@ -3745,7 +3986,7 @@ import * as THREE from './vendor/three.module.min.js';
   function mix(a, b, t) { return a + (b - a) * t; }
   function smooth(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
   var running = true, spinV = 0, zNow = '';
-  var idle = 0, spin = 0, riding = false, rideT = -1, sS = -1, lastNow = 0, mat = new THREE.Matrix4(), INTRO = !!window.KP_INTRO && !REDUCE;
+  var idle = 0, spin = 0, riding = false, rideT = -1, sS = -1, lastNow = 0, mat = new THREE.Matrix4();
 
   // Add ?fps to the address to see how many frames a second this device draws (for chasing lag on a real phone).
   var fpsEl = /[?&]fps\b/.test(location.search) && document.body.appendChild(document.createElement('div')), fpsN = 0, fpsT = 0;
@@ -3816,7 +4057,7 @@ import * as THREE from './vendor/three.module.min.js';
     heroS = mix(heroS, (wide ? Math.min(W * 0.34, H * 0.58) : W * 0.5) * (1 + 1.8 * peak), fe); // in the fly-through it takes the middle of the screen, then the camera pushes in
     var S = mix(mix(heroS, sceneS, smooth(en * 1.5)), mix(pl0.s, pl1.s, mp) * mix(FIT[fA], FIT[fB], m), d) * (1 + 0.3 * nudge);
     var CX = mix(mix(mix(wide ? W * 0.72 : W / 2, W / 2, fe), mix(W * 0.74, W * 0.26, q), en), mix(pl0.x, pl1.x, mp), d);
-    var CY = mix(mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.56, H * 0.5 + 0.1 * heroS, fe), wide ? H * 0.87 : H * 0.72, en), mix(pl0.y, pl1.y, mp), d);
+    var CY = mix(mix(mix(wide ? H * 0.5 - sS * 0.55 : heroBottom - W * 0.56, H * 0.5 + 0.1 * heroS, fe), wide ? H * 0.82 : H * 0.72, en), mix(pl0.y, pl1.y, mp), d);
     // Phones: where the model moves with the page, the canvas is laid on the page itself, so the phone's own scrolling carries it and it cannot trail behind the text. Where it holds still on screen, or during a dive, the canvas is fixed to the screen as before.
     var ride = !REDUCE && mix(mix(wide ? 0 : 1, 0, Math.max(en, fe)), mix(pl0.k, pl1.k, mp), d) > 0.5, rT = ride ? Math.round(clamp(CY + sc - H / 2, 0, document.body.offsetHeight - H)) : 0;
     if (ride !== riding) { riding = ride; cv.style.position = ride ? 'absolute' : 'fixed'; }
@@ -3979,10 +4220,9 @@ import * as THREE from './vendor/three.module.min.js';
     else if (NAV.on && (e.key === 'Escape' || NAV.dest)) { e.preventDefault(); navClose(!!NAV.dest); }
     else if (!NAV.on && (e.key === 'm' || e.key === 'M')) navOpen(null);
   });
-  if (!REDUCE) (function () { // the bar's Map button is built here, so without JavaScript there is no dead control
-    var b = document.createElement('button'), cta = document.querySelector('.bar-cta'); b.type = 'button'; b.className = 'bar-map'; b.setAttribute('aria-label', 'Route map');
-    b.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 15s5-4.6 5-8.6A5 5 0 0 0 3 6.400c0 4 5 8.600 5 8.600z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6.400" r="1.700" fill="currentColor"/></svg><span>Map</span>';
-    b.addEventListener('click', function () { navOpen(null); }); cta.parentNode.insertBefore(b, cta);
+  if (!REDUCE) (function () { // the bar's Map button holds its place in the page, hidden; it is shown and made to work here, so without JavaScript there is no dead control
+    var b = document.querySelector('.bar-map'); if (!b) return;
+    b.addEventListener('click', function () { navOpen(null); }); b.style.visibility = '';
   })();
   plan(goal, t0); plannedAt = t0;
   requestAnimationFrame(frame);
