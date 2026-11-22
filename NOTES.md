@@ -1,10 +1,52 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`ec204f3`, the seven section films), on your "ship it"; the top section below is newer and not pushed.
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`25d6f8b`, the films that flow into their chapters), on your "ship it"; the top section below is newer and not pushed.
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
 
-## Films that flow into their chapters (2026-11-21, evening). Not pushed
+## The route film opens Projects (2026-11-21, night). Not pushed
+
+After the flow changes shipped, Kia was offered four next steps in a multiple choice and picked this one: replace the circuit-board city, the weakest fit of the five films, with Route Engine itself.
+
+**What it shows** (`film/route/d` 120 pictures, `film/route/p` 80): the San Diego model at dusk, filmed like a scale model on a table.
+1. The whole model from the bay side, windows lit, one amber bead on the corner the trip starts from. (Phones open looking down on it instead: a square model cannot fill a tall picture from the side.)
+2. 5% to 47% of the film: the search. Blue light runs along each street as A* explores it, one street after another at an even pace, each from the end the search had already reached.
+3. 50% to 84%: the route. An amber line draws from the start corner to the goal along the way A* found; the search dims behind it; the camera follows its head.
+4. The end: low and close on a brass marker at the goal, the route arriving, the city and the bay out of focus behind. On computers the marker stands right of centre and low, so the chapter's name, which comes up over this picture, is clear of it.
+
+**Nothing in it is invented.** `node blender/dump_city.mjs` lifts the page's own code out of `index.html` (the street graph, the lots, which kit piece stands where, and A*) and writes `blender/city_layout.json`: 100 corners, 169 streets with their costs, 136 pieces, 8 parks, and the home trip from corner 81 to corner 18, the same trip the pinned "One request" story tells right after: 67 streets explored, in A*'s order, and a route of 14 streets. The film script only reads that file, lights it and films it. If the page's city or search ever changes, run the dump again and render again; the dump checks itself (the route starts and ends where it should, every step is a street, every street on it was explored).
+
+**How it is made**
+- `Blender -b blender/city.blend --python blender/film_route.py -- d` (then `p`), then `Blender -b --python blender/film_flatten.py -- route d` (then `p`). About 21 s a picture for computers and 10 s for phones on this Mac: 42 minutes and 13 minutes.
+- The kit pieces are the page's own (`city.blend`), placed from the data file. Added in the script, for a close-up: rows of small windows on every upright wall, about a third of them lit, sized in the model's units so a tower gets many rows and a low block two or three; edges rounded at render time; dark glass and water that reflect; the streets as strips with a rivet at each corner.
+- The two lights are one small material each (`light()` in the script): every point of a line carries the moment it comes on, and the material has a clock. Before its moment a point is not there; at its moment it flares, then settles. The search's clock counts streets; the route's is the share of its length drawn.
+- The marker at the goal is turned round in the script (a ball on a cone on a foot, the kit pin's size). The kit's own pin is a few flat faces, made to be seen an inch high, and showed its facets when the film ended close on it.
+- Light: the sunset studio at low strength, a low warm key from the west as on the page, a cool rim from behind; the lit streets and windows do the rest.
+
+**In the page:** one word. The film section before Projects now names `route` instead of `circuit`.
+
+**Weights**
+| Film | Computer | Phone |
+|---|---|---|
+| Route (new) | 9.5 MB | 3.6 MB |
+| Circuit city (replaced) | 9.9 MB | 3.0 MB |
+| **All five films now** | **33.5 MB** | **13.5 MB** |
+
+**Checked** (private headless Chrome on the real graphics chip, 1440 x 900 and 393 x 659), with the finished pictures:
+- Every film at both sizes from its rise to the chapter it opens: no page errors, no failed requests, no sideways scroll; the page is still 33.1 and 53.3 screens.
+- The route film in the page by stills, both sizes: it comes up under Experience's last rows, plays, "Projects" comes up over the marker picture, the picture splits and opens onto "Four projects, all running live."
+- The film finishes by itself and lands exactly on Projects, both sizes; a push back, a key and a tab click all take control.
+- The Projects tab highlights, its heading can be clicked. Reduced motion and JavaScript off: no film takes room.
+- Scroll speed: computer, typical frame 16.7 ms, none over 50 ms (worst 33). Phone at 3x with the processor slowed four times: 2 of 1,164 over 50 ms, none over 100.
+- `node --check` on the page's scripts (unchanged since the last section), `node blender/check_fold.mjs` and `node blender/dump_city.mjs` pass.
+
+**Not done, not checked**
+- Safari and a real iPhone, as before.
+- Three films' pictures are now in the repo unused: the sunset (`film/wave`), the closing balls (`film/balls`) and the circuit city (`film/circuit`), 30 MB in all, with their scripts. Kia has not said to remove them.
+- The search is shown at an even pace, one street at a time. That is its true order, not its true timing (the real run takes well under a millisecond).
+- The ordinary buildings are the kit's plain low blocks; the windows and the shallow focus carry them, but they are not detailed models.
+
+## Films that flow into their chapters (2026-11-21, evening). Shipped as `25d6f8b`
 
 After the seven films went live Kia said, in his words: he likes them, but "they just end and a new thing pops up"; he wants transitions that flow into each other like the reference video; "how does the sunset one have any relevance, I need all to be relevant to the page"; "I don't want it to be so much scrolling", maybe the transition itself carries the page on. He asked for a separate agent to walk the whole site and say whether the flow is good enough and how to fix it, and left the choice of approach to that agent.
 
@@ -48,7 +90,7 @@ After the seven films went live Kia said, in his words: he likes them, but "they
 - Scrolling very fast, the picture can be a few frames short of the last one at the instant of the swap (the film follows the page's eased scroll, the swap follows the real one). Not seen at the carry's pace.
 - Reloading part way down does not put the visitor back on the same rows: films above the reload point do not take their room again, so the page shows a place about two screens further down on a computer; at phone size the page returns near the top. Both happen on the shipped page too (there it was about four and a half screens).
 - Which tab is highlighted while a film plays was not checked.
-- Projects' circuit city is the weakest fit. If one film is ever rendered again, the reviewer's pick is a flight over the San Diego model with the search spreading and the route lighting up (project 1 itself).
+- Projects' circuit city is the weakest fit. If one film is ever rendered again, the reviewer's pick is a flight over the San Diego model with the search spreading and the route lighting up (project 1 itself). (Done the same night: see the section above.)
 
 **The sea film's sun** (found before that film was cut; not fixed, the film is no longer used). Near the end the sun was a flat white disc with a hard white block under it. Measured on a test render of picture 102: the disc is about 300 times brighter than the sky beside it (145 against 0.45), so it burns out to plain white; the block is a second copy of the sun, mirrored in the still water beyond the 300 m of waves, which is a perfect mirror (roughness 0.02). Test renders confirmed both: a sun 16 to 125 times dimmer (`sun_intensity` 0.03 to 0.004 in `film_wave.py`) shows its shading, and rougher far water (0.3, a second material for the far plane in `filmkit.sea()`) turns the block into a soft streak. If the film ever comes back, those are the two changes, then a re-render.
 
