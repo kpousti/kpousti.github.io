@@ -1,8 +1,56 @@
 # Preview: http://localhost:8765
 
-Branch: `nap-build` (built on top of `redesign/map-hero-test`). Shipped to `main` and kiapousti.com on 2026-11-15, on your "ship it".
+Branch: `nap-build` (built on top of `redesign/map-hero-test`). Last shipped to `main` and kiapousti.com on 2026-11-21 (`ec204f3`, the seven section films), on your "ship it"; the top section below is newer and not pushed.
 Also in this ship: the Contact line "Email is the fastest way to reach me." is now a mail link.
 If the preview stops loading, run `python3 -m http.server 8765` in this folder.
+
+## Films that flow into their chapters (2026-11-21, evening). Not pushed
+
+After the seven films went live Kia said, in his words: he likes them, but "they just end and a new thing pops up"; he wants transitions that flow into each other like the reference video; "how does the sunset one have any relevance, I need all to be relevant to the page"; "I don't want it to be so much scrolling", maybe the transition itself carries the page on. He asked for a separate agent to walk the whole site and say whether the flow is good enough and how to fix it, and left the choice of approach to that agent.
+
+**The review** (a separate agent; it changed nothing, and tried its fixes on a copy of the page served only to its own test browser). Its verdict: not good enough. What it measured on the shipped page, at 1440 x 900 and 393 x 659:
+- The page was 48.5 screens long on a computer and 68.7 on a phone. Half of it on a computer (23.8 screens) and 37% on a phone (24.8) had nothing to read.
+- Every film cost about 3 screens: 0.3 empty, 1.8 of film, 0.3 empty again, 0.6 of title card.
+- All seven ways out of a film were broken in the same way: the film faded to an empty sky (the live model belonged to the chapter before and had scrolled away), then a dark title card slid up from the bottom. All seven ways in were rough: an empty screen, then the film appearing within a tenth of a screen.
+- Relevance: the sea at sunset has nothing to do with About, and repeats the page's own backdrop. The closing steel balls repeat the opening film, come after the last words, and left the page's longest gap. Turbine and signal lamp clearly belong; circuit city, phone and armillary belong loosely.
+- Its full write-up and stills are outside the repo, in the sessions' shared notes folder (`flow-review.md`, `flow-review-evidence/`). I checked its stills of the broken hand-overs and of its trial before building anything.
+
+**What changed in the page** (code only; no new footage):
+1. **Two films are out.** The sea film before About and the closing film are no longer in the page. "routes" now hands straight to About with the same city on the card, and the page ends on the board assembling under the last cards. Their pictures and scripts are still in the repo (`film/wave`, `film/balls`, 17 MB), unused, until Kia says whether he wants the closing film back.
+2. **A film ends as its chapter's title card.** A film's section is 200vh (was 300vh) and overlaps the chapter after it by 88vh, so the chapter comes up behind the film unseen. The pictures play over the first 78% of the travel; then the last picture dims and the chapter's name comes up on it, in the title card's own type and place. When the film's stage lets go, the chapter's title card is exactly under it showing the identical picture and name, cut into its strips, and the strips slide away (0.8 s) onto the heading and the chapter's live model. Scroll back up and the film is simply back. Nothing fades to empty any more.
+3. **A film comes up with the page.** It fades in over the last 0.6 of a screen of its rise, under the last rows of the section before, with a soft top edge; the live model beside those rows dissolves into it.
+4. **A film finishes by itself.** If the visitor stops scrolling while a film fills the screen, the page carries on the way they were going, about 1.2 seconds a screen: down to where a tab click would land the chapter, or back up above the film. Any wheel, touch, key or click stops it on that frame. It never starts while a finger is down or the page is coasting, and never without a recent wheel, touch or key (so not from a scrollbar drag, a reload part way down, or a tab click). It only acts while a film, never text, is on screen. This is Kia's "it'll just go to the next page"; a film can therefore no longer be held on one picture.
+- Where: the styles under "Section films" and `.curtain.cine`; `reels()` and its set-up in the module script; one line in the title cards' `update()`; `zUp` in `frame()`; and the "A film finishes by itself" block after the in-page links.
+- The card's strips overlap by one pixel. Without that, a screen width that does not divide evenly (393 over four strips) showed a hairline of the page between two strips at the instant of the swap.
+- Not touched: the opening film, the words scene, the pinned story, every scene change inside a chapter.
+
+**Numbers after**
+| | Before | Now |
+|---|---|---|
+| Page length, computer | 48.5 screens | 33.1 |
+| Page length, phone | 68.7 screens | 53.3 |
+| Nothing to read, computer | 23.8 screens | 9.8 (review's trial of the same changes) |
+| Nothing to read, phone | 24.8 screens | 11.0 (review's trial of the same changes) |
+| Films' weight if all are watched | 46.4 MB / 17.6 MB | 34.0 MB / 12.9 MB |
+
+**Checked** (private headless Chrome on the real graphics chip, 1440 x 900 and 393 x 659):
+- Every film at both sizes, by stills and by numbers: rising (film 7% then 62%), pinned, name half in at 0.8 of the travel and full at 0.97, the instant it lets go, 0.3 / 0.6 / 1 s after, landed on the chapter, scrolled back up. No page errors, no failed requests, no sideways scroll.
+- The swap is the same picture: the screen 2 px before the film lets go against the screen at the pixel it lets go, strips held still. Mean difference 0.4 to 0.6 of 255. On a phone at 3x no pixel is far off; on a computer 0.2% are, along the edges of the big title (the strips sit on fractions of a pixel, the film's copy of the title does not).
+- The carry, with real wheel and key events on a computer and touch drags on a phone: one push into a film ends exactly where a tab click lands the chapter, with the card open and the heading on screen; it rests there; one push back carries above the film; a push the other way mid-carry turns it round; a key mid-carry still ends on the chapter; placed mid-film with no input for five seconds, nothing moves; a tab click from inside a film lands on its own section.
+- Every tab highlights its own section when landed on, Contact still at the very bottom; headings can be clicked where a film's box overlaps the chapter, and the mail link in Contact's heading on a computer.
+- A link to `#skills` or `#experience` lands at 64 px and stays, both sizes. Reduced motion and JavaScript off: all five film sections take no room, the hero link works, Experience's heading shows.
+- Scroll speed: computer, typical frame 16.7 ms, none over 50 ms. Phone at 3x with the processor slowed four times: typical 16.7 ms, 4 of 1,164 over 50 ms, none over 100, worst 67 ms.
+- `node --check` on both scripts and `node blender/check_fold.mjs` pass.
+
+**Not done, not checked**
+- **Safari and a real iPhone.** Two things matter most there: the carry (it waits for the phone's own coasting to stop, but only a real phone can say how it feels), and the instant the picture splits (film, card and overlap all use `vh`, never `svh`, so they meet while the address bar moves; if the picture jumps a finger-width on an iPhone, look there).
+- The first half of the plate-to-factory fold, and three scene changes (Tarjan graph to agent huts, seed head to armillary, armillary up the mast), now finish behind the film that leads into their chapter. Visitors without films (data saving, reduced motion) see them whole, as before. The reviewer's untested idea for the fold: start it at the reveal (`seg(fx, 0.88, 1.3)` for a chapter with `cine`).
+- Scrolling very fast, the picture can be a few frames short of the last one at the instant of the swap (the film follows the page's eased scroll, the swap follows the real one). Not seen at the carry's pace.
+- Reloading part way down does not put the visitor back on the same rows: films above the reload point do not take their room again, so the page shows a place about two screens further down on a computer; at phone size the page returns near the top. Both happen on the shipped page too (there it was about four and a half screens).
+- Which tab is highlighted while a film plays was not checked.
+- Projects' circuit city is the weakest fit. If one film is ever rendered again, the reviewer's pick is a flight over the San Diego model with the search spreading and the route lighting up (project 1 itself).
+
+**The sea film's sun** (found before that film was cut; not fixed, the film is no longer used). Near the end the sun was a flat white disc with a hard white block under it. Measured on a test render of picture 102: the disc is about 300 times brighter than the sky beside it (145 against 0.45), so it burns out to plain white; the block is a second copy of the sun, mirrored in the still water beyond the 300 m of waves, which is a perfect mirror (roughness 0.02). Test renders confirmed both: a sun 16 to 125 times dimmer (`sun_intensity` 0.03 to 0.004 in `film_wave.py`) shows its shading, and rougher far water (0.3, a second material for the far plane in `filmkit.sea()`) turns the block into a soft streak. If the film ever comes back, those are the two changes, then a re-render.
 
 ## A film into every section (2026-11-21, later the same day)
 
@@ -68,7 +116,7 @@ The circuit film is the heaviest (its lit traces are fine detail); it is saved a
 
 **Not done, not checked.**
 - Safari and a real iPhone cannot be tested from this Mac. Kia's iPhone is the test, after a "ship it".
-- About now sits about nine screens down (opening film, the pinned word scene, then its own film). `.reel.live { height: 300vh }` in the page sets every film's length; it is one number to shorten them all.
+- About now sits about nine screens down (opening film, the pinned word scene, then its own film). `.reel.live { height: 300vh }` in the page sets every film's length; it is one number to shorten them all. (Out of date: see the section above. The films are 200vh, end as their chapter's title card, and About has no film.)
 - While a film plays, the tab bar still highlights the section before it.
 - The Higgsfield wave barrel is set aside (see above); About uses the sea at sunset.
 - Seen in passing, not from this work and not changed: at phone size, reloading part way down returns the page near the top. It does the same with the films switched off.
